@@ -3,17 +3,24 @@
 from __future__ import annotations
 
 from shearstud.geometry.composite import CompositeGirder, DeckSlab
+from shearstud.geometry.effective import DeckLayout, width_for
 from shearstud.geometry.plate import Plate, flange, web
 from shearstud.geometry.rolled import RolledShape, shape
+from shearstud.geometry.schedule import GirderSchedule, SectionRun, uniform
 from shearstud.geometry.section import Section
 
 __all__ = [
     "CompositeGirder",
+    "DeckLayout",
     "DeckSlab",
+    "GirderSchedule",
     "Plate",
     "RolledShape",
     "Section",
+    "SectionRun",
     "flange",
     "shape",
+    "uniform",
     "web",
+    "width_for",
 ]
