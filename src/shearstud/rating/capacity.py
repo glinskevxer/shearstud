@@ -1,0 +1,210 @@
+"""Member capacity: what the girder can carry before the rating divides by it.
+
+Three capacities are worked out here and they fail in different places, which is
+why a rating has to compute all three rather than the one that looks worst on
+the drawing:
+
+* **yield moment** governs a slender or a non composite section, and is just the
+  section modulus times the yield stress;
+* **plastic moment** governs a compact composite section in positive bending,
+  where the deck holds the top flange and the whole section can yield;
+* **shear** governs short spans and the ends of everything, and on a girder with
+  no transverse stiffeners it is the web buckling that decides, not the yield.
+
+The compactness check that picks between the first two is the web slenderness
+ratio, and it is written out rather than assumed because a girder built in 1962
+is frequently not compact by today's rule even though it was by the rule it was
+designed to.
+"""
+
+from __future__ import annotations
+
+import math
+from dataclasses import dataclass
+from itertools import pairwise
+from typing import Final
+
+from shearstud.errors import InputError
+from shearstud.geometry.section import Section
+from shearstud.units import STEEL_E_KSI, kipin_to_kipft
+
+#: Yield stresses this inventory holds, by the steel the drawing calls for.
+YIELD_BY_GRADE_KSI: Final[dict[str, float]] = {
+    "A7": 33.0,
+    "A373": 32.0,
+    "A36": 36.0,
+    "A572-50": 50.0,
+    "A709-50": 50.0,
+    "A709-70": 70.0,
+}
+
+#: Web slenderness at or below which the web is compact, AASHTO LRFD 6.10.6.2.2
+#: written with the constant folded in. Compared against D over tw.
+COMPACT_WEB_COEFF: Final[float] = 3.76
+
+#: Shear buckling coefficient for an unstiffened web.
+UNSTIFFENED_SHEAR_K: Final[float] = 5.0
+
+#: Ratio of shear yield to tensile yield used by the shear provisions.
+SHEAR_YIELD_RATIO: Final[float] = 0.58
+
+
+def yield_stress_ksi(grade: str) -> float:
+    """Yield stress for a named steel grade."""
+    key = grade.strip().upper()
+    if key not in YIELD_BY_GRADE_KSI:
+        raise InputError(f"unknown steel grade {grade!r}")
+    return YIELD_BY_GRADE_KSI[key]
+
+
+@dataclass(frozen=True, slots=True)
+class FlexuralCapacity:
+    """Moment capacity, and which mechanism decided it."""
+
+    moment_kipft: float
+    mechanism: str
+    yield_stress_ksi: float
+    is_compact: bool
+
+
+def web_slenderness(section: Section) -> float:
+    """Clear web depth over web thickness."""
+    web = section.plate("web")
+    return web.height_in / web.width_in
+
+
+def is_compact_web(section: Section, fy_ksi: float) -> bool:
+    """Whether the web is stocky enough to reach the plastic moment."""
+    if fy_ksi <= 0.0:
+        raise InputError(f"yield stress {fy_ksi} is not a stress")
+    limit = COMPACT_WEB_COEFF * math.sqrt(STEEL_E_KSI / fy_ksi)
+    return web_slenderness(section) <= limit
+
+
+def yield_moment_kipft(section: Section, fy_ksi: float, *, fibre: str = "bottom") -> float:
+    """First yield moment at one fibre."""
+    if fy_ksi <= 0.0:
+        raise InputError(f"yield stress {fy_ksi} is not a stress")
+    if fibre == "bottom":
+        modulus_in3 = section.section_modulus_bottom_in3
+    elif fibre == "top":
+        modulus_in3 = section.section_modulus_top_in3
+    else:
+        raise InputError(f"unknown fibre {fibre!r}, expected top or bottom")
+    return kipin_to_kipft(modulus_in3 * fy_ksi)
+
+
+def plastic_moment_kipft(section: Section, fy_ksi: float) -> float:
+    """Full plastic moment of a steel section.
+
+    The plastic neutral axis is found by equal areas rather than by the elastic
+    centroid, so it is not the same axis the section modulus is taken about. On
+    a singly symmetric girder the two are several inches apart.
+    """
+    if fy_ksi <= 0.0:
+        raise InputError(f"yield stress {fy_ksi} is not a stress")
+    axis_in = plastic_neutral_axis_in(section)
+    total_kipin = 0.0
+    for plate in section:
+        # Both halves push the same way on the moment: the tension half pulls
+        # below the axis and the compression half pushes above it, so the arm
+        # is taken as a magnitude and the two add rather than cancel.
+        for lo_in, hi_in in (
+            (plate.y_bottom_in, min(plate.y_top_in, axis_in)),
+            (max(plate.y_bottom_in, axis_in), plate.y_top_in),
+        ):
+            if hi_in <= lo_in:
+                continue
+            area_in2 = plate.width_in * (hi_in - lo_in)
+            arm_in = abs((hi_in + lo_in) / 2.0 - axis_in)
+            total_kipin += area_in2 * arm_in * fy_ksi
+    return kipin_to_kipft(total_kipin)
+
+
+def plastic_neutral_axis_in(section: Section) -> float:
+    """Height at which half the area is above and half below."""
+    target_in2 = section.area_in2 / 2.0
+    edges = sorted({p.y_bottom_in for p in section} | {p.y_top_in for p in section})
+    for lower_in, upper_in in pairwise(edges):
+        below_in2 = _area_below(section, upper_in)
+        if below_in2 >= target_in2:
+            width_in = _width_at(section, (lower_in + upper_in) / 2.0)
+            if width_in <= 0.0:
+                continue
+            shortfall_in2 = target_in2 - _area_below(section, lower_in)
+            return lower_in + shortfall_in2 / width_in
+    return section.y_top_in
+
+
+def _area_below(section: Section, level_in: float) -> float:
+    total = 0.0
+    for plate in section:
+        hi_in = min(plate.y_top_in, level_in)
+        if hi_in > plate.y_bottom_in:
+            total += plate.width_in * (hi_in - plate.y_bottom_in)
+    return total
+
+
+def _width_at(section: Section, level_in: float) -> float:
+    return sum(p.width_in for p in section if p.y_bottom_in <= level_in <= p.y_top_in)
+
+
+def flexural_capacity(
+    section: Section, grade: str, *, composite: bool, fibre: str = "bottom"
+) -> FlexuralCapacity:
+    """Moment capacity under the mechanism that governs."""
+    fy_ksi = yield_stress_ksi(grade)
+    compact = is_compact_web(section, fy_ksi)
+    if composite and compact:
+        return FlexuralCapacity(
+            moment_kipft=plastic_moment_kipft(section, fy_ksi),
+            mechanism="plastic",
+            yield_stress_ksi=fy_ksi,
+            is_compact=True,
+        )
+    return FlexuralCapacity(
+        moment_kipft=yield_moment_kipft(section, fy_ksi, fibre=fibre),
+        mechanism="yield",
+        yield_stress_ksi=fy_ksi,
+        is_compact=compact,
+    )
+
+
+def shear_capacity_kip(
+    section: Section, grade: str, stiffener_spacing_ft: float | None = None
+) -> float:
+    """Web shear capacity, buckling accounted for.
+
+    ``stiffener_spacing_ft`` of ``None`` means an unstiffened web, which is the
+    common case on the older stringers and the one that buckles first.
+    """
+    fy_ksi = yield_stress_ksi(grade)
+    web = section.plate("web")
+    depth_in = web.height_in
+    thickness_in = web.width_in
+    plastic_kip = SHEAR_YIELD_RATIO * fy_ksi * depth_in * thickness_in
+    if stiffener_spacing_ft is None:
+        k = UNSTIFFENED_SHEAR_K
+    else:
+        if stiffener_spacing_ft <= 0.0:
+            raise InputError(f"stiffener spacing {stiffener_spacing_ft} is not a spacing")
+        ratio = stiffener_spacing_ft * 12.0 / depth_in
+        k = 5.0 + 5.0 / (ratio * ratio)
+    return plastic_kip * shear_buckling_ratio(depth_in / thickness_in, fy_ksi, k)
+
+
+def shear_buckling_ratio(slenderness: float, fy_ksi: float, k: float) -> float:
+    """The C factor: how much of the plastic shear the web can actually reach."""
+    if slenderness <= 0.0:
+        raise InputError(f"web slenderness {slenderness} is not a ratio")
+    if fy_ksi <= 0.0:
+        raise InputError(f"yield stress {fy_ksi} is not a stress")
+    if k <= 0.0:
+        raise InputError(f"buckling coefficient {k} is not a coefficient")
+    yield_limit = 1.12 * math.sqrt(STEEL_E_KSI * k / fy_ksi)
+    inelastic_limit = 1.40 * math.sqrt(STEEL_E_KSI * k / fy_ksi)
+    if slenderness <= yield_limit:
+        return 1.0
+    if slenderness <= inelastic_limit:
+        return yield_limit / slenderness
+    return 1.57 * STEEL_E_KSI * k / (slenderness * slenderness * fy_ksi)
