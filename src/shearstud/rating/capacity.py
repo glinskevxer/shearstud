@@ -122,31 +122,20 @@ def plastic_moment_kipft(section: Section, fy_ksi: float) -> float:
 
 
 def plastic_neutral_axis_in(section: Section) -> float:
-    """Height at which half the area is above and half below."""
+    """Height at which half the area is above and half below.
+
+    The area sweep is the section's own, so this is a search over the plate
+    boundaries rather than a second implementation of the same arithmetic.
+    """
     target_in2 = section.area_in2 / 2.0
-    edges = sorted({p.y_bottom_in for p in section} | {p.y_top_in for p in section})
-    for lower_in, upper_in in pairwise(edges):
-        below_in2 = _area_below(section, upper_in)
-        if below_in2 >= target_in2:
-            width_in = _width_at(section, (lower_in + upper_in) / 2.0)
+    for lower_in, upper_in in pairwise(section.plate_edges_in()):
+        if section.area_below_in2(upper_in) >= target_in2:
+            width_in = section.width_at_in((lower_in + upper_in) / 2.0)
             if width_in <= 0.0:
                 continue
-            shortfall_in2 = target_in2 - _area_below(section, lower_in)
+            shortfall_in2 = target_in2 - section.area_below_in2(lower_in)
             return lower_in + shortfall_in2 / width_in
     return section.y_top_in
-
-
-def _area_below(section: Section, level_in: float) -> float:
-    total = 0.0
-    for plate in section:
-        hi_in = min(plate.y_top_in, level_in)
-        if hi_in > plate.y_bottom_in:
-            total += plate.width_in * (hi_in - plate.y_bottom_in)
-    return total
-
-
-def _width_at(section: Section, level_in: float) -> float:
-    return sum(p.width_in for p in section if p.y_bottom_in <= level_in <= p.y_top_in)
 
 
 def flexural_capacity(

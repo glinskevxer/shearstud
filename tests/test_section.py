@@ -168,3 +168,69 @@ def test_a_section_iterates_and_counts_its_plates() -> None:
     s = symmetric_girder()
     assert len(s) == 3
     assert [p.label for p in s] == ["bottom", "web", "top"]
+
+
+def test_the_area_below_the_bottom_fibre_is_nothing() -> None:
+    s = symmetric_girder()
+    assert s.area_below_in2(s.y_bottom_in) == pytest.approx(0.0)
+
+
+def test_the_area_below_the_top_fibre_is_everything() -> None:
+    s = symmetric_girder()
+    assert s.area_below_in2(s.y_top_in) == pytest.approx(s.area_in2)
+
+
+def test_the_area_below_mid_depth_is_half_of_a_symmetric_section() -> None:
+    s = symmetric_girder()
+    assert s.area_below_in2(s.depth_in / 2.0) == pytest.approx(s.area_in2 / 2.0)
+
+
+def test_the_area_sweep_never_goes_backwards() -> None:
+    s = singly_symmetric_girder()
+    levels = [i * s.depth_in / 20.0 for i in range(21)]
+    areas = [s.area_below_in2(y) for y in levels]
+    assert areas == sorted(areas)
+
+
+def test_a_plate_that_straddles_the_level_is_split() -> None:
+    s = symmetric_girder()
+    half_flange = s.area_below_in2(0.5)
+    assert half_flange == pytest.approx(14.0 * 0.5)
+
+
+def test_the_width_at_a_flange_is_the_flange_width() -> None:
+    s = symmetric_girder()
+    assert s.width_at_in(0.5) == pytest.approx(14.0)
+
+
+def test_the_width_in_the_web_is_the_web_thickness() -> None:
+    s = symmetric_girder()
+    assert s.width_at_in(28.0) == pytest.approx(0.5)
+
+
+def test_the_width_at_a_plate_boundary_counts_both_plates() -> None:
+    s = symmetric_girder()
+    assert s.width_at_in(1.0) == pytest.approx(14.5)
+
+
+def test_the_width_off_the_section_is_nothing() -> None:
+    s = symmetric_girder()
+    assert s.width_at_in(s.y_top_in + 5.0) == pytest.approx(0.0)
+
+
+def test_the_plate_edges_are_sorted_and_distinct() -> None:
+    edges = symmetric_girder().plate_edges_in()
+    assert list(edges) == sorted(set(edges))
+
+
+def test_the_plate_edges_span_the_whole_section() -> None:
+    s = symmetric_girder()
+    edges = s.plate_edges_in()
+    assert edges[0] == pytest.approx(s.y_bottom_in)
+    assert edges[-1] == pytest.approx(s.y_top_in)
+
+
+def test_a_touching_stack_shares_its_boundaries() -> None:
+    # Bottom flange top and web bottom are the same height, so four plate
+    # boundaries collapse to four distinct edges rather than six.
+    assert len(symmetric_girder().plate_edges_in()) == 4

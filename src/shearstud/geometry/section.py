@@ -134,6 +134,38 @@ class Section:
             total += piece_area_in2 * (piece_centre_in - na_in)
         return total
 
+    def area_below_in2(self, y_in: float) -> float:
+        """Area of everything below ``y_in``, plates split where they straddle.
+
+        The plastic neutral axis search sweeps this, and so does anything that
+        needs to know how the area is distributed rather than where its centroid
+        is. It lives here rather than in the caller because it is the same sweep
+        :meth:`first_moment_above_in3` already does, one moment lower.
+        """
+        total = 0.0
+        for p in self.plates:
+            hi_in = min(p.y_top_in, y_in)
+            if hi_in > p.y_bottom_in:
+                total += p.width_in * (hi_in - p.y_bottom_in)
+        return total
+
+    def width_at_in(self, y_in: float) -> float:
+        """Total horizontal material at one height.
+
+        Plates that only touch the level are counted, so this reports the width
+        of the plate a level sits inside rather than zero at a boundary.
+        """
+        return sum(p.width_in for p in self.plates if p.y_bottom_in <= y_in <= p.y_top_in)
+
+    def plate_edges_in(self) -> tuple[float, ...]:
+        """Every distinct plate boundary height, ascending.
+
+        The area sweep is piecewise linear between these, so a search over them
+        is exact rather than a sampling.
+        """
+        edges = {p.y_bottom_in for p in self.plates} | {p.y_top_in for p in self.plates}
+        return tuple(sorted(edges))
+
     def with_plates(self, plates: Iterable[Plate]) -> Section:
         """A copy of this section carrying ``plates`` instead."""
         return Section(self.label, tuple(plates))
