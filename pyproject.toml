@@ -50,7 +50,7 @@ show_error_codes = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q --strict-markers"
+addopts = "-q --strict-markers -W error::ResourceWarning"
 markers = [
   "geometry: section property arithmetic",
   "loads: live load placement and distribution",
