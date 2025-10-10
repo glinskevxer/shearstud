@@ -12,60 +12,10 @@ from shearstud.signals import spectrum as spec
 from shearstud.signals.rainflow import Cycle
 from shearstud.signals.spectrum import Spectrum
 from shearstud.store import measurement as meas
-from shearstud.store import migrate
 from shearstud.store.measurement import CampaignRecord, SpectrumQuality
 from shearstud.structure.gauge import ORIENTATION_LONGITUDINAL, ORIENTATION_TRANSVERSE, GaugeInstall
 
 pytestmark = pytest.mark.store
-
-
-@pytest.fixture
-def book(tmp_path: Path) -> Path:
-    path = tmp_path / "shearstud.sqlite3"
-    migrate.upgrade(path)
-    _seed_inventory(path)
-    return path
-
-
-def _seed_inventory(path: Path) -> None:
-    from shearstud.store import db
-
-    with db.transaction(path) as connection:
-        connection.execute(
-            "INSERT INTO structures (number, name, county_code, route_class, sequence, "
-            "parallel, year_built, span_lengths_ft, continuous, effective_width_rule, "
-            "steel_grade, member_condition, redundancy, adtt, lanes_available, "
-            "growth_pct_per_yr) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (
-                "18-SH-0473",
-                "Salt Fork Creek",
-                18,
-                "SH",
-                473,
-                "",
-                1968,
-                "[120.0]",
-                0,
-                "tributary",
-                "A36",
-                "good",
-                "redundant",
-                1200.0,
-                2,
-                2.0,
-            ),
-        )
-        connection.execute(
-            "INSERT INTO girders (structure_number, girder_id, girder_index, "
-            "spacing_left_ft, spacing_right_ft, overhang_ft, slab_thickness_in, "
-            "haunch_in, deck_fc_ksi) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            ("18-SH-0473", "G3", 0, 7.5, 7.5, 0.0, 8.0, 2.0, 4.0),
-        )
-        connection.execute(
-            "INSERT INTO details (detail_id, structure_number, girder_id, kind, "
-            "category_name, station_ft, fibre) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            ("D07", "18-SH-0473", "G3", "cover_plate_end", "E", 24.5, "bottom"),
-        )
 
 
 def install(
@@ -104,9 +54,9 @@ def spectrum(gauge_id: str = "G3-BF-01") -> Spectrum:
     return spec.build(gauge_id, cycles, 5.0)
 
 
-def test_a_gauge_round_trips(book: Path) -> None:
-    meas.save_gauge(book, install())
-    loaded = meas.load_gauges(book)
+def test_a_gauge_round_trips(seeded_book: Path) -> None:
+    meas.save_gauge(seeded_book, install())
+    loaded = meas.load_gauges(seeded_book)
     assert len(loaded) == 1
     assert loaded[0].gauge_id == "G3-BF-01"
     assert loaded[0].gauge_factor == pytest.approx(2.10)
@@ -114,27 +64,27 @@ def test_a_gauge_round_trips(book: Path) -> None:
     assert loaded[0].removed_on is None
 
 
-def test_a_removed_gauge_keeps_its_removal_date(book: Path) -> None:
-    meas.save_gauge(book, install(removed=date(2026, 2, 1)))
-    assert meas.load_gauges(book)[0].removed_on == date(2026, 2, 1)
+def test_a_removed_gauge_keeps_its_removal_date(seeded_book: Path) -> None:
+    meas.save_gauge(seeded_book, install(removed=date(2026, 2, 1)))
+    assert meas.load_gauges(seeded_book)[0].removed_on == date(2026, 2, 1)
 
 
-def test_saving_a_gauge_twice_replaces_it(book: Path) -> None:
-    meas.save_gauge(book, install())
-    meas.save_gauge(book, install(removed=date(2026, 2, 1)))
-    loaded = meas.load_gauges(book)
+def test_saving_a_gauge_twice_replaces_it(seeded_book: Path) -> None:
+    meas.save_gauge(seeded_book, install())
+    meas.save_gauge(seeded_book, install(removed=date(2026, 2, 1)))
+    loaded = meas.load_gauges(seeded_book)
     assert len(loaded) == 1
     assert loaded[0].removed_on == date(2026, 2, 1)
 
 
-def test_gauges_can_be_narrowed_to_one_detail(book: Path) -> None:
-    meas.save_gauge(book, install("a"))
-    meas.save_gauge(book, install("b", orientation=ORIENTATION_TRANSVERSE))
-    assert len(meas.load_gauges(book, "D07")) == 2
-    assert meas.load_gauges(book, "nowhere") == []
+def test_gauges_can_be_narrowed_to_one_detail(seeded_book: Path) -> None:
+    meas.save_gauge(seeded_book, install("a"))
+    meas.save_gauge(seeded_book, install("b", orientation=ORIENTATION_TRANSVERSE))
+    assert len(meas.load_gauges(seeded_book, "D07")) == 2
+    assert meas.load_gauges(seeded_book, "nowhere") == []
 
 
-def test_a_gauge_watching_a_detail_that_is_not_there_is_refused(book: Path) -> None:
+def test_a_gauge_watching_a_detail_that_is_not_there_is_refused(seeded_book: Path) -> None:
     import sqlite3
 
     orphan = GaugeInstall(
@@ -146,12 +96,12 @@ def test_a_gauge_watching_a_detail_that_is_not_there_is_refused(book: Path) -> N
         channel_limit_ue=1500.0,
     )
     with pytest.raises(sqlite3.IntegrityError):
-        meas.save_gauge(book, orphan)
+        meas.save_gauge(seeded_book, orphan)
 
 
-def test_a_campaign_round_trips(book: Path) -> None:
-    meas.save_campaign(book, campaign())
-    loaded = meas.load_campaigns(book, "18-SH-0473")
+def test_a_campaign_round_trips(seeded_book: Path) -> None:
+    meas.save_campaign(seeded_book, campaign())
+    loaded = meas.load_campaigns(seeded_book, "18-SH-0473")
     assert len(loaded) == 1
     assert loaded[0].campaign_id == "C-2025-04"
     assert loaded[0].seasonal_factor == pytest.approx(1.15)
@@ -192,59 +142,59 @@ def test_a_campaign_needs_an_id() -> None:
         )
 
 
-def test_campaigns_come_back_oldest_first(book: Path) -> None:
+def test_campaigns_come_back_oldest_first(seeded_book: Path) -> None:
     later = CampaignRecord(
         campaign_id="C-2026-05",
         structure_number="18-SH-0473",
         started_on=date(2026, 5, 1),
         ended_on=date(2026, 5, 14),
     )
-    meas.save_campaign(book, later)
-    meas.save_campaign(book, campaign())
-    assert [c.campaign_id for c in meas.load_campaigns(book, "18-SH-0473")] == [
+    meas.save_campaign(seeded_book, later)
+    meas.save_campaign(seeded_book, campaign())
+    assert [c.campaign_id for c in meas.load_campaigns(seeded_book, "18-SH-0473")] == [
         "C-2025-04",
         "C-2026-05",
     ]
 
 
-def test_a_spectrum_round_trips(book: Path) -> None:
-    meas.save_gauge(book, install())
-    meas.save_campaign(book, campaign())
+def test_a_spectrum_round_trips(seeded_book: Path) -> None:
+    meas.save_gauge(seeded_book, install())
+    meas.save_campaign(seeded_book, campaign())
     original = spectrum()
-    meas.save_spectrum(book, "C-2025-04", original)
-    loaded = meas.load_spectrum(book, "C-2025-04", "G3-BF-01")
+    meas.save_spectrum(seeded_book, "C-2025-04", original)
+    loaded = meas.load_spectrum(seeded_book, "C-2025-04", "G3-BF-01")
     assert len(loaded) == len(original)
     assert loaded.total_count == pytest.approx(original.total_count)
     assert loaded.bin_width_ue == pytest.approx(original.bin_width_ue)
 
 
-def test_the_spectrum_damage_survives_the_round_trip(book: Path) -> None:
-    meas.save_gauge(book, install())
-    meas.save_campaign(book, campaign())
+def test_the_spectrum_damage_survives_the_round_trip(seeded_book: Path) -> None:
+    meas.save_gauge(seeded_book, install())
+    meas.save_campaign(seeded_book, campaign())
     original = spectrum()
-    meas.save_spectrum(book, "C-2025-04", original)
-    loaded = meas.load_spectrum(book, "C-2025-04", "G3-BF-01")
+    meas.save_spectrum(seeded_book, "C-2025-04", original)
+    loaded = meas.load_spectrum(seeded_book, "C-2025-04", "G3-BF-01")
     assert loaded.equivalent_range_ue() == pytest.approx(original.equivalent_range_ue())
     assert loaded.largest_range_ue == pytest.approx(original.largest_range_ue)
 
 
-def test_saving_a_spectrum_twice_replaces_its_bins(book: Path) -> None:
-    meas.save_gauge(book, install())
-    meas.save_campaign(book, campaign())
-    meas.save_spectrum(book, "C-2025-04", spectrum())
+def test_saving_a_spectrum_twice_replaces_its_bins(seeded_book: Path) -> None:
+    meas.save_gauge(seeded_book, install())
+    meas.save_campaign(seeded_book, campaign())
+    meas.save_spectrum(seeded_book, "C-2025-04", spectrum())
     smaller = spec.build("G3-BF-01", [Cycle(range_ue=40.0, mean_ue=0.0, count=5.0)], 5.0)
-    meas.save_spectrum(book, "C-2025-04", smaller)
-    loaded = meas.load_spectrum(book, "C-2025-04", "G3-BF-01")
+    meas.save_spectrum(seeded_book, "C-2025-04", smaller)
+    loaded = meas.load_spectrum(seeded_book, "C-2025-04", "G3-BF-01")
     assert len(loaded) == 1
     assert loaded.total_count == pytest.approx(5.0)
 
 
-def test_the_quality_fractions_round_trip(book: Path) -> None:
-    meas.save_gauge(book, install())
-    meas.save_campaign(book, campaign())
+def test_the_quality_fractions_round_trip(seeded_book: Path) -> None:
+    meas.save_gauge(seeded_book, install())
+    meas.save_campaign(seeded_book, campaign())
     quality = SpectrumQuality(dropout_frac=0.12, railed_frac=0.03)
-    meas.save_spectrum(book, "C-2025-04", spectrum(), quality)
-    loaded = meas.load_quality(book, "C-2025-04", "G3-BF-01")
+    meas.save_spectrum(seeded_book, "C-2025-04", spectrum(), quality)
+    loaded = meas.load_quality(seeded_book, "C-2025-04", "G3-BF-01")
     assert loaded.dropout_frac == pytest.approx(0.12)
     assert loaded.railed_frac == pytest.approx(0.03)
 
@@ -278,25 +228,25 @@ def test_a_fraction_outside_the_range_is_refused(kwargs: dict[str, float]) -> No
         SpectrumQuality(**kwargs)
 
 
-def test_reading_a_spectrum_that_is_not_there_is_refused(book: Path) -> None:
+def test_reading_a_spectrum_that_is_not_there_is_refused(seeded_book: Path) -> None:
     with pytest.raises(StorageError, match="no spectrum"):
-        meas.load_spectrum(book, "C-2025-04", "G3-BF-01")
+        meas.load_spectrum(seeded_book, "C-2025-04", "G3-BF-01")
 
 
-def test_reading_quality_that_is_not_there_is_refused(book: Path) -> None:
+def test_reading_quality_that_is_not_there_is_refused(seeded_book: Path) -> None:
     with pytest.raises(StorageError, match="no spectrum"):
-        meas.load_quality(book, "C-2025-04", "G3-BF-01")
+        meas.load_quality(seeded_book, "C-2025-04", "G3-BF-01")
 
 
-def test_the_gauges_in_a_campaign_come_back_in_order(book: Path) -> None:
-    meas.save_gauge(book, install("G3-BF-02"))
-    meas.save_gauge(book, install("G3-BF-01"))
-    meas.save_campaign(book, campaign())
-    meas.save_spectrum(book, "C-2025-04", spectrum("G3-BF-02"))
-    meas.save_spectrum(book, "C-2025-04", spectrum("G3-BF-01"))
-    assert meas.gauges_in_campaign(book, "C-2025-04") == ["G3-BF-01", "G3-BF-02"]
+def test_the_gauges_in_a_campaign_come_back_in_order(seeded_book: Path) -> None:
+    meas.save_gauge(seeded_book, install("G3-BF-02"))
+    meas.save_gauge(seeded_book, install("G3-BF-01"))
+    meas.save_campaign(seeded_book, campaign())
+    meas.save_spectrum(seeded_book, "C-2025-04", spectrum("G3-BF-02"))
+    meas.save_spectrum(seeded_book, "C-2025-04", spectrum("G3-BF-01"))
+    assert meas.gauges_in_campaign(seeded_book, "C-2025-04") == ["G3-BF-01", "G3-BF-02"]
 
 
-def test_a_campaign_with_no_spectra_reports_none(book: Path) -> None:
-    meas.save_campaign(book, campaign())
-    assert meas.gauges_in_campaign(book, "C-2025-04") == []
+def test_a_campaign_with_no_spectra_reports_none(seeded_book: Path) -> None:
+    meas.save_campaign(seeded_book, campaign())
+    assert meas.gauges_in_campaign(seeded_book, "C-2025-04") == []

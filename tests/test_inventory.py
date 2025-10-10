@@ -12,7 +12,7 @@ from shearstud.geometry.effective import DeckLayout
 from shearstud.geometry.plate import flange, web
 from shearstud.geometry.schedule import from_breaks, uniform
 from shearstud.geometry.section import Section
-from shearstud.store import db, inventory, migrate
+from shearstud.store import db, inventory
 from shearstud.store.inventory import StructurePolicy
 from shearstud.structure.detail import FIBRE_BOTTOM, FatigueDetail
 from shearstud.structure.girder import GirderLine
@@ -23,13 +23,6 @@ from shearstud.structure.span import series, simple
 pytestmark = pytest.mark.store
 
 UNIT_FT = 120.0
-
-
-@pytest.fixture
-def book(tmp_path: Path) -> Path:
-    path = tmp_path / "shearstud.sqlite3"
-    migrate.upgrade(path)
-    return path
 
 
 def section(label: str, bottom_in: float) -> Section:
