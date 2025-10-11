@@ -1,0 +1,6 @@
+# Digests of every applied migration. Frozen: a migration that has run
+# anywhere is never edited, and check_migrations fails the build if one is.
+# Regenerate with: python -m shearstud.tools.build_lock
+001 structures 431c2cc02ca37af4f1f1608a23257060a93e754896c1b919dc7a1c9f6bf4f044
+002 measurement 4c4ed4c5c3a04f74f9a68555aec38b0c13f48c7385fbc3cf622208846830961b
+003 assessment 945f57259205e6fbfbe18f3fdda907c10dc0c573323fbe38589f9622c715a79c
