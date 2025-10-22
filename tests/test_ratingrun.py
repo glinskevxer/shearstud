@@ -1,0 +1,292 @@
+"""The rating run, which is where every other module gets used at once."""
+
+from __future__ import annotations
+
+import pytest
+
+from shearstud.analysis import ratingrun as rr
+from shearstud.analysis.ratingrun import RatingSettings
+from shearstud.errors import InputError
+from shearstud.geometry.composite import DeckSlab
+from shearstud.geometry.effective import DeckLayout
+from shearstud.geometry.plate import flange, web
+from shearstud.geometry.schedule import from_breaks, uniform
+from shearstud.geometry.section import Section
+from shearstud.loads import vehicles
+from shearstud.structure.girder import GirderLine
+from shearstud.structure.identity import parse
+from shearstud.structure.record import Structure
+from shearstud.structure.span import series, simple
+
+pytestmark = pytest.mark.rating
+
+SPAN_FT = 90.0
+
+
+def section(label: str, bottom_in: float) -> Section:
+    return Section(
+        label,
+        (
+            flange("bottom", width_in=18.0, thickness_in=bottom_in, y_center_in=bottom_in / 2.0),
+            web("web", thickness_in=0.5625, depth_in=52.0, y_center_in=bottom_in + 26.0),
+            flange("top", width_in=16.0, thickness_in=1.0, y_center_in=bottom_in + 52.5),
+        ),
+    )
+
+
+def layout(index: int, exterior: bool) -> DeckLayout:
+    if exterior:
+        return DeckLayout(
+            girder_index=index,
+            spacing_left_ft=0.0,
+            spacing_right_ft=8.0,
+            overhang_ft=3.5,
+            slab_thickness_in=8.0,
+        )
+    return DeckLayout(
+        girder_index=index,
+        spacing_left_ft=8.0,
+        spacing_right_ft=8.0,
+        overhang_ft=0.0,
+        slab_thickness_in=8.0,
+    )
+
+
+def girder(girder_id: str, index: int, exterior: bool, length_ft: float = SPAN_FT) -> GirderLine:
+    if index == 1:
+        schedule = from_breaks(
+            girder_id,
+            [section("end", 1.25), section("middle", 2.0), section("far", 1.25)],
+            [length_ft * 0.25, length_ft * 0.75],
+            length_ft,
+        )
+    else:
+        schedule = uniform(girder_id, section("only", 1.5), length_ft)
+    return GirderLine(
+        girder_id=girder_id,
+        schedule=schedule,
+        layout=layout(index, exterior),
+        deck=DeckSlab(thickness_in=8.0, effective_width_in=96.0, haunch_in=2.0, fc_ksi=4.0),
+    )
+
+
+def structure(continuous: bool = False) -> Structure:
+    if continuous:
+        spans = series([SPAN_FT, SPAN_FT], continuous=True)
+        length_ft = 2.0 * SPAN_FT
+    else:
+        spans = simple(SPAN_FT)
+        length_ft = SPAN_FT
+    return Structure(
+        number=parse("18-SH-0473"),
+        name="Salt Fork Creek",
+        spans=spans,
+        girders=(
+            girder("G1", 0, True, length_ft),
+            girder("G2", 1, False, length_ft),
+            girder("G3", 2, False, length_ft),
+            girder("G4", 3, True, length_ft),
+        ),
+        year_built=1968,
+    )
+
+
+def test_the_stations_are_the_tenth_points() -> None:
+    got = rr.stations_for(structure(), RatingSettings())
+    assert len(got) == 11
+    assert got[0] == pytest.approx(0.0)
+    assert got[-1] == pytest.approx(SPAN_FT)
+    assert got[5] == pytest.approx(SPAN_FT / 2.0)
+
+
+def test_a_two_span_unit_gets_stations_in_both_spans() -> None:
+    got = rr.stations_for(structure(continuous=True), RatingSettings())
+    assert len(got) == 21
+    assert got[-1] == pytest.approx(2.0 * SPAN_FT)
+
+
+def test_a_finer_sampling_gives_more_stations() -> None:
+    got = rr.stations_for(structure(), RatingSettings(stations_per_span=20))
+    assert len(got) == 21
+
+
+def test_too_few_stations_is_refused() -> None:
+    with pytest.raises(InputError, match="too few to find a maximum"):
+        RatingSettings(stations_per_span=1)
+
+
+def test_an_unknown_steel_grade_is_caught_at_the_settings() -> None:
+    with pytest.raises(InputError, match="unknown steel grade"):
+        RatingSettings(steel_grade="A992")
+
+
+def test_an_unknown_condition_is_caught_at_the_settings() -> None:
+    with pytest.raises(InputError, match="unknown member condition"):
+        RatingSettings(member_condition="serviceable")
+
+
+def test_no_lanes_loaded_is_refused() -> None:
+    with pytest.raises(InputError, match="not a load case"):
+        RatingSettings(lanes_loaded=0)
+
+
+def test_a_simple_span_gets_a_simple_influence_line() -> None:
+    il = rr.influence_for(structure(), SPAN_FT / 2.0)
+    assert il.peak == pytest.approx(SPAN_FT / 4.0)
+
+
+def test_a_continuous_unit_gets_a_line_that_goes_negative() -> None:
+    il = rr.influence_for(structure(continuous=True), SPAN_FT / 2.0)
+    assert il.trough < 0.0
+
+
+def test_the_distribution_factor_lands_where_a_sheet_puts_it() -> None:
+    s = structure()
+    got = rr.distribution_for(s, s.girder("G2"), RatingSettings())
+    assert 0.5 < got < 1.0
+
+
+def test_an_exterior_girder_carries_at_least_as_much_as_an_interior_one() -> None:
+    s = structure()
+    settings = RatingSettings()
+    interior = rr.distribution_for(s, s.girder("G3"), settings)
+    exterior = rr.distribution_for(s, s.girder("G4"), settings)
+    assert exterior >= interior
+
+
+def test_the_dead_load_is_bigger_at_a_stiffer_section() -> None:
+    s = structure()
+    settings = RatingSettings(overlay_in=3.0)
+    thin = rr.dead_load_at(s, s.girder("G2"), 9.0, settings)
+    thick = rr.dead_load_at(s, s.girder("G2"), 45.0, settings)
+    assert thick.component > thin.component
+
+
+def test_the_wearing_surface_is_kept_apart_from_the_rest() -> None:
+    s = structure()
+    with_overlay = rr.dead_load_at(s, s.girder("G2"), 45.0, RatingSettings(overlay_in=3.0))
+    without = rr.dead_load_at(s, s.girder("G2"), 45.0, RatingSettings(overlay_in=0.0))
+    assert with_overlay.wearing_surface > 0.0
+    assert without.wearing_surface == pytest.approx(0.0)
+    assert with_overlay.component == pytest.approx(without.component)
+
+
+def test_a_station_rating_carries_one_result_per_vehicle() -> None:
+    s = structure()
+    fleet = vehicles.legal_fleet()
+    got = rr.rate_station(s, s.girder("G2"), SPAN_FT / 2.0, fleet, RatingSettings())
+    assert len(got.ratings) == len(fleet)
+    assert {r.vehicle for r in got.ratings} == {t.name for t in fleet}
+
+
+def test_a_station_rating_keeps_its_workings() -> None:
+    s = structure()
+    got = rr.rate_station(
+        s, s.girder("G2"), SPAN_FT / 2.0, vehicles.legal_fleet(), RatingSettings(overlay_in=3.0)
+    )
+    assert got.girder_id == "G2"
+    assert got.station_ft == pytest.approx(SPAN_FT / 2.0)
+    assert got.capacity_kipft > 0.0
+    assert got.dead_component_kipft > 0.0
+    assert got.dead_surface_kipft > 0.0
+    assert 0.0 < got.distribution_factor < 2.0
+
+
+def test_the_governing_vehicle_at_a_station_is_the_worst_one() -> None:
+    s = structure()
+    got = rr.rate_station(
+        s, s.girder("G2"), SPAN_FT / 2.0, vehicles.legal_fleet(), RatingSettings()
+    )
+    worst = got.governing
+    assert all(worst.value <= r.value + 1e-12 for r in got.ratings)
+
+
+def test_a_station_with_no_vehicles_is_refused() -> None:
+    s = structure()
+    with pytest.raises(InputError, match="at least one vehicle"):
+        rr.rate_station(s, s.girder("G2"), SPAN_FT / 2.0, [], RatingSettings())
+
+
+def test_a_station_rating_with_no_results_cannot_be_asked_for_a_governing_one() -> None:
+    empty = rr.StationRating("G2", 45.0, 0.7, 5000.0, 900.0, 100.0)
+    with pytest.raises(InputError, match="has no ratings"):
+        _ = empty.governing
+
+
+def test_a_whole_run_covers_every_girder() -> None:
+    s = structure()
+    results = rr.rate_structure(s, vehicles.legal_fleet(), RatingSettings(stations_per_span=4))
+    assert {station.girder_id for station in results} == {"G1", "G2", "G3", "G4"}
+
+
+def test_a_whole_run_skips_the_abutments() -> None:
+    s = structure()
+    results = rr.rate_structure(s, vehicles.legal_fleet(), RatingSettings(stations_per_span=4))
+    for station in results:
+        assert 0.0 < station.station_ft < s.length_ft
+
+
+def test_a_typical_structure_rates_above_one_for_the_legal_fleet() -> None:
+    s = structure()
+    results = rr.rate_structure(s, vehicles.legal_fleet(), RatingSettings(stations_per_span=4))
+    assert rr.governing(results).value > 1.0
+
+
+def test_a_poor_non_redundant_structure_rates_lower() -> None:
+    s = structure()
+    good = rr.rate_structure(s, vehicles.legal_fleet(), RatingSettings(stations_per_span=4))
+    poor = rr.rate_structure(
+        s,
+        vehicles.legal_fleet(),
+        RatingSettings(stations_per_span=4, member_condition="poor", redundancy="non_redundant"),
+    )
+    assert rr.governing(poor).value < rr.governing(good).value
+
+
+def test_an_overlay_lowers_the_rating() -> None:
+    s = structure()
+    bare = rr.rate_structure(s, vehicles.legal_fleet(), RatingSettings(stations_per_span=4))
+    paved = rr.rate_structure(
+        s, vehicles.legal_fleet(), RatingSettings(stations_per_span=4, overlay_in=4.0)
+    )
+    assert rr.governing(paved).value < rr.governing(bare).value
+
+
+def test_a_rough_riding_surface_lowers_the_rating() -> None:
+    s = structure()
+    smooth = rr.rate_structure(
+        s, vehicles.legal_fleet(), RatingSettings(stations_per_span=4, riding_surface="smooth")
+    )
+    rough = rr.rate_structure(
+        s, vehicles.legal_fleet(), RatingSettings(stations_per_span=4, riding_surface="rough")
+    )
+    assert rr.governing(rough).value < rr.governing(smooth).value
+
+
+def test_the_design_load_is_harsher_than_the_legal_fleet() -> None:
+    s = structure()
+    settings = RatingSettings(stations_per_span=4)
+    legal = rr.rate_structure(s, vehicles.legal_fleet(), settings)
+    design = rr.rate_structure(
+        s, [vehicles.design_truck()], settings, legal=False, level="inventory"
+    )
+    assert rr.governing(design).value < rr.governing(legal).value
+
+
+def test_the_governing_station_is_near_midspan() -> None:
+    s = structure()
+    results = rr.rate_structure(s, vehicles.legal_fleet(), RatingSettings(stations_per_span=10))
+    worst = min(results, key=lambda station: station.governing.value)
+    assert 0.3 * SPAN_FT < worst.station_ft < 0.7 * SPAN_FT
+
+
+def test_a_continuous_unit_runs_through_without_error() -> None:
+    s = structure(continuous=True)
+    results = rr.rate_structure(s, vehicles.legal_fleet(), RatingSettings(stations_per_span=4))
+    assert results
+    assert rr.governing(results).value > 0.0
+
+
+def test_governing_over_nothing_is_refused() -> None:
+    with pytest.raises(InputError, match="nothing was rated"):
+        rr.governing([])
