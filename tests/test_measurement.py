@@ -250,3 +250,31 @@ def test_the_gauges_in_a_campaign_come_back_in_order(seeded_book: Path) -> None:
 def test_a_campaign_with_no_spectra_reports_none(seeded_book: Path) -> None:
     meas.save_campaign(seeded_book, campaign())
     assert meas.gauges_in_campaign(seeded_book, "C-2025-04") == []
+
+
+def test_correcting_a_campaign_keeps_its_spectra(seeded_book: Path) -> None:
+    # An upsert rather than a delete and an insert. The cascade off campaigns
+    # would otherwise take every count with the correction.
+    meas.save_gauge(seeded_book, install())
+    meas.save_campaign(seeded_book, campaign())
+    meas.save_spectrum(seeded_book, "C-2025-04", spectrum())
+    corrected = CampaignRecord(
+        campaign_id="C-2025-04",
+        structure_number="18-SH-0473",
+        started_on=date(2025, 4, 1),
+        ended_on=date(2025, 4, 14),
+        seasonal_factor=1.4,
+        note="corrected after the harvest count came in",
+    )
+    meas.save_campaign(seeded_book, corrected)
+    assert meas.load_campaigns(seeded_book, "18-SH-0473")[0].seasonal_factor == pytest.approx(1.4)
+    assert meas.load_spectrum(seeded_book, "C-2025-04", "G3-BF-01").total_count > 0.0
+
+
+def test_recording_a_gauge_removal_keeps_its_spectra(seeded_book: Path) -> None:
+    meas.save_gauge(seeded_book, install())
+    meas.save_campaign(seeded_book, campaign())
+    meas.save_spectrum(seeded_book, "C-2025-04", spectrum())
+    meas.save_gauge(seeded_book, install(removed=date(2026, 2, 1)))
+    assert meas.load_gauges(seeded_book)[0].removed_on == date(2026, 2, 1)
+    assert meas.load_spectrum(seeded_book, "C-2025-04", "G3-BF-01").total_count > 0.0

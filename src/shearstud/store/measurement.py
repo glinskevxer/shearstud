@@ -77,12 +77,22 @@ class SpectrumQuality:
 
 
 def save_gauge(path: Path | str, install: GaugeInstall) -> None:
-    """Write a gauge installation, replacing any earlier record of it."""
+    """Write a gauge installation, updating any earlier record of it.
+
+    This is an upsert rather than a delete and an insert, and the difference is
+    not cosmetic: the spectra hang off the gauge with a cascade, so deleting the
+    row to rewrite it takes every measurement that gauge ever made with it.
+    Recording a removal date would then silently destroy the reason the gauge
+    was there.
+    """
     with db.transaction(path) as connection:
-        connection.execute("DELETE FROM gauges WHERE gauge_id = ?", (install.gauge_id,))
         connection.execute(
             "INSERT INTO gauges (gauge_id, detail_id, orientation, gauge_factor, "
-            "installed_on, removed_on, channel_limit_ue) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "installed_on, removed_on, channel_limit_ue) VALUES (?, ?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT (gauge_id) DO UPDATE SET "
+            "detail_id = excluded.detail_id, orientation = excluded.orientation, "
+            "gauge_factor = excluded.gauge_factor, installed_on = excluded.installed_on, "
+            "removed_on = excluded.removed_on, channel_limit_ue = excluded.channel_limit_ue",
             (
                 install.gauge_id,
                 install.detail_id,
@@ -127,12 +137,20 @@ def load_gauges(path: Path | str, detail_id: str | None = None) -> list[GaugeIns
 
 
 def save_campaign(path: Path | str, campaign: CampaignRecord) -> None:
-    """Write a campaign, replacing any earlier record of it."""
+    """Write a campaign, updating any earlier record of it.
+
+    An upsert for the same reason the gauge write is one: the spectra cascade
+    off the campaign, and correcting a seasonal factor after the fact must not
+    take the counts with it.
+    """
     with db.transaction(path) as connection:
-        connection.execute("DELETE FROM campaigns WHERE campaign_id = ?", (campaign.campaign_id,))
         connection.execute(
             "INSERT INTO campaigns (campaign_id, structure_number, started_on, "
-            "ended_on, seasonal_factor, note) VALUES (?, ?, ?, ?, ?, ?)",
+            "ended_on, seasonal_factor, note) VALUES (?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT (campaign_id) DO UPDATE SET "
+            "structure_number = excluded.structure_number, "
+            "started_on = excluded.started_on, ended_on = excluded.ended_on, "
+            "seasonal_factor = excluded.seasonal_factor, note = excluded.note",
             (
                 campaign.campaign_id,
                 campaign.structure_number,
