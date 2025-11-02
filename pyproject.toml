@@ -23,7 +23,7 @@ dev = [
 ]
 
 [project.scripts]
-shearstud = "shearstud.cli.main:run"
+shearstud = "shearstud.cli:run"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/shearstud"]
