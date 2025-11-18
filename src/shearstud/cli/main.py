@@ -52,7 +52,23 @@ class Context:
 pass_context = click.make_pass_decorator(Context)
 
 
-@click.group()
+class ShearstudGroup(click.Group):
+    """A group that turns a package error into a command line error.
+
+    The conversion belongs here rather than in the entry point, because the
+    entry point is not what a test drives and not what a subcommand raises
+    through. Catching at the top group covers every command under it, since
+    click dispatches the whole chain inside this call.
+    """
+
+    def invoke(self, ctx: click.Context) -> object:
+        try:
+            return super().invoke(ctx)
+        except ShearstudError as exc:
+            raise click.ClickException(str(exc)) from exc
+
+
+@click.group(cls=ShearstudGroup)
 @click.option(
     "--book",
     type=click.Path(dir_okay=False, path_type=Path),
@@ -125,9 +141,6 @@ def run() -> int:
         return int(exc.exit_code)
     except click.exceptions.Abort:
         click.echo("aborted", err=True)
-        return EXIT_INPUT
-    except ShearstudError as exc:
-        click.echo(f"error: {exc}", err=True)
         return EXIT_INPUT
     return 0
 
