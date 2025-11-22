@@ -62,6 +62,7 @@ class ShearstudGroup(click.Group):
     """
 
     def invoke(self, ctx: click.Context) -> object:
+        """Dispatch the command, translating a package error on the way out."""
         try:
             return super().invoke(ctx)
         except ShearstudError as exc:
