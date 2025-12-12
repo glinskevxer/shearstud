@@ -51,7 +51,9 @@ def _settings_from(path: Path, number: str, **overrides: object) -> RatingSettin
 @main.command("rate")
 @click.argument("number")
 @click.option("--stations", type=int, default=10, show_default=True, help="Stations per span.")
-@click.option("--overlay", type=float, default=0.0, show_default=True, help="Overlay, inches.")
+@click.option(
+    "--overlay", "overlay_in", type=float, default=0.0, show_default=True, help="Overlay, inches."
+)
 @click.option(
     "--surface",
     type=click.Choice(["smooth", "minor", "rough"]),
@@ -68,7 +70,7 @@ def rate_command(
     ctx: Context,
     number: str,
     stations: int,
-    overlay: float,
+    overlay_in: float,
     surface: str,
     condition: str | None,
     design: bool,
@@ -82,7 +84,7 @@ def rate_command(
         path,
         number,
         stations_per_span=stations,
-        overlay_in=overlay,
+        overlay_in=overlay_in,
         riding_surface=surface,
         member_condition=condition,
     )
@@ -133,14 +135,18 @@ def _save_results(path: Path, number: str, results: list[rr.StationRating], leve
 @main.command("posting")
 @click.argument("number")
 @click.option("--stations", type=int, default=10, show_default=True, help="Stations per span.")
-@click.option("--overlay", type=float, default=0.0, show_default=True, help="Overlay, inches.")
+@click.option(
+    "--overlay", "overlay_in", type=float, default=0.0, show_default=True, help="Overlay, inches."
+)
 @click.option("--save", is_flag=True, help="Write the decision into the book.")
 @pass_context
-def posting_command(ctx: Context, number: str, stations: int, overlay: float, save: bool) -> None:
+def posting_command(
+    ctx: Context, number: str, stations: int, overlay_in: float, save: bool
+) -> None:
     """Work the posting decision from the legal load ratings."""
     path = ctx.require_book()
     record = inventory.load(path, number)
-    settings = _settings_from(path, number, stations_per_span=stations, overlay_in=overlay)
+    settings = _settings_from(path, number, stations_per_span=stations, overlay_in=overlay_in)
     by_silhouette = {}
     for silhouette, vehicle_name in post.SIGN_VEHICLES.items():
         train = vehicles.vehicle(vehicle_name)

@@ -58,7 +58,7 @@ class RatingSettings:
     riding_surface: str = impact.SURFACE_MINOR
     barrier_klf: float = 0.45
     overlay_in: float = 0.0
-    exterior_barrier_share: float = 1.0
+    exterior_barrier_share_frac: float = 1.0
     stations_per_span: int = DEFAULT_STATIONS_PER_SPAN
     lanes_loaded: int = DEFAULT_LANES_LOADED
 
@@ -155,7 +155,7 @@ def dead_load_at(
         station_ft,
         barrier_klf=settings.barrier_klf,
         overlay_in=settings.overlay_in,
-        exterior_share=settings.exterior_barrier_share if girder.is_exterior else 0.0,
+        exterior_share_frac=settings.exterior_barrier_share_frac if girder.is_exterior else 0.0,
         girder_count=structure.girder_count,
     )
     component_klf, surface_klf = dl.component_and_surface_klf(parts)

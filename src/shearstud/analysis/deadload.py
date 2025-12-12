@@ -75,21 +75,21 @@ def deck_weight_klf(girder: GirderLine) -> float:
     return total_in2 * in_to_ft(1.0) * in_to_ft(1.0) * CONCRETE_KCF
 
 
-def barrier_weight_klf(barrier_klf: float, girder_count: int, exterior_share: float) -> float:
+def barrier_weight_klf(barrier_klf: float, girder_count: int, exterior_share_frac: float) -> float:
     """One girder's share of the barriers.
 
     Barriers sit over the exterior girders and the deck distributes some of that
-    inward. ``exterior_share`` is how much of a barrier the girder under it
+    inward. ``exterior_share_frac`` is how much of a barrier the girder under it
     keeps; the remainder is spread over the rest. A share of one is the
     conservative reading for an exterior girder and zero spreads it evenly.
     """
     if girder_count < 1:
         raise InputError(f"{girder_count} girders is not a cross section")
-    if not 0.0 <= exterior_share <= 1.0:
-        raise InputError(f"exterior share {exterior_share} is outside zero to one")
+    if not 0.0 <= exterior_share_frac <= 1.0:
+        raise InputError(f"exterior share {exterior_share_frac} is outside zero to one")
     if barrier_klf < 0.0:
         raise InputError(f"barrier weight {barrier_klf} is negative")
-    return barrier_klf * exterior_share
+    return barrier_klf * exterior_share_frac
 
 
 def wearing_surface_klf(thickness_in: float, tributary_width_ft: float) -> float:
@@ -106,7 +106,7 @@ def parts_for(
     station_ft: float,
     barrier_klf: float = 0.0,
     overlay_in: float = 0.0,
-    exterior_share: float = 0.0,
+    exterior_share_frac: float = 0.0,
     girder_count: int = 4,
 ) -> list[DeadLoadPart]:
     """Every dead load on one girder, each tagged with its stage."""
@@ -116,7 +116,7 @@ def parts_for(
         DeadLoadPart("deck", deck_weight_klf(girder), STAGE_NONCOMPOSITE),
     ]
     if barrier_klf > 0.0:
-        share = barrier_weight_klf(barrier_klf, girder_count, exterior_share)
+        share = barrier_weight_klf(barrier_klf, girder_count, exterior_share_frac)
         out.append(DeadLoadPart("barrier", share, STAGE_LONG_TERM))
     if overlay_in > 0.0:
         out.append(

@@ -120,13 +120,13 @@ def test_a_bare_girder_has_two_dead_load_parts() -> None:
 
 
 def test_the_barrier_and_the_overlay_land_on_the_composite_section() -> None:
-    parts = dl.parts_for(girder(), 0.0, barrier_klf=0.45, overlay_in=3.0, exterior_share=1.0)
+    parts = dl.parts_for(girder(), 0.0, barrier_klf=0.45, overlay_in=3.0, exterior_share_frac=1.0)
     later = [p for p in parts if p.stage == dl.STAGE_LONG_TERM]
     assert [p.name for p in later] == ["barrier", "wearing surface"]
 
 
 def test_only_the_overlay_is_flagged_as_a_wearing_surface() -> None:
-    parts = dl.parts_for(girder(), 0.0, barrier_klf=0.45, overlay_in=3.0, exterior_share=1.0)
+    parts = dl.parts_for(girder(), 0.0, barrier_klf=0.45, overlay_in=3.0, exterior_share_frac=1.0)
     flagged = [p.name for p in parts if p.is_wearing_surface]
     assert flagged == ["wearing surface"]
 
@@ -137,12 +137,12 @@ def test_a_barrier_of_zero_does_not_appear_at_all() -> None:
 
 
 def test_the_total_adds_up_every_part() -> None:
-    parts = dl.parts_for(girder(), 0.0, barrier_klf=0.45, overlay_in=3.0, exterior_share=1.0)
+    parts = dl.parts_for(girder(), 0.0, barrier_klf=0.45, overlay_in=3.0, exterior_share_frac=1.0)
     assert dl.total_klf(parts) == pytest.approx(sum(p.load_klf for p in parts))
 
 
 def test_the_total_can_be_taken_for_one_stage() -> None:
-    parts = dl.parts_for(girder(), 0.0, barrier_klf=0.45, overlay_in=3.0, exterior_share=1.0)
+    parts = dl.parts_for(girder(), 0.0, barrier_klf=0.45, overlay_in=3.0, exterior_share_frac=1.0)
     early = dl.total_klf(parts, dl.STAGE_NONCOMPOSITE)
     late = dl.total_klf(parts, dl.STAGE_LONG_TERM)
     assert early + late == pytest.approx(dl.total_klf(parts))
@@ -155,7 +155,7 @@ def test_an_unknown_stage_is_refused_by_the_total() -> None:
 
 
 def test_the_factor_split_puts_the_overlay_on_its_own() -> None:
-    parts = dl.parts_for(girder(), 0.0, barrier_klf=0.45, overlay_in=3.0, exterior_share=1.0)
+    parts = dl.parts_for(girder(), 0.0, barrier_klf=0.45, overlay_in=3.0, exterior_share_frac=1.0)
     component, surface = dl.component_and_surface_klf(parts)
     assert surface == pytest.approx(dl.wearing_surface_klf(3.0, 7.5))
     assert component + surface == pytest.approx(dl.total_klf(parts))

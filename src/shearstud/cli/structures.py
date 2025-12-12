@@ -71,7 +71,14 @@ def show_structure(ctx: Context, number: str, girders: bool) -> None:
 @click.option("--redundancy", default="redundant", show_default=True, help="System redundancy.")
 @click.option("--adtt", type=float, default=0.0, show_default=True, help="Truck traffic a day.")
 @click.option("--lanes", type=int, default=2, show_default=True, help="Lanes open to trucks.")
-@click.option("--growth", type=float, default=0.0, show_default=True, help="Traffic growth, %/yr.")
+@click.option(
+    "--growth",
+    "growth_pct",
+    type=float,
+    default=0.0,
+    show_default=True,
+    help="Traffic growth, %/yr.",
+)
 @click.option("--force", is_flag=True, help="Replace a structure that is already there.")
 @pass_context
 def import_structure(
@@ -82,7 +89,7 @@ def import_structure(
     redundancy: str,
     adtt: float,
     lanes: int,
-    growth: float,
+    growth_pct: float,
     force: bool,
 ) -> None:
     """Read a structure document into the book."""
@@ -97,7 +104,7 @@ def import_structure(
         redundancy=redundancy,
         adtt=adtt,
         lanes_available=lanes,
-        growth_pct_per_yr=growth,
+        growth_pct_per_yr=growth_pct,
     )
     inventory.save(path, record, policy)
     click.echo(f"imported {number} with {record.girder_count} girders")

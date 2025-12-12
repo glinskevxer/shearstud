@@ -66,7 +66,9 @@ def list_gauges(ctx: Context, detail: str | None) -> None:
     show_default=True,
 )
 @click.option("--factor", type=float, default=2.10, show_default=True, help="Gauge factor.")
-@click.option("--limit", type=float, default=1500.0, show_default=True, help="Channel limit, ue.")
+@click.option(
+    "--limit", "limit_ue", type=float, default=1500.0, show_default=True, help="Channel limit, ue."
+)
 @click.option("--removed", default=None, help="Date the gauge came off, YYYY-MM-DD.")
 @pass_context
 def add_gauge(
@@ -76,7 +78,7 @@ def add_gauge(
     installed: str,
     orientation: str,
     factor: float,
-    limit: float,
+    limit_ue: float,
     removed: str | None,
 ) -> None:
     """Record a gauge installation."""
@@ -89,7 +91,7 @@ def add_gauge(
             orientation=orientation,
             gauge_factor=factor,
             installed_on=date.fromisoformat(installed),
-            channel_limit_ue=limit,
+            channel_limit_ue=limit_ue,
             removed_on=None if removed is None else date.fromisoformat(removed),
         ),
     )
@@ -124,7 +126,14 @@ def list_campaigns(ctx: Context, number: str) -> None:
 @click.argument("number")
 @click.option("--from", "started", required=True, help="First day, YYYY-MM-DD.")
 @click.option("--to", "ended", required=True, help="Last day, YYYY-MM-DD.")
-@click.option("--seasonal", type=float, default=1.0, show_default=True, help="Seasonal factor.")
+@click.option(
+    "--seasonal",
+    "seasonal_factor",
+    type=float,
+    default=1.0,
+    show_default=True,
+    help="Seasonal factor.",
+)
 @click.option("--note", default="", help="What the campaign was for.")
 @pass_context
 def add_campaign(
@@ -133,7 +142,7 @@ def add_campaign(
     number: str,
     started: str,
     ended: str,
-    seasonal: float,
+    seasonal_factor: float,
     note: str,
 ) -> None:
     """Record a measurement campaign."""
@@ -147,7 +156,7 @@ def add_campaign(
             structure_number=number,
             started_on=date.fromisoformat(started),
             ended_on=date.fromisoformat(ended),
-            seasonal_factor=seasonal,
+            seasonal_factor=seasonal_factor,
             note=note,
         ),
     )
@@ -158,28 +167,39 @@ def add_campaign(
 @click.argument("campaign_id")
 @click.argument("gauge_id")
 @click.argument("counts", type=click.Path(exists=True, dir_okay=False, path_type=Path))
-@click.option("--bin-width", type=float, default=5.0, show_default=True, help="Bin width, ue.")
-@click.option("--dropout", type=float, default=0.0, show_default=True, help="Dropout fraction.")
-@click.option("--railed", type=float, default=0.0, show_default=True, help="Railed fraction.")
+@click.option(
+    "--bin-width", "bin_width_ue", type=float, default=5.0, show_default=True, help="Bin width, ue."
+)
+@click.option(
+    "--dropout",
+    "dropout_frac",
+    type=float,
+    default=0.0,
+    show_default=True,
+    help="Dropout fraction.",
+)
+@click.option(
+    "--railed", "railed_frac", type=float, default=0.0, show_default=True, help="Railed fraction."
+)
 @pass_context
 def import_spectrum(
     ctx: Context,
     campaign_id: str,
     gauge_id: str,
     counts: Path,
-    bin_width: float,
-    dropout: float,
-    railed: float,
+    bin_width_ue: float,
+    dropout_frac: float,
+    railed_frac: float,
 ) -> None:
     """Read a two column range and count file into the book."""
     path = ctx.require_book()
     cycles = _read_counts(counts)
-    built = spec.build(gauge_id, cycles, bin_width)
+    built = spec.build(gauge_id, cycles, bin_width_ue)
     meas.save_spectrum(
         path,
         campaign_id,
         built,
-        SpectrumQuality(dropout_frac=dropout, railed_frac=railed),
+        SpectrumQuality(dropout_frac=dropout_frac, railed_frac=railed_frac),
     )
     click.echo(f"stored {built.total_count:.0f} cycles in {len(built)} bins for {gauge_id}")
 
