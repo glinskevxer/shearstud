@@ -70,8 +70,10 @@ def test_a_cutoff_inside_the_policy_is_refused() -> None:
         retention.check_cutoff(date(2020, 1, 1), TODAY)
 
 
-def test_a_cutoff_outside_the_policy_is_allowed() -> None:
+def test_a_cutoff_outside_the_policy_is_allowed(seeded_book: Path) -> None:
+    # Nothing is raised, and the prune it guards goes through.
     retention.check_cutoff(date(2010, 1, 1), TODAY)
+    assert retention.prune_ratings(seeded_book, date(2010, 1, 1), TODAY) == 0
 
 
 def test_the_policy_boundary_is_where_it_says_it_is() -> None:

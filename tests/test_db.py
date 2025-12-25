@@ -158,9 +158,13 @@ def test_a_healthy_book_passes_the_integrity_check(book: Path) -> None:
 
 
 def test_nothing_is_left_open_after_a_run_of_operations(book: Path) -> None:
+    # The filter turns a leaked connection into an error rather than a warning
+    # nobody reads, and the row count says the work actually happened.
     with warnings.catch_warnings():
         warnings.simplefilter("error", ResourceWarning)
         for index in range(30):
             db.execute(book, "INSERT INTO parent (id, name) VALUES (?, ?)", (index + 10, "g"))
             db.fetch_all(book, "SELECT id FROM parent")
         gc.collect()
+    assert len(db.fetch_all(book, "SELECT id FROM parent")) == 31
+    assert db.integrity_check(book) == []
