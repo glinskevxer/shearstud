@@ -23,6 +23,13 @@ from shearstud.fatigue.evaluation import Evaluation
 from shearstud.rating.posting import PostingDecision, SignLine
 from shearstud.store import db
 
+#: Every column a stored rating is built from, named so that adding one to the
+#: table cannot silently change what a read comes back with.
+RATING_COLUMNS = (
+    "structure_number, girder_id, station_ft, limit_state, level, vehicle, effect, "
+    "capacity, factored_dead, factored_live, rating_factor, gross_weight_kip, rated_on"
+)
+
 
 @dataclass(frozen=True, slots=True)
 class StoredRating:
@@ -92,15 +99,15 @@ def load_ratings(
     if on is None:
         rows = db.fetch_all(
             path,
-            "SELECT * FROM ratings WHERE structure_number = ? "
+            f"SELECT {RATING_COLUMNS} FROM ratings WHERE structure_number = ? "
             "ORDER BY rated_on DESC, girder_id, station_ft, vehicle",
             (structure_number,),
         )
     else:
         rows = db.fetch_all(
             path,
-            "SELECT * FROM ratings WHERE structure_number = ? AND rated_on = ? "
-            "ORDER BY girder_id, station_ft, vehicle",
+            f"SELECT {RATING_COLUMNS} FROM ratings WHERE structure_number = ? "
+            "AND rated_on = ? ORDER BY girder_id, station_ft, vehicle",
             (structure_number, on.isoformat()),
         )
     return [_row_to_rating(row) for row in rows]

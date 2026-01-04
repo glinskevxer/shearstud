@@ -108,11 +108,10 @@ def status(ctx: Context) -> None:
     pending = migrate.pending(path)
     if pending:
         click.echo(f"pending  {', '.join(str(int(m.VERSION)) for m in pending)}")
+    known = db.table_names(path)
     for table in ("structures", "girders", "details", "gauges", "campaigns", "ratings"):
-        if table in db.table_names(path):
-            row = db.fetch_one(path, f"SELECT COUNT(*) AS n FROM {table}")
-            count = 0 if row is None else int(row["n"])
-            click.echo(f"{table:<9}{count}")
+        if table in known:
+            click.echo(f"{table:<9}{db.row_count(path, table)}")
 
 
 @main.command()

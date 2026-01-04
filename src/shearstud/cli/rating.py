@@ -25,24 +25,18 @@ from shearstud.loads import vehicles
 from shearstud.rating import factors as fac
 from shearstud.rating import posting as post
 from shearstud.store import assessment as asm
-from shearstud.store import db, inventory
+from shearstud.store import inventory
 from shearstud.store.assessment import StoredRating
 
 
 def _settings_from(path: Path, number: str, **overrides: object) -> RatingSettings:
     """Build the settings from the structure record, then apply overrides."""
-    row = db.fetch_one(
-        path,
-        "SELECT steel_grade, member_condition, redundancy, adtt FROM structures WHERE number = ?",
-        (number,),
-    )
-    if row is None:
-        raise click.ClickException(f"no structure {number} in the book")
+    policy = inventory.load_policy(path, number)
     fields: dict[str, object] = {
-        "steel_grade": str(row["steel_grade"]),
-        "member_condition": str(row["member_condition"]),
-        "redundancy": str(row["redundancy"]),
-        "adtt": float(row["adtt"]),
+        "steel_grade": policy.steel_grade,
+        "member_condition": policy.member_condition,
+        "redundancy": policy.redundancy,
+        "adtt": policy.adtt,
     }
     fields.update({k: v for k, v in overrides.items() if v is not None})
     return RatingSettings(**fields)  # type: ignore[arg-type]

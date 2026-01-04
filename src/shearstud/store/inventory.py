@@ -285,6 +285,39 @@ def _load_details(path: Path | str, number: str, girder_id: str) -> list[Fatigue
     ]
 
 
+def load_policy(path: Path | str, number: str) -> StructurePolicy:
+    """The policy fields for one structure.
+
+    Separate from :func:`load` because the callers are different: a rating needs
+    the policy and the geometry, a listing needs the geometry alone, and the
+    geometry is the expensive half.
+    """
+    row = db.fetch_one(
+        path,
+        "SELECT steel_grade, member_condition, redundancy, adtt, lanes_available, "
+        "growth_pct_per_yr, continuous FROM structures WHERE number = ?",
+        (number,),
+    )
+    if row is None:
+        raise StorageError(f"no structure {number!r} in the book of record")
+    return StructurePolicy(
+        steel_grade=str(row["steel_grade"]),
+        member_condition=str(row["member_condition"]),
+        redundancy=str(row["redundancy"]),
+        adtt=float(row["adtt"]),
+        lanes_available=int(row["lanes_available"]),
+        growth_pct_per_yr=float(row["growth_pct_per_yr"]),
+    )
+
+
+def is_continuous(path: Path | str, number: str) -> bool:
+    """Whether a structure's spans are joined over its piers."""
+    row = db.fetch_one(path, "SELECT continuous FROM structures WHERE number = ?", (number,))
+    if row is None:
+        raise StorageError(f"no structure {number!r} in the book of record")
+    return bool(row["continuous"])
+
+
 def numbers(path: Path | str) -> list[str]:
     """Every structure number in the book, in file cabinet order."""
     rows = db.fetch_all(

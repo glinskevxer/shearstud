@@ -26,7 +26,7 @@ from shearstud.fatigue.life import TrafficModel, cycles_per_truck
 from shearstud.signals import spectrum as spec
 from shearstud.signals.rainflow import Cycle
 from shearstud.store import assessment as asm
-from shearstud.store import db, inventory
+from shearstud.store import inventory
 from shearstud.store import measurement as meas
 from shearstud.store.measurement import CampaignRecord, SpectrumQuality
 from shearstud.structure.gauge import GaugeInstall
@@ -282,17 +282,11 @@ def evaluate_command(
 
 
 def _traffic_for(path: Path, number: str, length_ft: float, growth: float | None) -> TrafficModel:
-    row = db.fetch_one(
-        path,
-        "SELECT adtt, lanes_available, growth_pct_per_yr, continuous FROM structures "
-        "WHERE number = ?",
-        (number,),
-    )
-    if row is None:
-        raise click.ClickException(f"no structure {number} in the book")
+    policy = inventory.load_policy(path, number)
+    continuous = inventory.is_continuous(path, number)
     return TrafficModel(
-        adtt=float(row["adtt"]),
-        lanes_available=int(row["lanes_available"]),
-        growth_pct_per_yr=float(row["growth_pct_per_yr"]) if growth is None else growth,
-        cycles_per_passage=cycles_per_truck(length_ft, continuous=bool(row["continuous"])),
+        adtt=policy.adtt,
+        lanes_available=policy.lanes_available,
+        growth_pct_per_yr=policy.growth_pct_per_yr if growth is None else growth,
+        cycles_per_passage=cycles_per_truck(length_ft, continuous=continuous),
     )

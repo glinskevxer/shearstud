@@ -41,6 +41,12 @@ CONNECTION_PRAGMAS: Final[tuple[str, ...]] = (
 #: How long to wait for a lock before giving up, in seconds.
 LOCK_TIMEOUT_S: Final[float] = 5.0
 
+#: Functions here that build a statement around an identifier rather than a
+#: parameter, because SQLite will not bind one. Every function named here
+#: checks the identifier against the live schema first, and ``check_sql``
+#: reads this tuple rather than keeping its own copy.
+SQL_NAME_INTERPOLATION = ("row_count",)
+
 
 @contextmanager
 def connect(path: Path | str, *, read_only: bool = False) -> Iterator[sqlite3.Connection]:
@@ -119,6 +125,19 @@ def table_names(path: Path | str) -> list[str]:
         "AND name NOT LIKE 'sqlite_%' ORDER BY name",
     )
     return [str(row["name"]) for row in rows]
+
+
+def row_count(path: Path | str, table: str) -> int:
+    """How many rows one table holds.
+
+    The table name is interpolated because SQLite will not take it as a
+    parameter, so it is checked against the tables that actually exist first.
+    A caller cannot get an arbitrary string past that.
+    """
+    if table not in table_names(path):
+        raise StorageError(f"no table {table!r} in the book of record")
+    row = fetch_one(path, f"SELECT COUNT(*) AS n FROM {table}")
+    return 0 if row is None else int(row["n"])
 
 
 def foreign_key_violations(path: Path | str) -> list[sqlite3.Row]:
