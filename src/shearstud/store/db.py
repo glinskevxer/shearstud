@@ -82,23 +82,23 @@ def transaction(path: Path | str) -> Iterator[sqlite3.Connection]:
         connection.commit()
 
 
-def fetch_all(path: Path | str, sql: str, params: tuple[Any, ...] = ()) -> list[sqlite3.Row]:
+def fetch_all(path: Path | str, sql: str, parameters: tuple[Any, ...] = ()) -> list[sqlite3.Row]:
     """Run one read only query and hand back every row."""
     with connect(path, read_only=True) as connection:
-        return list(connection.execute(sql, params))
+        return list(connection.execute(sql, parameters))
 
 
-def fetch_one(path: Path | str, sql: str, params: tuple[Any, ...] = ()) -> sqlite3.Row | None:
+def fetch_one(path: Path | str, sql: str, parameters: tuple[Any, ...] = ()) -> sqlite3.Row | None:
     """Run one read only query and hand back the first row, or nothing."""
     with connect(path, read_only=True) as connection:
-        result: sqlite3.Row | None = connection.execute(sql, params).fetchone()
+        result: sqlite3.Row | None = connection.execute(sql, parameters).fetchone()
         return result
 
 
-def execute(path: Path | str, sql: str, params: tuple[Any, ...] = ()) -> int:
+def execute(path: Path | str, sql: str, parameters: tuple[Any, ...] = ()) -> int:
     """Run one write and return how many rows it touched."""
     with transaction(path) as connection:
-        cursor = connection.execute(sql, params)
+        cursor = connection.execute(sql, parameters)
         return cursor.rowcount
 
 

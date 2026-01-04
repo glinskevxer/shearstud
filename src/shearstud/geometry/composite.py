@@ -87,7 +87,7 @@ class DeckSlab:
         dead load calculation does."""
         return self.thickness_in * self.effective_width_in
 
-    def transformed_width_in(self, creep: bool) -> float:
+    def transformed_width_in(self, *, creep: bool) -> float:
         """Effective width divided by n, or by 3n when the load is sustained."""
         n = modular_ratio(self.fc_ksi)
         divisor = CREEP_FACTOR * n if creep else n

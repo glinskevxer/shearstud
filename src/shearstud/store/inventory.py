@@ -165,7 +165,7 @@ def load(path: Path | str, number: str) -> Structure:
     )
     if row is None:
         raise StorageError(f"no structure {number!r} in the book of record")
-    spans = _load_spans(str(row["span_lengths_ft"]), bool(row["continuous"]))
+    spans = _load_spans(str(row["span_lengths_ft"]), continuous=bool(row["continuous"]))
     girders = tuple(_load_girders(path, number))
     return Structure(
         number=parse(str(row["number"])),
@@ -177,7 +177,7 @@ def load(path: Path | str, number: str) -> Structure:
     )
 
 
-def _load_spans(lengths_json: str, continuous: bool) -> SpanArrangement:
+def _load_spans(lengths_json: str, *, continuous: bool) -> SpanArrangement:
     lengths = [float(v) for v in json.loads(lengths_json)]
     return series(lengths, continuous=continuous)
 

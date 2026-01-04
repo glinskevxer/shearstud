@@ -63,69 +63,69 @@ PLATE_KEYS = frozenset({"label", "width_in", "height_in", "y_center_in"})
 DETAIL_KEYS = frozenset({"detail_id", "kind", "category_name", "station_ft", "fibre", "note"})
 
 
-def _check_keys(obj: dict[str, Any], allowed: frozenset[str], what: str) -> None:
-    unknown = sorted(set(obj) - allowed)
+def _check_keys(entry: dict[str, Any], allowed: frozenset[str], what: str) -> None:
+    unknown = sorted(set(entry) - allowed)
     if unknown:
         raise InputError(f"{what}: unknown key {unknown[0]!r}")
 
 
-def _need(obj: dict[str, Any], key: str, what: str) -> Any:
-    if key not in obj:
+def _need(entry: dict[str, Any], key: str, what: str) -> Any:
+    if key not in entry:
         raise InputError(f"{what}: missing {key!r}")
-    return obj[key]
+    return entry[key]
 
 
-def _plate(obj: dict[str, Any], what: str) -> Plate:
-    _check_keys(obj, PLATE_KEYS, what)
+def _plate(entry: dict[str, Any], what: str) -> Plate:
+    _check_keys(entry, PLATE_KEYS, what)
     return Plate(
-        label=str(_need(obj, "label", what)),
-        width_in=float(_need(obj, "width_in", what)),
-        height_in=float(_need(obj, "height_in", what)),
-        y_center_in=float(_need(obj, "y_center_in", what)),
+        label=str(_need(entry, "label", what)),
+        width_in=float(_need(entry, "width_in", what)),
+        height_in=float(_need(entry, "height_in", what)),
+        y_center_in=float(_need(entry, "y_center_in", what)),
     )
 
 
-def _run(obj: dict[str, Any], index: int, girder_id: str) -> SectionRun:
+def _run(entry: dict[str, Any], index: int, girder_id: str) -> SectionRun:
     what = f"{girder_id} run {index}"
-    _check_keys(obj, RUN_KEYS, what)
-    plates = _need(obj, "plates", what)
+    _check_keys(entry, RUN_KEYS, what)
+    plates = _need(entry, "plates", what)
     if not isinstance(plates, list) or not plates:
         raise InputError(f"{what}: needs at least one plate")
     return SectionRun(
-        from_station_ft=float(_need(obj, "from_station_ft", what)),
-        to_station_ft=float(_need(obj, "to_station_ft", what)),
+        from_station_ft=float(_need(entry, "from_station_ft", what)),
+        to_station_ft=float(_need(entry, "to_station_ft", what)),
         section=Section(
-            label=str(obj.get("label", f"{girder_id}-{index}")),
+            label=str(entry.get("label", f"{girder_id}-{index}")),
             plates=tuple(_plate(p, f"{what} plate {i}") for i, p in enumerate(plates)),
         ),
     )
 
 
-def _detail(obj: dict[str, Any], girder_id: str) -> FatigueDetail:
+def _detail(entry: dict[str, Any], girder_id: str) -> FatigueDetail:
     what = f"{girder_id} detail"
-    _check_keys(obj, DETAIL_KEYS, what)
+    _check_keys(entry, DETAIL_KEYS, what)
     return FatigueDetail(
-        detail_id=str(_need(obj, "detail_id", what)),
-        kind=str(_need(obj, "kind", what)),
-        category_name=str(_need(obj, "category_name", what)),
-        station_ft=float(_need(obj, "station_ft", what)),
-        fibre=str(_need(obj, "fibre", what)),
-        note=str(obj.get("note", "")),
+        detail_id=str(_need(entry, "detail_id", what)),
+        kind=str(_need(entry, "kind", what)),
+        category_name=str(_need(entry, "category_name", what)),
+        station_ft=float(_need(entry, "station_ft", what)),
+        fibre=str(_need(entry, "fibre", what)),
+        note=str(entry.get("note", "")),
     )
 
 
-def _girder(obj: dict[str, Any]) -> GirderLine:
-    girder_id = str(_need(obj, "girder_id", "girder"))
-    _check_keys(obj, GIRDER_KEYS, girder_id)
-    runs = _need(obj, "runs", girder_id)
+def _girder(entry: dict[str, Any]) -> GirderLine:
+    girder_id = str(_need(entry, "girder_id", "girder"))
+    _check_keys(entry, GIRDER_KEYS, girder_id)
+    runs = _need(entry, "runs", girder_id)
     if not isinstance(runs, list) or not runs:
         raise InputError(f"{girder_id}: needs at least one section run")
     layout = DeckLayout(
-        girder_index=int(_need(obj, "girder_index", girder_id)),
-        spacing_left_ft=float(obj.get("spacing_left_ft", 0.0)),
-        spacing_right_ft=float(obj.get("spacing_right_ft", 0.0)),
-        overhang_ft=float(obj.get("overhang_ft", 0.0)),
-        slab_thickness_in=float(_need(obj, "slab_thickness_in", girder_id)),
+        girder_index=int(_need(entry, "girder_index", girder_id)),
+        spacing_left_ft=float(entry.get("spacing_left_ft", 0.0)),
+        spacing_right_ft=float(entry.get("spacing_right_ft", 0.0)),
+        overhang_ft=float(entry.get("overhang_ft", 0.0)),
+        slab_thickness_in=float(_need(entry, "slab_thickness_in", girder_id)),
     )
     tributary_in = (
         layout.spacing_left_ft / 2.0 + layout.spacing_right_ft / 2.0 + layout.overhang_ft
@@ -133,10 +133,10 @@ def _girder(obj: dict[str, Any]) -> GirderLine:
     deck = DeckSlab(
         thickness_in=layout.slab_thickness_in,
         effective_width_in=tributary_in,
-        haunch_in=float(obj.get("haunch_in", 0.0)),
-        fc_ksi=float(obj.get("deck_fc_ksi", 4.0)),
+        haunch_in=float(entry.get("haunch_in", 0.0)),
+        fc_ksi=float(entry.get("deck_fc_ksi", 4.0)),
     )
-    details = [_detail(d, girder_id) for d in obj.get("details", [])]
+    details = [_detail(d, girder_id) for d in entry.get("details", [])]
     details.sort(key=lambda d: (d.station_ft, d.detail_id))
     return GirderLine(
         girder_id=girder_id,
