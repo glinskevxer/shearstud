@@ -64,6 +64,7 @@ def list_gauges(ctx: Context, detail: str | None) -> None:
     type=click.Choice(["longitudinal", "transverse", "diagonal"]),
     default="longitudinal",
     show_default=True,
+    help="Which way the grid runs relative to the girder axis.",
 )
 @click.option("--factor", type=float, default=2.10, show_default=True, help="Gauge factor.")
 @click.option(
