@@ -1,0 +1,464 @@
+{
+  "number": "18-SH-0473",
+  "name": "Salt Fork Creek",
+  "year_built": 1968,
+  "spans": [
+    96.0
+  ],
+  "continuous": false,
+  "effective_width_rule": "tributary",
+  "girders": [
+    {
+      "girder_id": "G1",
+      "girder_index": 0,
+      "spacing_left_ft": 0.0,
+      "spacing_right_ft": 8.0,
+      "overhang_ft": 3.5,
+      "slab_thickness_in": 8.0,
+      "haunch_in": 2.0,
+      "deck_fc_ksi": 4.0,
+      "runs": [
+        {
+          "from_station_ft": 0.0,
+          "to_station_ft": 24.0,
+          "label": "PG52 end",
+          "plates": [
+            {
+              "label": "bottom",
+              "width_in": 18.0,
+              "height_in": 1.25,
+              "y_center_in": 0.625
+            },
+            {
+              "label": "web",
+              "width_in": 0.5625,
+              "height_in": 52.0,
+              "y_center_in": 27.25
+            },
+            {
+              "label": "top",
+              "width_in": 16.0,
+              "height_in": 1.0,
+              "y_center_in": 53.75
+            }
+          ]
+        },
+        {
+          "from_station_ft": 24.0,
+          "to_station_ft": 72.0,
+          "label": "PG52 middle",
+          "plates": [
+            {
+              "label": "bottom",
+              "width_in": 18.0,
+              "height_in": 2.0,
+              "y_center_in": 1.0
+            },
+            {
+              "label": "web",
+              "width_in": 0.5625,
+              "height_in": 52.0,
+              "y_center_in": 28.0
+            },
+            {
+              "label": "top",
+              "width_in": 16.0,
+              "height_in": 1.0,
+              "y_center_in": 54.5
+            }
+          ]
+        },
+        {
+          "from_station_ft": 72.0,
+          "to_station_ft": 96.0,
+          "label": "PG52 far",
+          "plates": [
+            {
+              "label": "bottom",
+              "width_in": 18.0,
+              "height_in": 1.25,
+              "y_center_in": 0.625
+            },
+            {
+              "label": "web",
+              "width_in": 0.5625,
+              "height_in": 52.0,
+              "y_center_in": 27.25
+            },
+            {
+              "label": "top",
+              "width_in": 16.0,
+              "height_in": 1.0,
+              "y_center_in": 53.75
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "detail_id": "18SH0473-G1-D1",
+          "kind": "cover_plate_end",
+          "category_name": "E",
+          "station_ft": 24.0,
+          "fibre": "bottom",
+          "note": "cover plate end, square cut, no end weld"
+        },
+        {
+          "detail_id": "18SH0473-G1-D2",
+          "kind": "stiffener_weld",
+          "category_name": "C",
+          "station_ft": 48.0,
+          "fibre": "web",
+          "note": "intermediate stiffener, fillet welded to the web"
+        },
+        {
+          "detail_id": "18SH0473-G1-D3",
+          "kind": "cover_plate_end",
+          "category_name": "E",
+          "station_ft": 72.0,
+          "fibre": "bottom",
+          "note": "cover plate end, square cut, no end weld"
+        }
+      ]
+    },
+    {
+      "girder_id": "G2",
+      "girder_index": 1,
+      "spacing_left_ft": 8.0,
+      "spacing_right_ft": 8.0,
+      "overhang_ft": 0.0,
+      "slab_thickness_in": 8.0,
+      "haunch_in": 2.0,
+      "deck_fc_ksi": 4.0,
+      "runs": [
+        {
+          "from_station_ft": 0.0,
+          "to_station_ft": 24.0,
+          "label": "PG52 end",
+          "plates": [
+            {
+              "label": "bottom",
+              "width_in": 18.0,
+              "height_in": 1.25,
+              "y_center_in": 0.625
+            },
+            {
+              "label": "web",
+              "width_in": 0.5625,
+              "height_in": 52.0,
+              "y_center_in": 27.25
+            },
+            {
+              "label": "top",
+              "width_in": 16.0,
+              "height_in": 1.0,
+              "y_center_in": 53.75
+            }
+          ]
+        },
+        {
+          "from_station_ft": 24.0,
+          "to_station_ft": 72.0,
+          "label": "PG52 middle",
+          "plates": [
+            {
+              "label": "bottom",
+              "width_in": 18.0,
+              "height_in": 2.0,
+              "y_center_in": 1.0
+            },
+            {
+              "label": "web",
+              "width_in": 0.5625,
+              "height_in": 52.0,
+              "y_center_in": 28.0
+            },
+            {
+              "label": "top",
+              "width_in": 16.0,
+              "height_in": 1.0,
+              "y_center_in": 54.5
+            }
+          ]
+        },
+        {
+          "from_station_ft": 72.0,
+          "to_station_ft": 96.0,
+          "label": "PG52 far",
+          "plates": [
+            {
+              "label": "bottom",
+              "width_in": 18.0,
+              "height_in": 1.25,
+              "y_center_in": 0.625
+            },
+            {
+              "label": "web",
+              "width_in": 0.5625,
+              "height_in": 52.0,
+              "y_center_in": 27.25
+            },
+            {
+              "label": "top",
+              "width_in": 16.0,
+              "height_in": 1.0,
+              "y_center_in": 53.75
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "detail_id": "18SH0473-G2-D1",
+          "kind": "cover_plate_end",
+          "category_name": "E",
+          "station_ft": 24.0,
+          "fibre": "bottom",
+          "note": "cover plate end, square cut, no end weld"
+        },
+        {
+          "detail_id": "18SH0473-G2-D2",
+          "kind": "stiffener_weld",
+          "category_name": "C",
+          "station_ft": 48.0,
+          "fibre": "web",
+          "note": "intermediate stiffener, fillet welded to the web"
+        },
+        {
+          "detail_id": "18SH0473-G2-D3",
+          "kind": "cover_plate_end",
+          "category_name": "E",
+          "station_ft": 72.0,
+          "fibre": "bottom",
+          "note": "cover plate end, square cut, no end weld"
+        }
+      ]
+    },
+    {
+      "girder_id": "G3",
+      "girder_index": 2,
+      "spacing_left_ft": 8.0,
+      "spacing_right_ft": 8.0,
+      "overhang_ft": 0.0,
+      "slab_thickness_in": 8.0,
+      "haunch_in": 2.0,
+      "deck_fc_ksi": 4.0,
+      "runs": [
+        {
+          "from_station_ft": 0.0,
+          "to_station_ft": 24.0,
+          "label": "PG52 end",
+          "plates": [
+            {
+              "label": "bottom",
+              "width_in": 18.0,
+              "height_in": 1.25,
+              "y_center_in": 0.625
+            },
+            {
+              "label": "web",
+              "width_in": 0.5625,
+              "height_in": 52.0,
+              "y_center_in": 27.25
+            },
+            {
+              "label": "top",
+              "width_in": 16.0,
+              "height_in": 1.0,
+              "y_center_in": 53.75
+            }
+          ]
+        },
+        {
+          "from_station_ft": 24.0,
+          "to_station_ft": 72.0,
+          "label": "PG52 middle",
+          "plates": [
+            {
+              "label": "bottom",
+              "width_in": 18.0,
+              "height_in": 2.0,
+              "y_center_in": 1.0
+            },
+            {
+              "label": "web",
+              "width_in": 0.5625,
+              "height_in": 52.0,
+              "y_center_in": 28.0
+            },
+            {
+              "label": "top",
+              "width_in": 16.0,
+              "height_in": 1.0,
+              "y_center_in": 54.5
+            }
+          ]
+        },
+        {
+          "from_station_ft": 72.0,
+          "to_station_ft": 96.0,
+          "label": "PG52 far",
+          "plates": [
+            {
+              "label": "bottom",
+              "width_in": 18.0,
+              "height_in": 1.25,
+              "y_center_in": 0.625
+            },
+            {
+              "label": "web",
+              "width_in": 0.5625,
+              "height_in": 52.0,
+              "y_center_in": 27.25
+            },
+            {
+              "label": "top",
+              "width_in": 16.0,
+              "height_in": 1.0,
+              "y_center_in": 53.75
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "detail_id": "18SH0473-G3-D1",
+          "kind": "cover_plate_end",
+          "category_name": "E",
+          "station_ft": 24.0,
+          "fibre": "bottom",
+          "note": "cover plate end, square cut, no end weld"
+        },
+        {
+          "detail_id": "18SH0473-G3-D2",
+          "kind": "stiffener_weld",
+          "category_name": "C",
+          "station_ft": 48.0,
+          "fibre": "web",
+          "note": "intermediate stiffener, fillet welded to the web"
+        },
+        {
+          "detail_id": "18SH0473-G3-D3",
+          "kind": "cover_plate_end",
+          "category_name": "E",
+          "station_ft": 72.0,
+          "fibre": "bottom",
+          "note": "cover plate end, square cut, no end weld"
+        }
+      ]
+    },
+    {
+      "girder_id": "G4",
+      "girder_index": 3,
+      "spacing_left_ft": 8.0,
+      "spacing_right_ft": 0.0,
+      "overhang_ft": 3.5,
+      "slab_thickness_in": 8.0,
+      "haunch_in": 2.0,
+      "deck_fc_ksi": 4.0,
+      "runs": [
+        {
+          "from_station_ft": 0.0,
+          "to_station_ft": 24.0,
+          "label": "PG52 end",
+          "plates": [
+            {
+              "label": "bottom",
+              "width_in": 18.0,
+              "height_in": 1.25,
+              "y_center_in": 0.625
+            },
+            {
+              "label": "web",
+              "width_in": 0.5625,
+              "height_in": 52.0,
+              "y_center_in": 27.25
+            },
+            {
+              "label": "top",
+              "width_in": 16.0,
+              "height_in": 1.0,
+              "y_center_in": 53.75
+            }
+          ]
+        },
+        {
+          "from_station_ft": 24.0,
+          "to_station_ft": 72.0,
+          "label": "PG52 middle",
+          "plates": [
+            {
+              "label": "bottom",
+              "width_in": 18.0,
+              "height_in": 2.0,
+              "y_center_in": 1.0
+            },
+            {
+              "label": "web",
+              "width_in": 0.5625,
+              "height_in": 52.0,
+              "y_center_in": 28.0
+            },
+            {
+              "label": "top",
+              "width_in": 16.0,
+              "height_in": 1.0,
+              "y_center_in": 54.5
+            }
+          ]
+        },
+        {
+          "from_station_ft": 72.0,
+          "to_station_ft": 96.0,
+          "label": "PG52 far",
+          "plates": [
+            {
+              "label": "bottom",
+              "width_in": 18.0,
+              "height_in": 1.25,
+              "y_center_in": 0.625
+            },
+            {
+              "label": "web",
+              "width_in": 0.5625,
+              "height_in": 52.0,
+              "y_center_in": 27.25
+            },
+            {
+              "label": "top",
+              "width_in": 16.0,
+              "height_in": 1.0,
+              "y_center_in": 53.75
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "detail_id": "18SH0473-G4-D1",
+          "kind": "cover_plate_end",
+          "category_name": "E",
+          "station_ft": 24.0,
+          "fibre": "bottom",
+          "note": "cover plate end, square cut, no end weld"
+        },
+        {
+          "detail_id": "18SH0473-G4-D2",
+          "kind": "stiffener_weld",
+          "category_name": "C",
+          "station_ft": 48.0,
+          "fibre": "web",
+          "note": "intermediate stiffener, fillet welded to the web"
+        },
+        {
+          "detail_id": "18SH0473-G4-D3",
+          "kind": "cover_plate_end",
+          "category_name": "E",
+          "station_ft": 72.0,
+          "fibre": "bottom",
+          "note": "cover plate end, square cut, no end weld"
+        }
+      ]
+    }
+  ]
+}
