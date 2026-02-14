@@ -15,7 +15,7 @@ the same table, so the two cannot drift apart.
 | (top level) | 3       | 186   | units, the error tree, and nothing that knows about a bridge      |
 | geometry    | 8       | 1026  | plates, sections, composite stages and section loss               |
 | loads       | 9       | 1283  | vehicles, influence lines, distribution and the dynamic allowance |
-| signals     | 6       | 958   | strain records, conditioning, defects, rainflow and spectra       |
+| signals     | 7       | 1106  | strain records, conditioning, defects, rainflow and spectra       |
 | fatigue     | 5       | 624   | detail categories, Miner damage, remaining life and evaluation    |
 | structure   | 7       | 812   | the inventory: identity, spans, girders, details and gauges       |
 | rating      | 7       | 1014  | capacity, load factors, the rating equation, posting and permits  |
@@ -83,6 +83,7 @@ store layer. `check_sql` enforces that.
 | -------------------------------- | ----- | ----------------------------------------------------------------------------- |
 | `shearstud.signals.conditioning` | 189   | Getting the load out of a strain record and the rest of it out of the way.    |
 | `shearstud.signals.defects`      | 185   | Finding the parts of a record that are the instrument rather than the bridge. |
+| `shearstud.signals.events`       | 148   | Pulling individual truck events out of a continuous strain record.            |
 | `shearstud.signals.rainflow`     | 186   | Rainflow cycle counting, four point method.                                   |
 | `shearstud.signals.series`       | 181   | Strain records: a gauge, a start time, a sample rate and a run of samples.    |
 | `shearstud.signals.spectrum`     | 210   | Binning a cycle count into a histogram, which is how it gets stored.          |
