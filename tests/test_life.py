@@ -216,3 +216,18 @@ def test_an_undamaged_detail_says_it_is_indefinite() -> None:
     result = life.remaining_life("A", 0.0, traffic())
     assert result.is_indefinite
     assert not result.is_expired
+
+
+def test_the_growth_fraction_is_the_percentage_over_a_hundred() -> None:
+    assert traffic(growth_pct=2.5).growth_frac_per_yr == pytest.approx(0.025)
+    assert traffic(growth_pct=0.0).growth_frac_per_yr == pytest.approx(0.0)
+
+
+def test_traffic_that_is_falling_off_gives_a_negative_fraction() -> None:
+    assert traffic(growth_pct=-1.5).growth_frac_per_yr == pytest.approx(-0.015)
+
+
+def test_the_growth_fraction_is_what_the_compounding_uses() -> None:
+    model = traffic(growth_pct=3.0)
+    year_ten = model.cycles_in_first_year() * math.pow(1.0 + model.growth_frac_per_yr, 10)
+    assert model.cycles_in_year(10) == pytest.approx(year_ten)

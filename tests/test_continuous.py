@@ -161,3 +161,70 @@ def test_an_exterior_support_is_not_an_interior_one() -> None:
 def test_the_last_support_is_not_an_interior_one() -> None:
     with pytest.raises(InputError, match="not an interior support"):
         continuous.continuous_support_moment(TWO, 2)
+
+
+def test_the_moment_under_a_midspan_load_matches_the_closed_form() -> None:
+    # Two equal spans, load at the middle of the first. The published value
+    # under the load is 13PL/64.
+    value = continuous.moment_at(TWO, 0, L / 2.0, 0, L / 2.0)
+    assert value == pytest.approx(13.0 * L / 64.0)
+
+
+def test_the_moment_at_the_interior_support_is_the_support_moment() -> None:
+    moments = continuous.support_moments(TWO, 0, L / 2.0)
+    value = continuous.moment_at(TWO, 0, L, 0, L / 2.0)
+    assert value == pytest.approx(moments[1])
+
+
+def test_the_moment_at_an_abutment_is_zero() -> None:
+    assert continuous.moment_at(TWO, 0, 0.0, 0, L / 2.0) == pytest.approx(0.0, abs=1.0e-9)
+    assert continuous.moment_at(TWO, 1, L, 0, L / 2.0) == pytest.approx(0.0, abs=1.0e-9)
+
+
+def test_a_load_in_the_far_span_still_bends_the_near_one() -> None:
+    # Continuity is the whole reason for the module. A simple span would give
+    # zero here.
+    value = continuous.moment_at(TWO, 0, L / 2.0, 1, L / 2.0)
+    assert value < 0.0
+
+
+def test_the_moment_scales_with_the_load() -> None:
+    one = continuous.moment_at(TWO, 0, L / 2.0, 0, L / 2.0, load_kip=1.0)
+    ten = continuous.moment_at(TWO, 0, L / 2.0, 0, L / 2.0, load_kip=10.0)
+    assert ten == pytest.approx(10.0 * one)
+
+
+def test_the_shear_jumps_by_the_load_across_it() -> None:
+    at_ft = L / 2.0
+    just_before = continuous.shear_at(TWO, 0, at_ft - 1.0e-6, 0, at_ft)
+    just_after = continuous.shear_at(TWO, 0, at_ft + 1.0e-6, 0, at_ft)
+    assert just_before - just_after == pytest.approx(1.0, abs=1.0e-4)
+
+
+def test_the_end_shears_are_the_published_abutment_reactions() -> None:
+    # Point load at the middle of the first of two equal spans. The near
+    # abutment takes 13P/32, and the far one is pulled down by 3P/32, which is
+    # why the shear there comes back positive rather than negative.
+    assert continuous.shear_at(TWO, 0, 0.0, 0, L / 2.0) == pytest.approx(13.0 / 32.0)
+    assert continuous.shear_at(TWO, 1, L, 0, L / 2.0) == pytest.approx(3.0 / 32.0)
+
+
+def test_the_reactions_carry_the_whole_load() -> None:
+    near = continuous.shear_at(TWO, 0, 0.0, 0, L / 2.0)
+    far = -continuous.shear_at(TWO, 1, L, 0, L / 2.0)
+    interior = -continuous.shear_at(TWO, 0, L, 0, L / 2.0) + continuous.shear_at(
+        TWO, 1, 0.0, 0, L / 2.0
+    )
+    assert near + far + interior == pytest.approx(1.0)
+
+
+def test_a_load_in_the_far_span_puts_shear_in_the_near_one() -> None:
+    value = continuous.shear_at(TWO, 0, L / 2.0, 1, L / 2.0)
+    assert value != pytest.approx(0.0, abs=1.0e-9)
+
+
+def test_the_shear_in_a_span_with_no_load_is_constant() -> None:
+    # No load between the supports means no change in shear along the span.
+    first = continuous.shear_at(TWO, 0, 10.0, 1, L / 2.0)
+    second = continuous.shear_at(TWO, 0, 80.0, 1, L / 2.0)
+    assert first == pytest.approx(second)

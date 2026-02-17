@@ -166,3 +166,38 @@ def test_from_breaks_sorts_the_breaks_it_was_given() -> None:
 def test_a_thicker_middle_section_is_stiffer_where_it_matters() -> None:
     s = three_run_schedule()
     assert s.section_at(60.0).inertia_in4 > s.section_at(10.0).inertia_in4
+
+
+def test_the_run_in_force_is_the_one_the_station_falls_in() -> None:
+    s = three_run_schedule()
+    assert s.run_at(10.0).section.label == "end"
+    assert s.run_at(60.0).section.label == "middle"
+    assert s.run_at(100.0).section.label == "far"
+
+
+def test_a_station_on_a_transition_belongs_to_the_run_that_starts_there() -> None:
+    s = three_run_schedule()
+    assert s.run_at(28.0).section.label == "middle"
+    assert s.run_at(92.0).section.label == "far"
+
+
+def test_the_run_carries_the_stations_it_covers() -> None:
+    run = three_run_schedule().run_at(60.0)
+    assert run.from_station_ft == pytest.approx(28.0)
+    assert run.to_station_ft == pytest.approx(92.0)
+
+
+def test_a_station_behind_the_datum_has_no_run() -> None:
+    with pytest.raises(GeometryError, match="behind the datum"):
+        three_run_schedule().run_at(-5.0)
+
+
+def test_a_station_past_the_end_has_no_run() -> None:
+    with pytest.raises(GeometryError, match="past the end"):
+        three_run_schedule().run_at(140.0)
+
+
+def test_the_ends_of_the_girder_are_inside_the_schedule() -> None:
+    s = three_run_schedule()
+    assert s.run_at(0.0).section.label == "end"
+    assert s.run_at(120.0).section.label == "far"

@@ -123,3 +123,18 @@ def test_the_book_defaults_to_the_working_directory(runner: CliRunner) -> None:
 def test_an_unknown_command_is_refused(runner: CliRunner) -> None:
     result = runner.invoke(main, ["fly"])
     assert result.exit_code != 0
+
+
+def test_the_group_class_is_the_one_carrying_the_error_boundary() -> None:
+    from shearstud.cli.main import ShearstudGroup
+
+    assert isinstance(main, ShearstudGroup)
+
+
+def test_the_boundary_lives_on_the_group_and_not_on_the_runner() -> None:
+    # The translation from a domain error to a click error has to happen where
+    # commands are invoked, or a command called directly in a test raises
+    # something a user would never see.
+    from shearstud.cli.main import ShearstudGroup
+
+    assert "invoke" in vars(ShearstudGroup)

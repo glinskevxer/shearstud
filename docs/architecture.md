@@ -22,7 +22,7 @@ the same table, so the two cannot drift apart.
 | store       | 12      | 1852  | the book of record, its migrations and its repositories           |
 | analysis    | 4       | 609   | dead load, and the runs that use everything below at once         |
 | cli         | 5       | 797   | the command line, which is how anyone outside the package uses it |
-| tools       | 19      | 2353  | the repository's own checks and generated documents               |
+| tools       | 20      | 2506  | the repository's own checks and generated documents               |
 
 ## What each layer may import
 
@@ -168,6 +168,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.tools.check_sql`          | 178   | SQL is parameterised, lives in the store layer, and names its columns.          |
 | `shearstud.tools.check_tests`        | 137   | Every module has a test file, every test file has a marker, every test asserts. |
 | `shearstud.tools.check_units`        | 170   | Every float that crosses a public boundary carries its unit in its name.        |
+| `shearstud.tools.check_wiring`       | 153   | Nothing public is written and then left with no caller.                         |
 | `shearstud.tools.generated`          | 96    | The write-or-check contract every generated document follows.                   |
 | `shearstud.tools.release_check`      | 120   | Every gate, in one command, so that nothing is checked only by CI.              |
 | `shearstud.tools.schema_dump`        | 131   | The schema as SQLite itself reports it, after every migration has run.          |

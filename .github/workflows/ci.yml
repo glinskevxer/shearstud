@@ -45,6 +45,7 @@ jobs:
       - run: python -m shearstud.tools.check_sql
       - run: python -m shearstud.tools.check_tests
       - run: python -m shearstud.tools.check_units
+      - run: python -m shearstud.tools.check_wiring
 
   generated:
     runs-on: ubuntu-latest
