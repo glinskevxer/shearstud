@@ -23,6 +23,7 @@ from shearstud.analysis import fatiguerun as fr
 from shearstud.cli.main import Context, main, pass_context
 from shearstud.errors import InputError
 from shearstud.fatigue.life import TrafficModel, cycles_per_truck
+from shearstud.program import interval
 from shearstud.signals import spectrum as spec
 from shearstud.signals.rainflow import Cycle
 from shearstud.store import assessment as asm
@@ -240,6 +241,13 @@ def fatigue() -> None:
 @click.option("--growth", type=float, default=None, help="Override the recorded traffic growth.")
 @click.option("--allow-poor-records", is_flag=True, help="Evaluate untrustworthy records too.")
 @click.option("--save", is_flag=True, help="Write the evaluations into the book.")
+@click.option(
+    "--condition",
+    type=click.IntRange(interval.MIN_CONDITION_RATING, interval.MAX_CONDITION_RATING),
+    default=interval.EXTENSION_CONDITION_RATING,
+    show_default=True,
+    help="Lowest component condition rating from the last inspection.",
+)
 @pass_context
 def evaluate_command(
     ctx: Context,
@@ -248,6 +256,7 @@ def evaluate_command(
     growth: float | None,
     allow_poor_records: bool,
     save: bool,
+    condition: int,
 ) -> None:
     """Evaluate every detail on a structure against one campaign."""
     path = ctx.require_book()
@@ -270,9 +279,11 @@ def evaluate_command(
         skipped = result.skipped_for(reason)
         if skipped:
             click.echo(f"skipped ({reason}): {', '.join(skipped)}")
+    state = fr.inspection_state(result, condition)
+    decision = interval.decide(state)
     click.echo(
         f"{len(result.evaluated)} of {result.detail_count} details measured, "
-        f"re evaluate in {fr.interval_years(result):.0f} years"
+        f"inspect again in {decision.months} months ({decision.reason})"
     )
     if not save:
         return

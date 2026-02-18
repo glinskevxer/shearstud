@@ -24,6 +24,7 @@ from shearstud.errors import InputError
 from shearstud.fatigue import categories as cat
 from shearstud.fatigue import evaluation as ev
 from shearstud.fatigue import life as lf
+from shearstud.program import interval
 from shearstud.store import measurement as meas
 from shearstud.structure.detail import FatigueDetail
 from shearstud.structure.gauge import GaugeInstall
@@ -35,6 +36,12 @@ SKIP_NO_SPECTRUM = "the gauge did not report in this campaign"
 SKIP_TRANSVERSE = "the gauge does not read bending stress"
 SKIP_UNTRUSTWORTHY = "too much of the record was unusable"
 SKIP_REASONS = (SKIP_NO_GAUGE, SKIP_NO_SPECTRUM, SKIP_TRANSVERSE, SKIP_UNTRUSTWORTHY)
+
+#: The most fatigue life the interval rule is allowed to be told about. An
+#: infinite life is a statement about one calculation and not about the
+#: structure, and it must not walk into a programme decision as a number no
+#: threshold can ever fail.
+MAX_CREDITED_LIFE_YEARS = 100.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -145,24 +152,46 @@ def run(
     return RunResult(campaign_id=campaign_id, evaluated=tuple(evaluated), skipped=tuple(skipped))
 
 
-def re_evaluation_due(result: RunResult, last_evaluated: date, today: date) -> bool:
-    """Whether the structure's fatigue evaluation is out of date.
+def inspection_state(
+    result: RunResult,
+    lowest_condition_rating: int,
+    *,
+    is_posted: bool = False,
+    has_nonredundant_members: bool = False,
+) -> interval.StructureState:
+    """What the interval rule needs to know, with the fatigue life filled in.
 
-    The interval is the remaining life divided by four, floored at two years and
-    capped at ten. A detail with eighty years left does not need looking at every
-    other year and one with six does.
+    A run that evaluated nothing does not get the benefit of the doubt. The
+    fatigue life goes in as zero, which fires the shortener, because a structure
+    nobody has a reading for is not a structure known to be fine.
     """
     if not result.evaluated:
-        return True
-    years_since = (today - last_evaluated).days / 365.25
-    return years_since >= interval_years(result)
+        life_years = 0.0
+    else:
+        measured = ev.structure_life_years(list(result.evaluated))
+        life_years = min(measured, MAX_CREDITED_LIFE_YEARS)
+    return interval.StructureState(
+        lowest_condition_rating=lowest_condition_rating,
+        is_posted=is_posted,
+        has_nonredundant_members=has_nonredundant_members,
+        fatigue_life_years=life_years,
+    )
 
 
-def interval_years(result: RunResult) -> float:
-    """How long until the evaluation should be repeated."""
-    if not result.evaluated:
-        return 2.0
-    worst = ev.structure_life_years(list(result.evaluated))
-    if worst == float("inf"):
-        return 10.0
-    return min(10.0, max(2.0, worst / 4.0))
+def inspection_due(
+    result: RunResult,
+    last_inspected: date,
+    today: date,
+    lowest_condition_rating: int,
+    *,
+    is_posted: bool = False,
+    has_nonredundant_members: bool = False,
+) -> bool:
+    """Whether the structure is past its inspection date."""
+    state = inspection_state(
+        result,
+        lowest_condition_rating,
+        is_posted=is_posted,
+        has_nonredundant_members=has_nonredundant_members,
+    )
+    return interval.decide(state).is_overdue(last_inspected, today)

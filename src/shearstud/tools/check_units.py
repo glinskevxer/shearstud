@@ -100,6 +100,7 @@ DURATIONS_AND_COUNTS: Final[frozenset[str]] = frozenset(
         "annual_cycles",
         "years",
         "years_remaining",
+        "fatigue_life_years",
         "half_window",
         "seconds",
     }

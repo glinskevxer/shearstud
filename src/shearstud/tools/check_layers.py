@@ -3,7 +3,7 @@
 The layers, from the bottom up:
 
     units, errors -> geometry -> loads, signals -> fatigue, structure
-                  -> rating -> store -> analysis -> cli
+                  -> rating -> store -> program -> analysis -> cli
 
 A layer may import from anything below it and from nothing above it. That is the
 whole rule, and it is worth enforcing rather than intending because the two
@@ -35,11 +35,24 @@ ALLOWED: Final[dict[str, frozenset[str]]] = {
     "structure": frozenset({"geometry", "signals", "fatigue"}),
     "rating": frozenset({"geometry", "loads", "signals", "fatigue", "structure"}),
     "store": frozenset({"geometry", "loads", "signals", "fatigue", "structure", "rating"}),
-    "analysis": frozenset(
+    "program": frozenset(
         {"geometry", "loads", "signals", "fatigue", "structure", "rating", "store"}
     ),
+    "analysis": frozenset(
+        {"geometry", "loads", "signals", "fatigue", "structure", "rating", "store", "program"}
+    ),
     "cli": frozenset(
-        {"geometry", "loads", "signals", "fatigue", "structure", "rating", "store", "analysis"}
+        {
+            "geometry",
+            "loads",
+            "signals",
+            "fatigue",
+            "structure",
+            "rating",
+            "store",
+            "program",
+            "analysis",
+        }
     ),
     "tools": frozenset(
         {
@@ -50,6 +63,7 @@ ALLOWED: Final[dict[str, frozenset[str]]] = {
             "structure",
             "rating",
             "store",
+            "program",
             "analysis",
             "cli",
         }
@@ -61,9 +75,16 @@ FOUNDATION: Final[frozenset[str]] = frozenset({"shearstud", "shearstud.units", "
 
 
 def _layer_of(module: str) -> str:
-    """Which layer a dotted module name is in."""
+    """Which layer a dotted module name is in.
+
+    Both import forms have to land here. ``shearstud.store.measurement`` names
+    the module and ``shearstud.store`` names the package, and for a long time
+    only the first was recognised, which quietly exempted every
+    ``from shearstud.<layer> import <module>`` in the repository from the rule
+    this file exists to enforce.
+    """
     parts = module.split(".")
-    if len(parts) < 3 or parts[0] != "shearstud":
+    if len(parts) < 2 or parts[0] != "shearstud" or module in FOUNDATION:
         return ""
     return parts[1]
 

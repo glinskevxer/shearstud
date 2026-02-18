@@ -131,3 +131,31 @@ def test_the_allowances_are_transitive_downwards() -> None:
 def test_the_check_exits_one_when_something_is_wrong(source: Source, planted: Plant) -> None:
     planted(check, [source("geometry/x.py", f"{HEAD}\n\nfrom shearstud.store.db import connect\n")])
     assert check.main() == 1
+
+
+def test_the_package_import_form_is_caught_too(source: Source, planted: Plant) -> None:
+    # ``from shearstud.store import db`` names the package, not the module, and
+    # for a long time that form was invisible to this check.
+    found = planted_import(source, planted, "geometry/x.py", "from shearstud.store import db")
+    assert any("(geometry) imports shearstud.store (store)" in problem for problem in found)
+
+
+def test_the_package_import_form_is_allowed_where_the_table_allows_it(
+    source: Source, planted: Plant
+) -> None:
+    assert planted_import(source, planted, "rating/x.py", "from shearstud.loads import axles") == []
+
+
+def test_the_foundation_is_not_read_as_a_layer(source: Source, planted: Plant) -> None:
+    assert planted_import(source, planted, "geometry/x.py", "from shearstud import units") == []
+    assert planted_import(source, planted, "geometry/x.py", "from shearstud.units import KSI") == []
+
+
+def test_the_programme_layer_sits_above_the_book(source: Source, planted: Plant) -> None:
+    assert planted_import(source, planted, "program/x.py", "from shearstud.store import db") == []
+    found = planted_import(source, planted, "store/x.py", "from shearstud.program import interval")
+    assert any("(store) imports shearstud.program (program)" in problem for problem in found)
+
+
+def test_the_programme_layer_has_an_importer() -> None:
+    assert "program" not in check.orphans()

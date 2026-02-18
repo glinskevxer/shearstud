@@ -111,11 +111,12 @@ Evaluate every detail on a structure against one campaign.
 
 Takes `number`, `campaign_id`.
 
-| Option                 | Default | What it does                          |
-| ---------------------- | ------- | ------------------------------------- |
-| `--growth`             |         | Override the recorded traffic growth. |
-| `--allow-poor-records` |         | Evaluate untrustworthy records too.   |
-| `--save`               |         | Write the evaluations into the book.  |
+| Option                 | Default | What it does                                                |
+| ---------------------- | ------- | ----------------------------------------------------------- |
+| `--growth`             |         | Override the recorded traffic growth.                       |
+| `--allow-poor-records` |         | Evaluate untrustworthy records too.                         |
+| `--save`               |         | Write the evaluations into the book.                        |
+| `--condition`          | `7`     | Lowest component condition rating from the last inspection. |
 
 ### `shearstud rate`
 

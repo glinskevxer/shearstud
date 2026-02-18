@@ -37,6 +37,7 @@ EXEMPT_MODULES: Final[frozenset[str]] = frozenset(
         "shearstud.rating",
         "shearstud.store",
         "shearstud.store.migrations",
+        "shearstud.program",
         "shearstud.analysis",
         "shearstud.cli",
         "shearstud.tools",

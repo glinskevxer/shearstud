@@ -58,6 +58,7 @@ markers = [
   "fatigue: damage accumulation and remaining life",
   "rating: load rating and posting",
   "store: persistence and migrations",
+  "program: inspection programme policy",
   "cli: command line surface",
   "tools: repository self checks",
 ]

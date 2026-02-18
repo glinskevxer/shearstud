@@ -15,6 +15,7 @@ from shearstud.geometry.effective import DeckLayout
 from shearstud.geometry.plate import flange, web
 from shearstud.geometry.schedule import uniform
 from shearstud.geometry.section import Section
+from shearstud.program import interval
 from shearstud.signals import spectrum as spec
 from shearstud.signals.rainflow import Cycle
 from shearstud.signals.spectrum import Spectrum
@@ -246,29 +247,60 @@ def test_asking_for_an_unknown_skip_reason_is_refused(wired: Path) -> None:
         result.skipped_for("the inspector was ill")
 
 
-def test_a_short_life_shortens_the_re_evaluation_interval(wired: Path) -> None:
+def test_the_run_hands_the_interval_rule_a_state_it_can_use(wired: Path) -> None:
     result = fr.run(wired, loaded(wired), CAMPAIGN, traffic())
-    assert 2.0 <= fr.interval_years(result) <= 10.0
+    state = fr.inspection_state(result, lowest_condition_rating=7)
+    assert 0.0 <= state.fatigue_life_years <= fr.MAX_CREDITED_LIFE_YEARS
+    assert not state.is_posted
 
 
-def test_a_structure_with_nothing_evaluated_is_looked_at_in_two_years(book: Path) -> None:
+def test_a_structure_with_nothing_evaluated_gets_the_short_interval(book: Path) -> None:
     empty = fr.RunResult(campaign_id=CAMPAIGN, evaluated=(), skipped=())
-    assert fr.interval_years(empty) == pytest.approx(2.0)
-    assert fr.re_evaluation_due(empty, date(2026, 1, 1), date(2026, 2, 1))
+    state = fr.inspection_state(empty, lowest_condition_rating=8)
+    assert state.fatigue_life_years == 0.0
+    assert interval.decide(state).months == interval.SHORT_MONTHS
 
 
-def test_an_indefinite_structure_is_looked_at_in_ten_years(wired: Path) -> None:
+def test_an_indefinite_structure_does_not_arrive_as_infinity(wired: Path) -> None:
+    # An infinite life is a statement about the calculation. Letting it into a
+    # programme decision hands the office a number no threshold can fail.
     meas.save_spectrum(wired, CAMPAIGN, spectrum("g1", range_ksi=0.5))
     meas.save_spectrum(wired, CAMPAIGN, spectrum("g2", range_ksi=0.5))
     result = fr.run(wired, loaded(wired), CAMPAIGN, traffic())
-    assert fr.interval_years(result) == pytest.approx(10.0)
+    state = fr.inspection_state(result, lowest_condition_rating=8)
+    assert state.fatigue_life_years == pytest.approx(fr.MAX_CREDITED_LIFE_YEARS)
 
 
-def test_a_recent_evaluation_is_not_due(wired: Path) -> None:
+def test_a_sound_structure_with_life_left_earns_the_extension(wired: Path) -> None:
+    meas.save_spectrum(wired, CAMPAIGN, spectrum("g1", range_ksi=0.5))
+    meas.save_spectrum(wired, CAMPAIGN, spectrum("g2", range_ksi=0.5))
     result = fr.run(wired, loaded(wired), CAMPAIGN, traffic())
-    assert not fr.re_evaluation_due(result, date(2026, 5, 1), date(2026, 6, 1))
+    state = fr.inspection_state(result, lowest_condition_rating=8)
+    assert interval.decide(state).months == interval.EXTENDED_MONTHS
 
 
-def test_an_old_evaluation_is_due(wired: Path) -> None:
+def test_a_posting_takes_the_extension_away(wired: Path) -> None:
+    meas.save_spectrum(wired, CAMPAIGN, spectrum("g1", range_ksi=0.5))
+    meas.save_spectrum(wired, CAMPAIGN, spectrum("g2", range_ksi=0.5))
     result = fr.run(wired, loaded(wired), CAMPAIGN, traffic())
-    assert fr.re_evaluation_due(result, date(2005, 5, 1), date(2026, 6, 1))
+    state = fr.inspection_state(result, lowest_condition_rating=8, is_posted=True)
+    assert interval.decide(state).months == interval.SHORT_MONTHS
+
+
+def test_a_recent_inspection_is_not_due(wired: Path) -> None:
+    result = fr.run(wired, loaded(wired), CAMPAIGN, traffic())
+    assert not fr.inspection_due(result, date(2026, 5, 1), date(2026, 6, 1), 7)
+
+
+def test_an_old_inspection_is_due(wired: Path) -> None:
+    result = fr.run(wired, loaded(wired), CAMPAIGN, traffic())
+    assert fr.inspection_due(result, date(2005, 5, 1), date(2026, 6, 1), 7)
+
+
+def test_a_nonredundant_structure_is_due_sooner_than_a_redundant_one(wired: Path) -> None:
+    meas.save_spectrum(wired, CAMPAIGN, spectrum("g1", range_ksi=0.5))
+    meas.save_spectrum(wired, CAMPAIGN, spectrum("g2", range_ksi=0.5))
+    result = fr.run(wired, loaded(wired), CAMPAIGN, traffic())
+    last, today = date(2023, 1, 1), date(2026, 6, 1)
+    assert not fr.inspection_due(result, last, today, 8)
+    assert fr.inspection_due(result, last, today, 8, has_nonredundant_members=True)

@@ -287,10 +287,17 @@ def test_a_non_numeric_row_is_reported(runner: CliRunner, wired: Path, tmp_path:
     assert "are not numbers" in result.output
 
 
-def evaluated(runner: CliRunner, book: Path, tmp_path: Path, range_ksi: float = 6.0) -> Any:
+def evaluated(
+    runner: CliRunner,
+    book: Path,
+    tmp_path: Path,
+    range_ksi: float = 6.0,
+    extra: list[str] | None = None,
+) -> Any:
     counts = counts_file(tmp_path, range_ksi=range_ksi)
     runner.invoke(main, ["--book", str(book), "spectrum", CAMPAIGN, "g1", str(counts)])
-    return runner.invoke(main, ["--book", str(book), "fatigue", "evaluate", NUMBER, CAMPAIGN])
+    argv = ["--book", str(book), "fatigue", "evaluate", NUMBER, CAMPAIGN, *(extra or [])]
+    return runner.invoke(main, argv)
 
 
 def test_the_evaluation_prints_a_line_per_measured_detail(
@@ -316,11 +323,34 @@ def test_the_evaluation_reports_the_coverage(
     assert "1 of 2 details measured" in result.output
 
 
-def test_the_evaluation_gives_a_re_evaluation_interval(
+def test_the_evaluation_gives_an_inspection_interval(
     runner: CliRunner, wired: Path, tmp_path: Path
 ) -> None:
     result = evaluated(runner, wired, tmp_path)
-    assert "re evaluate in" in result.output
+    assert "inspect again in" in result.output
+    assert "months" in result.output
+
+
+def test_a_poor_condition_rating_shortens_what_the_command_prints(
+    runner: CliRunner, wired: Path, tmp_path: Path
+) -> None:
+    result = evaluated(runner, wired, tmp_path, range_ksi=0.4, extra=["--condition", "3"])
+    assert "inspect again in 12 months" in result.output
+    assert "shortened by condition" in result.output
+
+
+def test_a_sound_structure_with_a_quiet_detail_earns_the_long_interval(
+    runner: CliRunner, wired: Path, tmp_path: Path
+) -> None:
+    result = evaluated(runner, wired, tmp_path, range_ksi=0.4, extra=["--condition", "8"])
+    assert "inspect again in 48 months" in result.output
+
+
+def test_a_condition_rating_off_the_scale_is_refused(
+    runner: CliRunner, wired: Path, tmp_path: Path
+) -> None:
+    result = evaluated(runner, wired, tmp_path, extra=["--condition", "11"])
+    assert result.exit_code != 0
 
 
 def test_a_quiet_detail_reads_indefinite(runner: CliRunner, wired: Path, tmp_path: Path) -> None:
