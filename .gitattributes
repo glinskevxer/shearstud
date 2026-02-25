@@ -1,0 +1,10 @@
+# One ending in the repository, whatever the machine that wrote the file does.
+# Without this a checkout on Windows and a checkout on Linux disagree about the
+# bytes of every file, and the three operating systems in the test matrix stop
+# being a test of the code.
+* text=auto eol=lf
+
+# Line counts and diffs on the generated documents are noise in review. They
+# are rebuilt by a command and checked by CI, so read them there.
+docs/*.md linguist-generated=true
+migrations.lock linguist-generated=true

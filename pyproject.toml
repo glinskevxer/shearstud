@@ -33,6 +33,12 @@ line-length = 100
 target-version = "py312"
 src = ["src", "tests"]
 
+[tool.ruff.format]
+# The test matrix runs on Windows, and an editor there will happily write a
+# file back with the other ending. Naming the ending here means the format gate
+# catches that on the machine it happened on rather than in CI on Linux.
+line-ending = "lf"
+
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "B", "SIM", "RET", "ARG", "PTH", "RUF"]
 ignore = ["RUF012"]
