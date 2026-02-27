@@ -20,7 +20,7 @@ the same table, so the two cannot drift apart.
 | structure   | 7       | 812   | the inventory: identity, spans, girders, details and gauges       |
 | rating      | 7       | 1014  | capacity, load factors, the rating equation, posting and permits  |
 | store       | 12      | 1852  | the book of record, its migrations and its repositories           |
-| program     | 2       | 213   | what the office does with the numbers: intervals and priority     |
+| program     | 3       | 380   | what the office does with the numbers: intervals and priority     |
 | analysis    | 4       | 638   | dead load, and the runs that use everything below at once         |
 | cli         | 5       | 808   | the command line, which is how anyone outside the package uses it |
 | tools       | 20      | 2531  | the repository's own checks and generated documents               |
@@ -138,9 +138,10 @@ store layer. `check_sql` enforces that.
 
 ### program
 
-| Module                       | Lines | What it is                                          |
-| ---------------------------- | ----- | --------------------------------------------------- |
-| `shearstud.program.interval` | 198   | How long until this structure gets looked at again. |
+| Module                       | Lines | What it is                                                                 |
+| ---------------------------- | ----- | -------------------------------------------------------------------------- |
+| `shearstud.program.interval` | 198   | How long until this structure gets looked at again.                        |
+| `shearstud.program.priority` | 167   | Which structures get looked at first, and why they cannot share one score. |
 
 ### analysis
 
