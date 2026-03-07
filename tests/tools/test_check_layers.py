@@ -151,10 +151,15 @@ def test_the_foundation_is_not_read_as_a_layer(source: Source, planted: Plant) -
     assert planted_import(source, planted, "geometry/x.py", "from shearstud.units import KSI") == []
 
 
-def test_the_programme_layer_sits_above_the_book(source: Source, planted: Plant) -> None:
-    assert planted_import(source, planted, "program/x.py", "from shearstud.store import db") == []
-    found = planted_import(source, planted, "store/x.py", "from shearstud.program import interval")
-    assert any("(store) imports shearstud.program (program)" in problem for problem in found)
+def test_the_programme_layer_sits_below_the_book(source: Source, planted: Plant) -> None:
+    # A repository imports the types it persists, so a type the book has a
+    # table for has to be underneath the book.
+    assert (
+        planted_import(source, planted, "store/x.py", "from shearstud.program import interval")
+        == []
+    )
+    found = planted_import(source, planted, "program/x.py", "from shearstud.store import db")
+    assert any("(program) imports shearstud.store (store)" in problem for problem in found)
 
 
 def test_the_programme_layer_has_an_importer() -> None:

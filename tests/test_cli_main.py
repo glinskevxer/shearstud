@@ -83,9 +83,12 @@ def test_status_on_a_missing_book_says_how_to_make_one(runner: CliRunner, tmp_pa
 
 
 def test_status_names_a_pending_migration(runner: CliRunner, book: Path) -> None:
-    db.execute(book, f"DELETE FROM {migrate.VERSION_TABLE} WHERE version = 3")
+    # The newest one, read off the code. Naming a number here means the test
+    # stops testing anything the day a migration is added after it.
+    newest = migrate.newest_version()
+    db.execute(book, f"DELETE FROM {migrate.VERSION_TABLE} WHERE version = ?", (newest,))
     result = runner.invoke(main, ["--book", str(book), "status"])
-    assert "pending  3" in result.output
+    assert f"pending  {newest}" in result.output
 
 
 def test_check_passes_on_a_healthy_book(runner: CliRunner, seeded_book: Path) -> None:

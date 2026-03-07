@@ -3,13 +3,19 @@
 The layers, from the bottom up:
 
     units, errors -> geometry -> loads, signals -> fatigue, structure
-                  -> rating -> store -> program -> analysis -> cli
+                  -> rating -> program -> store -> analysis -> cli
 
 A layer may import from anything below it and from nothing above it. That is the
 whole rule, and it is worth enforcing rather than intending because the two
 places it wants to break are the two places it would hurt most: geometry
 reaching into store to look a section up, and rating reaching into cli to print
 something.
+
+``program`` sits below ``store`` and not above it, which reads backwards until
+you look at what the store does. Every repository in this package imports the
+types it persists and none of them is imported by one, so a programme type the
+book has a table for has to be underneath it. The programme rules themselves
+read no rows: they are handed a state and they answer.
 
 Siblings are allowed to import each other where the table says so, and where it
 does not, they are not. ``loads`` and ``signals`` are siblings with nothing to
@@ -34,9 +40,9 @@ ALLOWED: Final[dict[str, frozenset[str]]] = {
     "fatigue": frozenset({"geometry", "signals"}),
     "structure": frozenset({"geometry", "signals", "fatigue"}),
     "rating": frozenset({"geometry", "loads", "signals", "fatigue", "structure"}),
-    "store": frozenset({"geometry", "loads", "signals", "fatigue", "structure", "rating"}),
-    "program": frozenset(
-        {"geometry", "loads", "signals", "fatigue", "structure", "rating", "store"}
+    "program": frozenset({"geometry", "loads", "signals", "fatigue", "structure", "rating"}),
+    "store": frozenset(
+        {"geometry", "loads", "signals", "fatigue", "structure", "rating", "program"}
     ),
     "analysis": frozenset(
         {"geometry", "loads", "signals", "fatigue", "structure", "rating", "store", "program"}

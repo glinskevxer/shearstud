@@ -8,7 +8,7 @@ import pytest
 
 from shearstud.errors import MigrationError
 from shearstud.store import db, migrate
-from shearstud.store.migrations import m001_structures, m003_assessment
+from shearstud.store.migrations import m001_structures, m004_programme
 
 pytestmark = pytest.mark.store
 
@@ -53,8 +53,13 @@ def test_upgrading_twice_does_nothing_the_second_time(book: Path) -> None:
 
 def test_the_version_table_records_what_it_ran(book: Path) -> None:
     rows = migrate.applied(book)
-    assert [row.version for row in rows] == [1, 2, 3]
-    assert [row.name for row in rows] == ["structures", "measurement", "assessment"]
+    assert [row.version for row in rows] == [1, 2, 3, 4]
+    assert [row.name for row in rows] == [
+        "structures",
+        "measurement",
+        "assessment",
+        "programme",
+    ]
     assert all(len(row.digest) == 64 for row in rows)
     assert all(row.applied_at for row in rows)
 
@@ -179,14 +184,14 @@ def test_a_book_from_the_future_is_refused(book: Path) -> None:
 
 
 def test_the_newest_version_is_the_last_migration() -> None:
-    assert migrate.newest_version() == int(m003_assessment.VERSION)
+    assert migrate.newest_version() == int(m004_programme.VERSION)
 
 
 def test_a_partially_upgraded_book_finishes_the_job(tmp_path: Path) -> None:
     path = tmp_path / "partial.sqlite3"
     migrate.upgrade(path)
     db.execute(path, f"DELETE FROM {migrate.VERSION_TABLE} WHERE version > 1")
-    assert [int(m.VERSION) for m in migrate.pending(path)] == [2, 3]
+    assert [int(m.VERSION) for m in migrate.pending(path)] == [2, 3, 4]
 
 
 def test_an_upgraded_book_has_no_foreign_key_violations(book: Path) -> None:
@@ -195,3 +200,55 @@ def test_an_upgraded_book_has_no_foreign_key_violations(book: Path) -> None:
 
 def test_an_upgraded_book_passes_the_integrity_check(book: Path) -> None:
     assert db.integrity_check(book) == []
+
+
+def test_the_programme_table_arrives_with_its_migration(tmp_path: Path) -> None:
+    path = tmp_path / "staged.sqlite3"
+    migrate.upgrade(path, through=3)
+    assert "programme" not in db.table_names(path)
+    migrate.upgrade(path)
+    assert "programme" in db.table_names(path)
+
+
+def test_the_programme_table_refuses_a_condition_rating_off_the_scale(book: Path) -> None:
+    # The check constraint is on the column, not only in the dataclass, so a
+    # row written by anything at all is held to it.
+    db.execute(
+        book,
+        "INSERT INTO structures (number, name, county_code, route_class, sequence, "
+        "parallel, year_built, span_lengths_ft, continuous, effective_width_rule, "
+        "steel_grade, member_condition, redundancy, adtt, lanes_available, "
+        "growth_pct_per_yr) VALUES ('18-SH-0473', 'Salt Fork Creek', 18, 'SH', 473, "
+        "'', 1962, '[84.0]', 0, 'tributary', 'A36', 'good', 'redundant', 500, 2, 1.0)",
+    )
+    with pytest.raises(Exception, match="CHECK constraint"):
+        db.execute(
+            book,
+            "INSERT INTO programme (structure_number, lowest_condition_rating, "
+            "daily_traffic, detour_mi, is_posted, last_inspected, updated_on) "
+            "VALUES ('18-SH-0473', 11, 100, 1.0, 0, '2025-01-01', '2025-01-02')",
+        )
+
+
+def test_an_upgrade_can_be_stopped_partway(tmp_path: Path) -> None:
+    path = tmp_path / "window.sqlite3"
+    assert migrate.upgrade(path, through=2) == [1, 2]
+    assert migrate.current_version(path) == 2
+    assert [int(m.VERSION) for m in migrate.pending(path)] == [3, 4]
+
+
+def test_a_stopped_upgrade_finishes_when_it_is_run_again(tmp_path: Path) -> None:
+    path = tmp_path / "window.sqlite3"
+    migrate.upgrade(path, through=2)
+    assert migrate.upgrade(path) == [3, 4]
+    assert migrate.pending(path) == []
+
+
+def test_stopping_past_the_end_applies_everything(tmp_path: Path) -> None:
+    path = tmp_path / "window.sqlite3"
+    assert migrate.upgrade(path, through=99) == [1, 2, 3, 4]
+
+
+def test_stopping_before_the_first_migration_is_refused(tmp_path: Path) -> None:
+    with pytest.raises(MigrationError, match="no version 0 to stop at"):
+        migrate.upgrade(tmp_path / "window.sqlite3", through=0)

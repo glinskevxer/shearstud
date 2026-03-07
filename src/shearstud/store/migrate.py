@@ -119,14 +119,23 @@ def check_digests(path: Path | str) -> None:
             )
 
 
-def upgrade(path: Path | str) -> list[int]:
-    """Bring a book up to the newest schema, returning the versions applied."""
+def upgrade(path: Path | str, through: int | None = None) -> list[int]:
+    """Bring a book up to the newest schema, returning the versions applied.
+
+    ``through`` stops after a given version. It exists because an upgrade on a
+    large book is done in a window, and getting halfway and stopping on purpose
+    is better than getting halfway and stopping because the window ran out.
+    """
+    if through is not None and through < 1:
+        raise MigrationError(f"there is no version {through} to stop at")
     with db.transaction(path) as connection:
         connection.execute(_CREATE_VERSION_TABLE)
     check_digests(path)
     done: list[int] = []
     for migration in pending(path):
         version = int(migration.VERSION)
+        if through is not None and version > through:
+            break
         with db.transaction(path) as connection:
             connection.executescript(str(migration.UP))
             connection.execute(

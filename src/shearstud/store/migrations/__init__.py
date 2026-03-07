@@ -16,13 +16,19 @@ from __future__ import annotations
 
 from types import ModuleType
 
-from shearstud.store.migrations import m001_structures, m002_measurement, m003_assessment
+from shearstud.store.migrations import (
+    m001_structures,
+    m002_measurement,
+    m003_assessment,
+    m004_programme,
+)
 
 #: Every migration, in the order they apply.
 MIGRATIONS: tuple[ModuleType, ...] = (
     m001_structures,
     m002_measurement,
     m003_assessment,
+    m004_programme,
 )
 
 __all__ = ["MIGRATIONS"]

@@ -60,7 +60,11 @@ def run(book: Path) -> list[str]:
     lines: list[str] = []
 
     applied = migrate.upgrade(book)
-    assert applied == [1, 2, 3], f"expected three migrations, got {applied}"
+    # Against the code's own list rather than a number written here. A count
+    # written here has to be edited by whoever adds a migration, and the edit
+    # that keeps the smoke run green is the one that stops it checking.
+    expected = list(range(1, migrate.newest_version() + 1))
+    assert applied == expected, f"expected migrations {expected}, got {applied}"
     lines.append(f"schema      migrations {', '.join(str(v) for v in applied)} applied")
 
     structure = importer.read(EXAMPLE)

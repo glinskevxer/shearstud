@@ -19,11 +19,11 @@ the same table, so the two cannot drift apart.
 | fatigue     | 5       | 624   | detail categories, Miner damage, remaining life and evaluation    |
 | structure   | 7       | 812   | the inventory: identity, spans, girders, details and gauges       |
 | rating      | 7       | 1014  | capacity, load factors, the rating equation, posting and permits  |
-| store       | 12      | 1852  | the book of record, its migrations and its repositories           |
 | program     | 3       | 380   | what the office does with the numbers: intervals and priority     |
+| store       | 14      | 2106  | the book of record, its migrations and its repositories           |
 | analysis    | 4       | 638   | dead load, and the runs that use everything below at once         |
 | cli         | 5       | 808   | the command line, which is how anyone outside the package uses it |
-| tools       | 20      | 2531  | the repository's own checks and generated documents               |
+| tools       | 20      | 2542  | the repository's own checks and generated documents               |
 
 ## What each layer may import
 
@@ -36,13 +36,13 @@ the same table, so the two cannot drift apart.
 | fatigue     | geometry, signals                                                                   |
 | structure   | fatigue, geometry, signals                                                          |
 | rating      | fatigue, geometry, loads, signals, structure                                        |
-| store       | fatigue, geometry, loads, rating, signals, structure                                |
-| program     | fatigue, geometry, loads, rating, signals, store, structure                         |
+| program     | fatigue, geometry, loads, rating, signals, structure                                |
+| store       | fatigue, geometry, loads, program, rating, signals, structure                       |
 | analysis    | fatigue, geometry, loads, program, rating, signals, store, structure                |
 | cli         | analysis, fatigue, geometry, loads, program, rating, signals, store, structure      |
 | tools       | analysis, cli, fatigue, geometry, loads, program, rating, signals, store, structure |
 
-The package holds 66 SQL statements, all of them in the
+The package holds 76 SQL statements, all of them in the
 store layer. `check_sql` enforces that.
 
 ## Modules
@@ -121,6 +121,13 @@ store layer. `check_sql` enforces that.
 | `shearstud.rating.rate`     | 155   | The rating factor: capacity left over, divided by what the truck asks for.  |
 | `shearstud.rating.studs`    | 194   | Shear connectors: what holds the deck to the girder, and how far apart.     |
 
+### program
+
+| Module                       | Lines | What it is                                                                 |
+| ---------------------------- | ----- | -------------------------------------------------------------------------- |
+| `shearstud.program.interval` | 198   | How long until this structure gets looked at again.                        |
+| `shearstud.program.priority` | 167   | Which structures get looked at first, and why they cannot share one score. |
+
 ### store
 
 | Module                                        | Lines | What it is                                                                  |
@@ -130,18 +137,13 @@ store layer. `check_sql` enforces that.
 | `shearstud.store.importer`                    | 243   | Reading a structure out of a JSON document, and writing one back.           |
 | `shearstud.store.inventory`                   | 338   | Reading and writing whole structures.                                       |
 | `shearstud.store.measurement`                 | 269   | Reading and writing what was measured: gauges, campaigns and spectra.       |
-| `shearstud.store.migrate`                     | 153   | Applying migrations, and refusing to run against a book that has diverged.  |
+| `shearstud.store.migrate`                     | 162   | Applying migrations, and refusing to run against a book that has diverged.  |
 | `shearstud.store.migrations.m001_structures`  | 87    | The inventory: structures, girders and the details welded to them.          |
 | `shearstud.store.migrations.m002_measurement` | 71    | What is measured: gauges, campaigns, cycle spectra and thickness readings.  |
 | `shearstud.store.migrations.m003_assessment`  | 72    | What is concluded: ratings, fatigue evaluations and posting decisions.      |
+| `shearstud.store.migrations.m004_programme`   | 39    | The facts the inspection programme runs on, none of which are engineering.  |
+| `shearstud.store.programme`                   | 200   | The inspection programme's own row for each structure.                      |
 | `shearstud.store.retention`                   | 138   | Pruning the record, which is the only place anything is deleted on purpose. |
-
-### program
-
-| Module                       | Lines | What it is                                                                 |
-| ---------------------------- | ----- | -------------------------------------------------------------------------- |
-| `shearstud.program.interval` | 198   | How long until this structure gets looked at again.                        |
-| `shearstud.program.priority` | 167   | Which structures get looked at first, and why they cannot share one score. |
 
 ### analysis
 
@@ -171,15 +173,15 @@ store layer. `check_sql` enforces that.
 | `shearstud.tools.check_cli`          | 99    | The command line documents itself: every command and every option has help.     |
 | `shearstud.tools.check_docstrings`   | 81    | Every module, public class, public function and public method says what it is.  |
 | `shearstud.tools.check_errors`       | 161   | Errors are the package's own, they carry a message, and nothing is swallowed.   |
-| `shearstud.tools.check_layers`       | 137   | Imports run one way through the package, and this is where that is written.     |
+| `shearstud.tools.check_layers`       | 143   | Imports run one way through the package, and this is where that is written.     |
 | `shearstud.tools.check_migrations`   | 126   | Applied migrations are frozen, and the lock file is what says so.               |
 | `shearstud.tools.check_naming`       | 156   | Names say what the thing is, in the words this domain already uses.             |
 | `shearstud.tools.check_sql`          | 178   | SQL is parameterised, lives in the store layer, and names its columns.          |
-| `shearstud.tools.check_tests`        | 138   | Every module has a test file, every test file has a marker, every test asserts. |
+| `shearstud.tools.check_tests`        | 139   | Every module has a test file, every test file has a marker, every test asserts. |
 | `shearstud.tools.check_units`        | 171   | Every float that crosses a public boundary carries its unit in its name.        |
 | `shearstud.tools.check_wiring`       | 153   | Nothing public is written and then left with no caller.                         |
 | `shearstud.tools.generated`          | 96    | The write-or-check contract every generated document follows.                   |
 | `shearstud.tools.release_check`      | 120   | Every gate, in one command, so that nothing is checked only by CI.              |
 | `shearstud.tools.schema_dump`        | 131   | The schema as SQLite itself reports it, after every migration has run.          |
-| `shearstud.tools.smoke`              | 185   | One run through the whole package, from an empty directory to a posting.        |
+| `shearstud.tools.smoke`              | 189   | One run through the whole package, from an empty directory to a posting.        |
 | `shearstud.tools.walk`               | 178   | Finding and parsing the repository's own source, for the self checks.           |

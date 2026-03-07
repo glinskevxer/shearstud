@@ -2,10 +2,10 @@
 
 # Schema
 
-What migration 3 leaves behind, read back out
+What migration 4 leaves behind, read back out
 of SQLite rather than transcribed from the migration text.
 
-15 tables: `campaigns`, `details`, `evaluations`, `gauges`, `girders`, `posting_lines`, `postings`, `ratings`, `schema_version`, `section_plates`, `section_runs`, `spectra`, `spectrum_bins`, `structures`, `thickness_readings`.
+16 tables: `campaigns`, `details`, `evaluations`, `gauges`, `girders`, `posting_lines`, `postings`, `programme`, `ratings`, `schema_version`, `section_plates`, `section_runs`, `spectra`, `spectrum_bins`, `structures`, `thickness_readings`.
 
 ## Tables
 
@@ -145,6 +145,27 @@ of SQLite rather than transcribed from the migration text.
 | Column           | References        | On delete |
 | ---------------- | ----------------- | --------- |
 | structure_number | structures.number | CASCADE   |
+
+### `programme`
+
+| Column                  | Type         | Null | Default |
+| ----------------------- | ------------ | ---- | ------- |
+| structure_number        | TEXT primary | yes  |         |
+| lowest_condition_rating | INTEGER      | no   |         |
+| daily_traffic           | INTEGER      | no   |         |
+| detour_mi               | REAL         | no   |         |
+| is_posted               | INTEGER      | no   |         |
+| last_inspected          | TEXT         | no   |         |
+| updated_on              | TEXT         | no   |         |
+
+| Column           | References        | On delete |
+| ---------------- | ----------------- | --------- |
+| structure_number | structures.number | CASCADE   |
+
+| Index                   | Unique | Columns                 |
+| ----------------------- | ------ | ----------------------- |
+| programme_by_inspection | no     | last_inspected          |
+| programme_by_condition  | no     | lowest_condition_rating |
 
 ### `ratings`
 
