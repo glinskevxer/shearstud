@@ -305,3 +305,29 @@ def test_the_book_stays_consistent_after_a_save_and_a_delete(book: Path) -> None
     inventory.delete(book, "18-SH-0473")
     assert db.foreign_key_violations(book) == []
     assert db.integrity_check(book) == []
+
+
+def test_every_redundancy_the_inventory_records_is_accepted() -> None:
+    for word in inventory.REDUNDANCIES:
+        assert StructurePolicy(redundancy=word).redundancy == word
+
+
+def test_a_redundancy_nobody_uses_is_refused() -> None:
+    with pytest.raises(StorageError, match="unknown redundancy"):
+        StructurePolicy(redundancy="fracture critical")
+
+
+def test_a_redundant_structure_does_not_get_the_treatment() -> None:
+    assert not StructurePolicy(redundancy=inventory.REDUNDANT).is_nonredundant
+
+
+def test_limited_redundancy_gets_the_non_redundant_treatment() -> None:
+    # Some redundancy, not enough to rely on, and there is no version of the
+    # inspection decision where that buys a longer interval.
+    assert StructurePolicy(redundancy=inventory.LIMITED).is_nonredundant
+    assert StructurePolicy(redundancy=inventory.NONREDUNDANT).is_nonredundant
+
+
+def test_the_redundancy_survives_the_round_trip(book: Path) -> None:
+    inventory.save(book, structure(), StructurePolicy(redundancy=inventory.LIMITED))
+    assert inventory.load_policy(book, "18-SH-0473").redundancy == inventory.LIMITED

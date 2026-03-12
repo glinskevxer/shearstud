@@ -20,8 +20,8 @@ the same table, so the two cannot drift apart.
 | structure   | 7       | 812   | the inventory: identity, spans, girders, details and gauges       |
 | rating      | 7       | 1014  | capacity, load factors, the rating equation, posting and permits  |
 | program     | 3       | 380   | what the office does with the numbers: intervals and priority     |
-| store       | 14      | 2106  | the book of record, its migrations and its repositories           |
-| analysis    | 4       | 638   | dead load, and the runs that use everything below at once         |
+| store       | 14      | 2163  | the book of record, its migrations and its repositories           |
+| analysis    | 5       | 779   | dead load, and the runs that use everything below at once         |
 | cli         | 5       | 808   | the command line, which is how anyone outside the package uses it |
 | tools       | 20      | 2542  | the repository's own checks and generated documents               |
 
@@ -42,7 +42,7 @@ the same table, so the two cannot drift apart.
 | cli         | analysis, fatigue, geometry, loads, program, rating, signals, store, structure      |
 | tools       | analysis, cli, fatigue, geometry, loads, program, rating, signals, store, structure |
 
-The package holds 76 SQL statements, all of them in the
+The package holds 77 SQL statements, all of them in the
 store layer. `check_sql` enforces that.
 
 ## Modules
@@ -132,10 +132,10 @@ store layer. `check_sql` enforces that.
 
 | Module                                        | Lines | What it is                                                                  |
 | --------------------------------------------- | ----- | --------------------------------------------------------------------------- |
-| `shearstud.store.assessment`                  | 288   | Storing what was concluded: ratings, fatigue evaluations and postings.      |
+| `shearstud.store.assessment`                  | 313   | Storing what was concluded: ratings, fatigue evaluations and postings.      |
 | `shearstud.store.db`                          | 158   | The book of record: one SQLite file, opened and closed around each unit of  |
 | `shearstud.store.importer`                    | 243   | Reading a structure out of a JSON document, and writing one back.           |
-| `shearstud.store.inventory`                   | 338   | Reading and writing whole structures.                                       |
+| `shearstud.store.inventory`                   | 370   | Reading and writing whole structures.                                       |
 | `shearstud.store.measurement`                 | 269   | Reading and writing what was measured: gauges, campaigns and spectra.       |
 | `shearstud.store.migrate`                     | 162   | Applying migrations, and refusing to run against a book that has diverged.  |
 | `shearstud.store.migrations.m001_structures`  | 87    | The inventory: structures, girders and the details welded to them.          |
@@ -147,11 +147,12 @@ store layer. `check_sql` enforces that.
 
 ### analysis
 
-| Module                          | Lines | What it is                                                               |
-| ------------------------------- | ----- | ------------------------------------------------------------------------ |
-| `shearstud.analysis.deadload`   | 162   | Dead load, and which of the three composite sections each part lands on. |
-| `shearstud.analysis.fatiguerun` | 197   | Evaluating every instrumented detail on a structure from stored spectra. |
-| `shearstud.analysis.ratingrun`  | 276   | Rating a whole structure, which is where every other module gets used.   |
+| Module                          | Lines | What it is                                                                  |
+| ------------------------------- | ----- | --------------------------------------------------------------------------- |
+| `shearstud.analysis.deadload`   | 162   | Dead load, and which of the three composite sections each part lands on.    |
+| `shearstud.analysis.fatiguerun` | 197   | Evaluating every instrumented detail on a structure from stored spectra.    |
+| `shearstud.analysis.programrun` | 141   | Building the office's worklist out of the book, and saying what is missing. |
+| `shearstud.analysis.ratingrun`  | 276   | Rating a whole structure, which is where every other module gets used.      |
 
 ### cli
 

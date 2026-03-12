@@ -33,6 +33,23 @@ from shearstud.structure.identity import parse
 from shearstud.structure.record import Structure
 from shearstud.structure.span import SpanArrangement, series
 
+#: How the load finds another way round when a member goes.
+#:
+#: ``nonredundant`` is what the regulation calls a non redundant steel tension
+#: member and what the office still calls fracture critical. ``limited`` is a
+#: two girder unit or a two line truss that has some internal redundancy but
+#: not enough to be relied on, and this inventory has eleven of them. It exists
+#: as its own word rather than being filed under one of the other two because
+#: an inspector needs to be able to write down what they found; every rule that
+#: acts on it treats it as non redundant.
+REDUNDANT = "redundant"
+LIMITED = "limited"
+NONREDUNDANT = "nonredundant"
+REDUNDANCIES = (REDUNDANT, LIMITED, NONREDUNDANT)
+
+#: The redundancies that get the treatment a non redundant structure gets.
+NOT_RELIED_ON = (LIMITED, NONREDUNDANT)
+
 #: Fields the structures table carries beyond the identity.
 _STRUCTURE_COLUMNS = (
     "number, name, county_code, route_class, sequence, parallel, year_built, "
@@ -52,16 +69,31 @@ class StructurePolicy:
 
     steel_grade: str = "A36"
     member_condition: str = "good"
-    redundancy: str = "redundant"
+    redundancy: str = REDUNDANT
     adtt: float = 0.0
     lanes_available: int = 2
     growth_pct_per_yr: float = 0.0
 
     def __post_init__(self) -> None:
+        if self.redundancy not in REDUNDANCIES:
+            raise StorageError(
+                f"unknown redundancy {self.redundancy!r}, expected one of {REDUNDANCIES}"
+            )
         if self.adtt < 0.0:
             raise StorageError(f"truck traffic {self.adtt} is negative")
         if self.lanes_available < 1:
             raise StorageError(f"{self.lanes_available} lanes is not a roadway")
+
+    @property
+    def is_nonredundant(self) -> bool:
+        """True when the structure gets the non redundant treatment.
+
+        Limited redundancy answers true here. A rule that acts on this is
+        deciding how often somebody climbs the structure, and there is no
+        version of that decision where "some redundancy, not enough to rely
+        on" should buy a longer interval.
+        """
+        return self.redundancy in NOT_RELIED_ON
 
 
 def save(path: Path | str, structure: Structure, policy: StructurePolicy | None = None) -> None:

@@ -224,6 +224,31 @@ def shortest_lives(path: Path | str, limit: int = 20) -> list[tuple[str, float]]
     return [(str(row["detail_id"]), float(row["worst"])) for row in rows]
 
 
+def structure_life_years(path: Path | str, structure_number: str) -> float | None:
+    """The shortest life among a structure's details, or nothing if unmeasured.
+
+    Each detail contributes its most recent evaluation and no earlier one. That
+    matters: a detail evaluated at four years in 2019 and at forty in 2026 has
+    forty, and taking the minimum over the whole history would keep quoting the
+    number a retrofit already dealt with.
+    """
+    row = db.fetch_one(
+        path,
+        "SELECT MIN(newest.years_remaining) AS worst FROM ("
+        "  SELECT e.detail_id, e.years_remaining FROM evaluations e"
+        "  JOIN details d ON d.detail_id = e.detail_id"
+        "  WHERE d.structure_number = ?"
+        "    AND e.evaluated_on = ("
+        "      SELECT MAX(evaluated_on) FROM evaluations WHERE detail_id = e.detail_id"
+        "    )"
+        ") AS newest",
+        (structure_number,),
+    )
+    if row is None or row["worst"] is None:
+        return None
+    return float(row["worst"])
+
+
 def save_posting(
     path: Path | str, structure_number: str, decision: PostingDecision, decided_on: date
 ) -> int:
