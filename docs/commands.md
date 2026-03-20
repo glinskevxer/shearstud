@@ -8,12 +8,13 @@ from the environment, because a rating office runs one book per district.
 
 ## Groups
 
-| Group       | What it covers                    |
-| ----------- | --------------------------------- |
-| `campaign`  | Measurement campaigns.            |
-| `fatigue`   | Fatigue evaluation.               |
-| `gauge`     | Gauges on the structures.         |
-| `structure` | Look at and change the inventory. |
+| Group       | What it covers                                                  |
+| ----------- | --------------------------------------------------------------- |
+| `campaign`  | Measurement campaigns.                                          |
+| `fatigue`   | Fatigue evaluation.                                             |
+| `gauge`     | Gauges on the structures.                                       |
+| `program`   | The inspection programme: intervals, priority and the worklist. |
+| `structure` | Look at and change the inventory.                               |
 
 ## Commands
 
@@ -27,6 +28,10 @@ from the environment, because a rating office runs one book per district.
 | `gauge list`        | Every gauge in the book.                                              |
 | `init`              | Create the book of record, or bring an existing one up to date.       |
 | `posting`           | Work the posting decision from the legal load ratings.                |
+| `program due`       | Structures whose inspection date has gone past.                       |
+| `program record`    | Write down what an inspection found.                                  |
+| `program show`      | What the programme currently believes about one structure.            |
+| `program worklist`  | The office's list, gaps first.                                        |
 | `rate`              | Rate a structure against the legal fleet, or against the design load. |
 | `ratings`           | What the book already holds for a structure, newest first.            |
 | `spectrum`          | Read a two column range and count file into the book.                 |
@@ -117,6 +122,43 @@ Takes `number`, `campaign_id`.
 | `--allow-poor-records` |         | Evaluate untrustworthy records too.                         |
 | `--save`               |         | Write the evaluations into the book.                        |
 | `--condition`          | `7`     | Lowest component condition rating from the last inspection. |
+
+### `shearstud program record`
+
+Write down what an inspection found.
+
+Takes `number`.
+
+| Option        | Default | What it does                                           |
+| ------------- | ------- | ------------------------------------------------------ |
+| `--condition` |         | Lowest component condition rating from the inspection. |
+| `--inspected` |         | Date of the inspection, YYYY-MM-DD.                    |
+| `--traffic`   |         | Vehicles a day.                                        |
+| `--detour-mi` |         | Miles of detour if the structure closes.               |
+| `--posted`    |         | Whether a weight limit is up.                          |
+
+### `shearstud program show`
+
+What the programme currently believes about one structure.
+
+Takes `number`.
+
+### `shearstud program worklist`
+
+The office's list, gaps first.
+
+| Option    | Default | What it does                                |
+| --------- | ------- | ------------------------------------------- |
+| `--limit` |         | Print only the first few ranked structures. |
+| `--band`  |         | Only one band, by name.                     |
+
+### `shearstud program due`
+
+Structures whose inspection date has gone past.
+
+| Option | Default | What it does                                 |
+| ------ | ------- | -------------------------------------------- |
+| `--on` |         | Ask as at a date, YYYY-MM-DD. Default today. |
 
 ### `shearstud rate`
 
