@@ -1,15 +1,43 @@
-"""The end to end run, which says the pieces fit rather than that each is right."""
+"""The end to end run, which says the pieces fit rather than that each is right.
+
+The run is done once for the whole module and every question is asked of that
+one result. It rates thirty six stations against the legal fleet and then does
+it again per posting silhouette, which takes about eleven seconds, and asking
+fifteen questions used to mean paying for it fifteen times. Where a test needs
+a book nobody else has touched it makes its own and says why.
+"""
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
 
-from shearstud.store import importer
+from shearstud.program import interval
+from shearstud.store import db, importer
 from shearstud.tools import smoke
 
 pytestmark = pytest.mark.tools
+
+
+@dataclass(frozen=True, slots=True)
+class Run:
+    """One smoke run: what it printed, and the book it left."""
+
+    lines: list[str]
+    book: Path
+
+    def step(self, name: str) -> str:
+        """The line one step produced."""
+        return next(line for line in self.lines if line.startswith(name))
+
+
+@pytest.fixture(scope="module")
+def smoke_run(tmp_path_factory: pytest.TempPathFactory) -> Run:
+    """One run, shared by every test that only wants to read the result."""
+    book = tmp_path_factory.mktemp("smoke") / "smoke.sqlite3"
+    return Run(lines=smoke.run(book), book=book)
 
 
 def test_the_example_document_is_where_it_says_it_is() -> None:
@@ -52,10 +80,9 @@ def test_the_synthetic_history_returns_to_zero() -> None:
     assert history[-1] == 0.0
 
 
-def test_the_run_reports_a_line_per_step(tmp_path: Path) -> None:
-    lines = smoke.run(tmp_path / "smoke.sqlite3")
-    assert len(lines) == 7
-    starts = [line.split()[0] for line in lines]
+def test_the_run_reports_a_line_per_step(smoke_run: Run) -> None:
+    assert len(smoke_run.lines) == 8
+    starts = [line.split()[0] for line in smoke_run.lines]
     assert starts == [
         "schema",
         "inventory",
@@ -64,43 +91,66 @@ def test_the_run_reports_a_line_per_step(tmp_path: Path) -> None:
         "measurement",
         "fatigue",
         "record",
+        "programme",
     ]
 
 
-def test_the_run_rates_every_station_on_every_girder(tmp_path: Path) -> None:
-    lines = smoke.run(tmp_path / "smoke.sqlite3")
-    rating = next(line for line in lines if line.startswith("rating"))
+def test_the_run_rates_every_station_on_every_girder(smoke_run: Run) -> None:
     # Four girders, nine interior stations each.
-    assert "36 stations" in rating
+    assert "36 stations" in smoke_run.step("rating")
 
 
-def test_the_run_counts_more_loops_than_trucks(tmp_path: Path) -> None:
-    lines = smoke.run(tmp_path / "smoke.sqlite3")
-    measurement = next(line for line in lines if line.startswith("measurement"))
-    counted = int(measurement.split()[1])
+def test_the_run_counts_more_loops_than_trucks(smoke_run: Run) -> None:
+    counted = int(smoke_run.step("measurement").split()[1])
     assert counted > smoke.SAMPLE_EVENTS
 
 
-def test_the_run_leaves_most_details_unmeasured(tmp_path: Path) -> None:
+def test_the_run_leaves_most_details_unmeasured(smoke_run: Run) -> None:
     # One gauge on twelve details. The point of the line is that it says so.
-    lines = smoke.run(tmp_path / "smoke.sqlite3")
-    fatigue = next(line for line in lines if line.startswith("fatigue"))
-    assert "1 of 12 measured" in fatigue
+    assert "1 of 12 measured" in smoke_run.step("fatigue")
 
 
-def test_the_run_leaves_the_book_behind(tmp_path: Path) -> None:
-    book = tmp_path / "smoke.sqlite3"
-    smoke.run(book)
-    assert book.exists()
+def test_the_run_leaves_the_book_behind(smoke_run: Run) -> None:
+    assert smoke_run.book.exists()
 
 
-def test_the_book_the_run_leaves_is_consistent(tmp_path: Path) -> None:
-    from shearstud.store import db
+def test_the_book_the_run_leaves_is_consistent(smoke_run: Run) -> None:
+    assert db.foreign_key_violations(smoke_run.book) == []
+    assert db.integrity_check(smoke_run.book) == []
 
-    book = tmp_path / "smoke.sqlite3"
-    smoke.run(book)
-    assert db.foreign_key_violations(book) == []
-    assert db.integrity_check(book) == []
+
+def test_the_run_ranks_the_structure_it_rated(smoke_run: Run) -> None:
+    programme = smoke_run.step("programme")
+    assert "18-SH-0473" in programme
+    assert "months" in programme
+
+
+def test_the_run_puts_a_structure_that_cannot_carry_the_load_in_the_first_band(
+    smoke_run: Run,
+) -> None:
+    # The example rates at 0.94, which is what the restricted band is for.
+    assert "restricted band" in smoke_run.step("programme")
+
+
+def test_the_run_stores_the_ratings_it_ranks_on(smoke_run: Run) -> None:
+    assert db.row_count(smoke_run.book, "ratings") > 0
+    assert db.row_count(smoke_run.book, "programme") == 1
+
+
+def test_the_run_writes_one_posting_and_one_evaluation(smoke_run: Run) -> None:
+    assert db.row_count(smoke_run.book, "postings") == 1
+    assert db.row_count(smoke_run.book, "evaluations") == 1
+
+
+def test_the_condition_rating_the_run_uses_blocks_the_extension() -> None:
+    assert smoke.CONDITION_RATING < interval.EXTENSION_CONDITION_RATING
+    assert smoke.CONDITION_RATING > interval.POOR_CONDITION_RATING
+
+
+def test_a_second_run_into_a_fresh_book_says_the_same_thing(smoke_run: Run, tmp_path: Path) -> None:
+    # Its own book, because the point is that the run does not depend on one.
+    again = smoke.run(tmp_path / "again.sqlite3")
+    assert again == smoke_run.lines
 
 
 def test_the_command_exits_zero(capsys: pytest.CaptureFixture[str]) -> None:

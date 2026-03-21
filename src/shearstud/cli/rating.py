@@ -26,7 +26,6 @@ from shearstud.rating import factors as fac
 from shearstud.rating import posting as post
 from shearstud.store import assessment as asm
 from shearstud.store import inventory
-from shearstud.store.assessment import StoredRating
 
 
 def _settings_from(path: Path, number: str, **overrides: object) -> RatingSettings:
@@ -98,32 +97,8 @@ def rate_command(
     click.echo(f"{'adequate' if worst.is_adequate else 'INADEQUATE'} at {level}")
     if not save:
         return
-    _save_results(path, number, results, level)
+    rr.store(path, number, results, level, date.today())
     click.echo(f"saved {len(results)} station ratings")
-
-
-def _save_results(path: Path, number: str, results: list[rr.StationRating], level: str) -> None:
-    today = date.today()
-    for station in results:
-        for factor in station.ratings:
-            asm.save_rating(
-                path,
-                StoredRating(
-                    structure_number=number,
-                    girder_id=station.girder_id,
-                    station_ft=station.station_ft,
-                    limit_state=fac.STRENGTH_I,
-                    level=level,
-                    vehicle=factor.vehicle,
-                    effect="moment",
-                    capacity=factor.capacity,
-                    factored_dead=factor.factored_dead,
-                    factored_live=factor.factored_live,
-                    rating_factor=factor.value,
-                    gross_weight_kip=factor.gross_weight_kip,
-                    rated_on=today,
-                ),
-            )
 
 
 @main.command("posting")

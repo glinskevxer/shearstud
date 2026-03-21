@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from datetime import date
+from pathlib import Path
+
 import pytest
 
 from shearstud.analysis import ratingrun as rr
@@ -13,6 +16,9 @@ from shearstud.geometry.plate import flange, web
 from shearstud.geometry.schedule import from_breaks, uniform
 from shearstud.geometry.section import Section
 from shearstud.loads import vehicles
+from shearstud.rating import factors as fac
+from shearstud.store import assessment as asm
+from shearstud.store import db, inventory
 from shearstud.structure.girder import GirderLine
 from shearstud.structure.identity import parse
 from shearstud.structure.record import Structure
@@ -290,3 +296,69 @@ def test_a_continuous_unit_runs_through_without_error() -> None:
 def test_governing_over_nothing_is_refused() -> None:
     with pytest.raises(InputError, match="nothing was rated"):
         rr.governing([])
+
+
+def rated() -> list[rr.StationRating]:
+    """One structure rated against the legal fleet, at a coarse sampling."""
+    return rr.rate_structure(
+        structure(), vehicles.legal_fleet(), RatingSettings(stations_per_span=2)
+    )
+
+
+def stored(book: Path, level: str = fac.OPERATING) -> int:
+    inventory.save(book, structure())
+    return rr.store(book, "18-SH-0473", rated(), level, date(2026, 5, 4))
+
+
+def test_a_run_can_be_written_into_the_book(book: Path) -> None:
+    written = stored(book)
+    assert written > 0
+    assert db.row_count(book, "ratings") == written
+
+
+def test_every_vehicle_at_every_station_is_written(book: Path) -> None:
+    results = rated()
+    expected = sum(len(station.ratings) for station in results)
+    assert stored(book) == expected
+
+
+def test_the_stored_rows_carry_the_girder_and_the_station(book: Path) -> None:
+    stored(book)
+    rows = asm.load_ratings(book, "18-SH-0473")
+    assert {row.girder_id for row in rows} == {"G1", "G2", "G3", "G4"}
+    assert all(row.station_ft >= 0.0 for row in rows)
+
+
+def test_the_stored_rows_carry_the_date_they_were_given(book: Path) -> None:
+    stored(book)
+    assert asm.latest_rating_date(book, "18-SH-0473") == date(2026, 5, 4)
+
+
+def test_the_stored_rows_are_moment_ratings(book: Path) -> None:
+    stored(book)
+    assert {row.effect for row in asm.load_ratings(book, "18-SH-0473")} == {rr.EFFECT_MOMENT}
+
+
+def test_the_level_asked_for_is_the_level_written(book: Path) -> None:
+    stored(book, fac.INVENTORY)
+    assert {row.level for row in asm.load_ratings(book, "18-SH-0473")} == {fac.INVENTORY}
+
+
+def test_the_governing_row_in_the_book_matches_the_run(book: Path) -> None:
+    stored(book)
+    assert asm.governing_rating(book, "18-SH-0473").rating_factor == pytest.approx(
+        rr.governing(rated()).value
+    )
+
+
+def test_a_level_nobody_rates_at_is_refused(book: Path) -> None:
+    with pytest.raises(InputError, match="unknown rating level"):
+        rr.store(book, "18-SH-0473", rated(), "provisional", date(2026, 5, 4))
+
+
+def test_storing_nothing_writes_nothing(book: Path) -> None:
+    assert rr.store(book, "18-SH-0473", [], fac.OPERATING, date(2026, 5, 4)) == 0
+
+
+def test_both_levels_the_rating_package_knows_are_accepted(book: Path) -> None:
+    assert set(rr.RATING_LEVELS) == set(fac.LEVELS)

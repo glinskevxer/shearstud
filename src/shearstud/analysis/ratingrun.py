@@ -23,6 +23,8 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from datetime import date
+from pathlib import Path
 from typing import Final
 
 from shearstud.analysis import deadload as dl
@@ -36,6 +38,7 @@ from shearstud.loads.live import LiveLoadCase, evaluate
 from shearstud.rating import capacity as cap
 from shearstud.rating import factors as fac
 from shearstud.rating.rate import DeadLoad, RatingFactor, rate
+from shearstud.store import assessment as asm
 from shearstud.structure.girder import GirderLine
 from shearstud.structure.record import Structure
 
@@ -45,6 +48,15 @@ DEFAULT_STATIONS_PER_SPAN: Final[int] = 10
 #: Lanes assumed loaded when the distribution factor is worked out. Two is the
 #: governing case on every cross section in this inventory.
 DEFAULT_LANES_LOADED: Final[int] = 2
+
+#: Rating levels a run may be stored at, taken from the rating package rather
+#: than written again, so that the two cannot drift apart.
+RATING_LEVELS: Final[tuple[str, ...]] = fac.LEVELS
+
+#: The load effect a moment run produces. Shear ratings go in under their own
+#: name the day a shear run is written, and naming it here rather than passing
+#: a bare string keeps that day from being a search for a string literal.
+EFFECT_MOMENT: Final[str] = "moment"
 
 
 @dataclass(frozen=True, slots=True)
@@ -274,3 +286,45 @@ def governing(results: Sequence[StationRating]) -> RatingFactor:
         (station.governing for station in results),
         key=lambda r: (r.value, r.label, r.vehicle),
     )
+
+
+def store(
+    path: Path | str,
+    number: str,
+    results: Sequence[StationRating],
+    level: str,
+    rated_on: date,
+) -> int:
+    """Write a run into the book, returning how many rows it wrote.
+
+    Here rather than in the command that calls it because a run that is only
+    stored by the command line is a run nothing else can store, and the
+    programme ranking reads the book rather than the run. The date is passed in
+    rather than taken from the clock so that a caller replaying a run can say
+    when it happened.
+    """
+    if level not in RATING_LEVELS:
+        raise InputError(f"unknown rating level {level!r}, expected one of {RATING_LEVELS}")
+    written = 0
+    for station in results:
+        for factor in station.ratings:
+            asm.save_rating(
+                path,
+                asm.StoredRating(
+                    structure_number=number,
+                    girder_id=station.girder_id,
+                    station_ft=station.station_ft,
+                    limit_state=fac.STRENGTH_I,
+                    level=level,
+                    vehicle=factor.vehicle,
+                    effect=EFFECT_MOMENT,
+                    capacity=factor.capacity,
+                    factored_dead=factor.factored_dead,
+                    factored_live=factor.factored_live,
+                    rating_factor=factor.value,
+                    gross_weight_kip=factor.gross_weight_kip,
+                    rated_on=rated_on,
+                ),
+            )
+            written += 1
+    return written

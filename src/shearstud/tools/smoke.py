@@ -20,17 +20,21 @@ from pathlib import Path
 from typing import Final
 
 from shearstud.analysis import fatiguerun as fr
+from shearstud.analysis import programrun as pr
 from shearstud.analysis import ratingrun as rr
 from shearstud.analysis.ratingrun import RatingSettings
 from shearstud.errors import ShearstudError
 from shearstud.fatigue.life import TrafficModel, cycles_per_truck
 from shearstud.loads import vehicles
+from shearstud.program import interval, priority
+from shearstud.rating import factors as fac
 from shearstud.rating import posting as post
 from shearstud.signals import rainflow, spectrum
 from shearstud.store import assessment as asm
-from shearstud.store import importer, inventory, measurement, migrate
+from shearstud.store import importer, inventory, measurement, migrate, programme
 from shearstud.store.inventory import StructurePolicy
 from shearstud.store.measurement import CampaignRecord
+from shearstud.store.programme import ProgrammeRow
 from shearstud.structure.gauge import ORIENTATION_LONGITUDINAL, GaugeInstall
 from shearstud.tools.walk import REPO_ROOT
 
@@ -44,6 +48,15 @@ CAMPAIGN_ID: Final[str] = "C-2026-04"
 #: rainflow counter turns into a spectrum.
 SAMPLE_PEAK_UE: Final[float] = 210.0
 SAMPLE_EVENTS: Final[int] = 400
+
+#: What the last inspection of this structure found. Fair rather than good, so
+#: that the run exercises the branch where the extension is blocked and not the
+#: one where everything is clean.
+CONDITION_RATING: Final[int] = 6
+
+#: The route it carries and what closing it would cost.
+DAILY_TRAFFIC: Final[int] = 2600
+DETOUR_MI: Final[float] = 11.0
 
 
 def _strain_history() -> list[float]:
@@ -160,10 +173,51 @@ def run(book: Path) -> list[str]:
         f"worst {worst.detail_id} at {worst.verdict}"
     )
 
-    assert asm.load_ratings(book, str(structure.number)) == []
+    assert asm.load_ratings(book, str(structure.number)) == [], "nothing should be rated yet"
     history = asm.load_evaluations(book, worst.detail_id)
     assert history, "the evaluation did not reach the book of record"
     lines.append(f"record      {len(history)} evaluation(s) stored, book clean")
+
+    # Nothing has been inspected under the programme yet, so the structure is a
+    # gap rather than a low ranking. That distinction is the whole point of the
+    # module and it is worth holding here rather than only in its unit tests.
+    number = str(structure.number)
+    before = pr.build(book)
+    assert before.ranked == (), "a structure with no inspection row should not be ranked"
+    assert before.gaps_for(pr.GAP_NO_PROGRAMME) == [number]
+
+    programme.save(
+        book,
+        ProgrammeRow(
+            structure_number=str(structure.number),
+            lowest_condition_rating=CONDITION_RATING,
+            daily_traffic=DAILY_TRAFFIC,
+            detour_mi=DETOUR_MI,
+            is_posted=decision.outcome == post.POSTED,
+            last_inspected=date(2026, 3, 12),
+            updated_on=date(2026, 4, 20),
+        ),
+    )
+    # The rating run reports factors and does not store them, so an inspected
+    # structure is still short of a rating until the run is written down. The
+    # ranking reads the book and not the run, and this is where that shows.
+    inspected = pr.build(book)
+    assert inspected.gaps_for(pr.GAP_NEVER_RATED) == [number], (
+        "a structure with no stored rating should be a gap, not a ranking"
+    )
+
+    written = rr.store(book, number, results, fac.OPERATING, date(2026, 4, 20))
+    assert written > 0, "the rating run stored nothing"
+    worklist = pr.build(book)
+    assert worklist.gaps == (), f"the worklist could not rank anything: {worklist.gaps}"
+    assert len(worklist.ranked) == 1
+    candidate = worklist.ranked[0]
+    band = priority.band_of(candidate)
+    decided = interval.decide(candidate.state)
+    assert decided.months in interval.ALLOWED_MONTHS
+    lines.append(
+        f"programme   {candidate.number} in the {band} band, inspect in {decided.months} months"
+    )
     return lines
 
 

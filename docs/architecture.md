@@ -21,9 +21,9 @@ the same table, so the two cannot drift apart.
 | rating      | 7       | 1014  | capacity, load factors, the rating equation, posting and permits  |
 | program     | 3       | 380   | what the office does with the numbers: intervals and priority     |
 | store       | 14      | 2163  | the book of record, its migrations and its repositories           |
-| analysis    | 5       | 779   | dead load, and the runs that use everything below at once         |
-| cli         | 6       | 958   | the command line, which is how anyone outside the package uses it |
-| tools       | 20      | 2543  | the repository's own checks and generated documents               |
+| analysis    | 5       | 833   | dead load, and the runs that use everything below at once         |
+| cli         | 6       | 933   | the command line, which is how anyone outside the package uses it |
+| tools       | 20      | 2597  | the repository's own checks and generated documents               |
 
 ## What each layer may import
 
@@ -152,7 +152,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.analysis.deadload`   | 162   | Dead load, and which of the three composite sections each part lands on.    |
 | `shearstud.analysis.fatiguerun` | 197   | Evaluating every instrumented detail on a structure from stored spectra.    |
 | `shearstud.analysis.programrun` | 141   | Building the office's worklist out of the book, and saying what is missing. |
-| `shearstud.analysis.ratingrun`  | 276   | Rating a whole structure, which is where every other module gets used.      |
+| `shearstud.analysis.ratingrun`  | 330   | Rating a whole structure, which is where every other module gets used.      |
 
 ### cli
 
@@ -161,7 +161,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.cli.main`        | 149   | The command line, which is the only way anyone outside this package uses it. |
 | `shearstud.cli.measurement` | 304   | Commands for what was measured, and the fatigue evaluation that reads it.    |
 | `shearstud.cli.program`     | 150   | Commands for the inspection programme: what gets visited, and when.          |
-| `shearstud.cli.rating`      | 179   | Commands that rate a structure and decide whether to post it.                |
+| `shearstud.cli.rating`      | 154   | Commands that rate a structure and decide whether to post it.                |
 | `shearstud.cli.structures`  | 162   | Commands for the inventory: what is on the books and what it looks like.     |
 
 ### tools
@@ -185,5 +185,5 @@ store layer. `check_sql` enforces that.
 | `shearstud.tools.generated`          | 96    | The write-or-check contract every generated document follows.                   |
 | `shearstud.tools.release_check`      | 120   | Every gate, in one command, so that nothing is checked only by CI.              |
 | `shearstud.tools.schema_dump`        | 131   | The schema as SQLite itself reports it, after every migration has run.          |
-| `shearstud.tools.smoke`              | 189   | One run through the whole package, from an empty directory to a posting.        |
+| `shearstud.tools.smoke`              | 243   | One run through the whole package, from an empty directory to a posting.        |
 | `shearstud.tools.walk`               | 178   | Finding and parsing the repository's own source, for the self checks.           |
