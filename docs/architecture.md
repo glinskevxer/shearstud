@@ -23,7 +23,7 @@ the same table, so the two cannot drift apart.
 | store       | 14      | 2163  | the book of record, its migrations and its repositories           |
 | analysis    | 5       | 833   | dead load, and the runs that use everything below at once         |
 | cli         | 6       | 933   | the command line, which is how anyone outside the package uses it |
-| tools       | 20      | 2597  | the repository's own checks and generated documents               |
+| tools       | 21      | 2763  | the repository's own checks and generated documents               |
 
 ## What each layer may import
 
@@ -178,6 +178,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.tools.check_layers`       | 143   | Imports run one way through the package, and this is where that is written.     |
 | `shearstud.tools.check_migrations`   | 126   | Applied migrations are frozen, and the lock file is what says so.               |
 | `shearstud.tools.check_naming`       | 156   | Names say what the thing is, in the words this domain already uses.             |
+| `shearstud.tools.check_readme`       | 166   | The README makes checkable claims, so they get checked.                         |
 | `shearstud.tools.check_sql`          | 178   | SQL is parameterised, lives in the store layer, and names its columns.          |
 | `shearstud.tools.check_tests`        | 140   | Every module has a test file, every test file has a marker, every test asserts. |
 | `shearstud.tools.check_units`        | 171   | Every float that crosses a public boundary carries its unit in its name.        |
