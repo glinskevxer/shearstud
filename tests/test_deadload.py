@@ -194,3 +194,45 @@ def test_the_end_shear_is_wl_over_two() -> None:
 def test_a_span_of_zero_is_refused(fn: object) -> None:
     with pytest.raises(InputError, match="is not a span"):
         fn(1.2, 0.0)  # type: ignore[operator]
+
+
+def test_the_shear_at_the_end_is_half_the_load() -> None:
+    assert dl.simple_span_shear_at_kip(2.0, 80.0, 0.0) == pytest.approx(80.0)
+
+
+def test_the_shear_at_midspan_is_zero() -> None:
+    assert dl.simple_span_shear_at_kip(2.0, 80.0, 40.0) == pytest.approx(0.0)
+
+
+def test_the_shear_changes_sign_across_midspan() -> None:
+    assert dl.simple_span_shear_at_kip(2.0, 80.0, 10.0) > 0.0
+    assert dl.simple_span_shear_at_kip(2.0, 80.0, 70.0) < 0.0
+
+
+def test_the_shear_at_the_far_end_is_the_other_reaction() -> None:
+    assert dl.simple_span_shear_at_kip(2.0, 80.0, 80.0) == pytest.approx(-80.0)
+
+
+def test_the_shear_falls_linearly_along_the_span() -> None:
+    first = dl.simple_span_shear_at_kip(2.0, 80.0, 10.0)
+    second = dl.simple_span_shear_at_kip(2.0, 80.0, 20.0)
+    third = dl.simple_span_shear_at_kip(2.0, 80.0, 30.0)
+    assert first - second == pytest.approx(second - third)
+
+
+def test_the_end_shear_is_the_general_case_at_the_end() -> None:
+    assert dl.simple_span_shear_kip(2.0, 80.0) == pytest.approx(
+        dl.simple_span_shear_at_kip(2.0, 80.0, 0.0)
+    )
+
+
+def test_a_station_off_the_span_has_no_shear_to_report() -> None:
+    with pytest.raises(InputError, match="is not on a"):
+        dl.simple_span_shear_at_kip(2.0, 80.0, 90.0)
+    with pytest.raises(InputError, match="is not on a"):
+        dl.simple_span_shear_at_kip(2.0, 80.0, -1.0)
+
+
+def test_a_span_of_zero_has_no_shear() -> None:
+    with pytest.raises(InputError, match="is not a span"):
+        dl.simple_span_shear_at_kip(2.0, 0.0, 0.0)

@@ -155,8 +155,21 @@ def simple_span_moment_kipft(load_klf: float, span_ft: float) -> float:
     return load_klf * span_ft * span_ft / 8.0
 
 
-def simple_span_shear_kip(load_klf: float, span_ft: float) -> float:
-    """End shear from a uniform load on a simply supported span."""
+def simple_span_shear_at_kip(load_klf: float, span_ft: float, station_ft: float) -> float:
+    """Shear from a uniform load at a station on a simply supported span.
+
+    Falls linearly from the left reaction through zero at midspan to minus the
+    right reaction, so the sign says which way the web is being pushed. A shear
+    rating wants the magnitude and takes the absolute value itself, because a
+    web has no preference.
+    """
     if span_ft <= 0.0:
         raise InputError(f"span {span_ft} is not a span")
-    return load_klf * span_ft / 2.0
+    if not 0.0 <= station_ft <= span_ft:
+        raise InputError(f"station {station_ft} is not on a {span_ft} foot span")
+    return load_klf * (span_ft / 2.0 - station_ft)
+
+
+def simple_span_shear_kip(load_klf: float, span_ft: float) -> float:
+    """End shear from a uniform load on a simply supported span."""
+    return simple_span_shear_at_kip(load_klf, span_ft, 0.0)

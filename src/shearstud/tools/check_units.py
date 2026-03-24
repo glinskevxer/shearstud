@@ -45,6 +45,7 @@ DIMENSIONLESS: Final[frozenset[str]] = frozenset(
         "governing_factor",
         "seasonal_factor",
         "slenderness",
+        "web_slenderness",
         "k",
         "raw_factor",
         "condition",
