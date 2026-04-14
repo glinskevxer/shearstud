@@ -45,8 +45,13 @@ number nobody can defend.
 shearstud init
 shearstud structure import examples/salt-fork-creek.json
 shearstud rate 18-SH-0473 --save
+shearstud shear 18-SH-0473 --ends-only
 shearstud posting 18-SH-0473
 ```
+
+Moment and shear are separate commands because they are separate runs. The
+shear run rates the abutments, which the moment run skips because moment there
+is zero, and shear at an abutment is the largest it gets anywhere.
 
 `shearstud --help` lists everything. The full command reference, generated from
 the command tree itself, is in [docs/commands.md](docs/commands.md).

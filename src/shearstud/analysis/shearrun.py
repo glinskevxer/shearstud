@@ -69,6 +69,7 @@ class ShearRating:
     dead_component_kip: float
     dead_surface_kip: float
     web_slenderness: float
+    unit_length_ft: float
     ratings: tuple[RatingFactor, ...] = field(default_factory=tuple)
 
     @property
@@ -80,8 +81,16 @@ class ShearRating:
 
     @property
     def is_at_an_end(self) -> bool:
-        """True when this is one of the end stations shear is largest at."""
-        return self.station_ft <= END_OFFSET_FT
+        """True when this is one of the end stations shear is largest at.
+
+        Both ends. A structure has two of them, and a rating that only knew
+        about the near one reported half the stations that govern, which is
+        harder to notice than reporting none.
+        """
+        return (
+            self.station_ft <= END_OFFSET_FT
+            or self.station_ft >= self.unit_length_ft - END_OFFSET_FT
+        )
 
 
 def shear_stations(structure: Structure, settings: RatingSettings) -> list[float]:
@@ -209,6 +218,7 @@ def rate_station(
         dead_component_kip=dead.component,
         dead_surface_kip=dead.wearing_surface,
         web_slenderness=cap.web_slenderness(section),
+        unit_length_ft=structure.length_ft,
         ratings=tuple(ratings),
     )
 

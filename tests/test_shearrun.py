@@ -158,6 +158,27 @@ def test_the_end_station_knows_it_is_one() -> None:
     assert not results[2].is_at_an_end
 
 
+def test_both_ends_of_the_structure_count_as_ends() -> None:
+    # Two per girder. Only knowing about the near one reported half the
+    # stations that govern, which is harder to notice than reporting none.
+    results = sr.rate_structure(structure(), vehicles.legal_fleet(), settings())
+    ends = [r for r in results if r.is_at_an_end]
+    assert len(ends) == 2 * len(structure().girders)
+    assert {round(r.station_ft, 3) for r in ends} == {
+        sr.END_OFFSET_FT,
+        SPAN_FT - sr.END_OFFSET_FT,
+    }
+
+
+def test_a_continuous_unit_has_two_ends_and_not_four() -> None:
+    # The pier is not an end. Shear is large there too and it is not the case
+    # this flag is about.
+    unit = structure(continuous=True)
+    results = sr.rate_structure(unit, vehicles.legal_fleet(), settings())
+    ends = [r for r in results if r.is_at_an_end]
+    assert len(ends) == 2 * len(unit.girders)
+
+
 def test_the_shear_distribution_factor_is_not_the_moment_one() -> None:
     # No stiffness term in the shear equation, and the two do not agree.
     interior = girder("G2", 1, False)
@@ -217,6 +238,7 @@ def test_a_station_with_no_ratings_has_no_governing_one() -> None:
         dead_component_kip=30.0,
         dead_surface_kip=5.0,
         web_slenderness=92.0,
+        unit_length_ft=SPAN_FT,
     )
     with pytest.raises(InputError, match="has no shear ratings"):
         _ = empty.governing

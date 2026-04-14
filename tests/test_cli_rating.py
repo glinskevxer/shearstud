@@ -215,3 +215,87 @@ def test_the_ratings_command_caps_its_output(runner: CliRunner, rated_book: Path
     result = runner.invoke(main, ["--book", str(rated_book), "ratings", NUMBER, "--limit", "3"])
     assert "and " in result.output
     assert "more" in result.output
+
+
+def shear(runner: CliRunner, book: Path, *extra: str) -> Any:
+    argv = ["--book", str(book), "shear", NUMBER, "--stations", "4", *extra]
+    return runner.invoke(main, argv)
+
+
+def test_the_shear_command_prints_a_governing_factor(runner: CliRunner, rated_book: Path) -> None:
+    result = shear(runner, rated_book)
+    assert result.exit_code == 0, result.output
+    assert "governing shear RF" in result.output
+
+
+def test_the_shear_command_says_whether_the_web_is_adequate(
+    runner: CliRunner, rated_book: Path
+) -> None:
+    assert "in shear" in shear(runner, rated_book).output
+
+
+def test_the_shear_command_is_quiet_by_default(runner: CliRunner, rated_book: Path) -> None:
+    assert len(shear(runner, rated_book).output.strip().splitlines()) == 2
+
+
+def test_the_verbose_flag_prints_every_shear_station(runner: CliRunner, rated_book: Path) -> None:
+    quiet = shear(runner, rated_book)
+    loud = shear(runner, rated_book, "--verbose")
+    assert len(loud.output.splitlines()) > len(quiet.output.splitlines())
+    assert "D/tw" in loud.output
+
+
+def test_the_ends_only_flag_prints_the_ends(runner: CliRunner, rated_book: Path) -> None:
+    result = shear(runner, rated_book, "--ends-only")
+    listed = [line for line in result.output.splitlines() if "RF" in line and "D/tw" in line]
+    # Four girders, two ends each.
+    assert len(listed) == 8
+
+
+def test_the_ends_only_flag_prints_fewer_lines_than_verbose(
+    runner: CliRunner, rated_book: Path
+) -> None:
+    ends = shear(runner, rated_book, "--ends-only")
+    loud = shear(runner, rated_book, "--verbose")
+    assert len(ends.output.splitlines()) < len(loud.output.splitlines())
+
+
+def test_the_shear_command_writes_nothing_unless_asked(runner: CliRunner, rated_book: Path) -> None:
+    shear(runner, rated_book)
+    assert asm.load_ratings(rated_book, NUMBER) == []
+
+
+def test_the_shear_command_saves_when_asked(runner: CliRunner, rated_book: Path) -> None:
+    result = shear(runner, rated_book, "--save")
+    assert "saved" in result.output
+    stored = asm.load_ratings(rated_book, NUMBER)
+    assert stored
+    assert {row.effect for row in stored} == {"shear"}
+
+
+def test_a_thicker_overlay_lowers_the_shear_rating(runner: CliRunner, rated_book: Path) -> None:
+    thin = shear(runner, rated_book, "--overlay", "0")
+    thick = shear(runner, rated_book, "--overlay", "6")
+    assert _governing(thick) < _governing(thin)
+
+
+def test_a_rough_surface_lowers_the_shear_rating(runner: CliRunner, rated_book: Path) -> None:
+    smooth = shear(runner, rated_book, "--surface", "smooth")
+    rough = shear(runner, rated_book, "--surface", "rough")
+    assert _governing(rough) < _governing(smooth)
+
+
+def test_a_worse_condition_lowers_the_shear_rating(runner: CliRunner, rated_book: Path) -> None:
+    good = shear(runner, rated_book, "--condition", "good")
+    poor = shear(runner, rated_book, "--condition", "poor")
+    assert _governing(poor) < _governing(good)
+
+
+def test_a_structure_that_is_not_in_the_book_is_refused(runner: CliRunner, book: Path) -> None:
+    assert shear(runner, book).exit_code != 0
+
+
+def _governing(result: Any) -> float:
+    """The factor off a shear command's summary line."""
+    line = next(line for line in result.output.splitlines() if "governing shear RF" in line)
+    return float(line.split("governing shear RF")[1].split()[0])

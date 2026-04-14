@@ -19,6 +19,7 @@ from pathlib import Path
 import click
 
 from shearstud.analysis import ratingrun as rr
+from shearstud.analysis import shearrun as sr
 from shearstud.analysis.ratingrun import RatingSettings
 from shearstud.cli.main import Context, main, pass_context
 from shearstud.loads import vehicles
@@ -152,3 +153,63 @@ def ratings_command(ctx: Context, number: str, limit: int) -> None:
         )
     if len(rows) > limit:
         click.echo(f"... and {len(rows) - limit} more")
+
+
+@main.command("shear")
+@click.argument("number")
+@click.option("--stations", type=int, default=10, show_default=True, help="Stations per span.")
+@click.option(
+    "--overlay", "overlay_in", type=float, default=0.0, show_default=True, help="Overlay, inches."
+)
+@click.option(
+    "--surface",
+    type=click.Choice(["smooth", "minor", "rough"]),
+    default="minor",
+    show_default=True,
+    help="Riding surface, for the dynamic allowance.",
+)
+@click.option("--condition", default=None, help="Override the recorded member condition.")
+@click.option("--ends-only", is_flag=True, help="Print only the end stations, where shear governs.")
+@click.option("--verbose", is_flag=True, help="Print a line for every station.")
+@click.option("--save", is_flag=True, help="Write the results into the book.")
+@pass_context
+def shear_command(
+    ctx: Context,
+    number: str,
+    stations: int,
+    overlay_in: float,
+    surface: str,
+    condition: str | None,
+    ends_only: bool,
+    verbose: bool,
+    save: bool,
+) -> None:
+    """Rate a structure in shear, ends included."""
+    path = ctx.require_book()
+    record = inventory.load(path, number)
+    settings = _settings_from(
+        path,
+        number,
+        stations_per_span=stations,
+        overlay_in=overlay_in,
+        riding_surface=surface,
+        member_condition=condition,
+    )
+    results = sr.rate_structure(record, vehicles.legal_fleet(), settings)
+    shown = [station for station in results if station.is_at_an_end] if ends_only else results
+    if verbose or ends_only:
+        for station in shown:
+            worst = station.governing
+            click.echo(
+                f"{station.girder_id:<6}{station.station_ft:>7.1f} ft  "
+                f"D/tw {station.web_slenderness:>6.1f}  "
+                f"Vn {station.capacity_kip:>7.1f} kip  "
+                f"{worst.vehicle:<12}RF {worst.value:>6.2f}"
+            )
+    worst = sr.governing(results)
+    click.echo(f"{number} governing shear RF {worst.value:.2f} on {worst.vehicle} at {worst.label}")
+    click.echo(f"{'adequate' if worst.is_adequate else 'INADEQUATE'} in shear")
+    if not save:
+        return
+    written = sr.store(path, number, results, fac.OPERATING, date.today())
+    click.echo(f"saved {written} shear ratings")

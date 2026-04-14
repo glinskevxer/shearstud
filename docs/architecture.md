@@ -21,8 +21,8 @@ the same table, so the two cannot drift apart.
 | rating      | 7       | 1014  | capacity, load factors, the rating equation, posting and permits  |
 | program     | 3       | 380   | what the office does with the numbers: intervals and priority     |
 | store       | 14      | 2163  | the book of record, its migrations and its repositories           |
-| analysis    | 6       | 1133  | dead load, and the runs that use everything below at once         |
-| cli         | 6       | 933   | the command line, which is how anyone outside the package uses it |
+| analysis    | 6       | 1143  | dead load, and the runs that use everything below at once         |
+| cli         | 6       | 994   | the command line, which is how anyone outside the package uses it |
 | tools       | 21      | 2764  | the repository's own checks and generated documents               |
 
 ## What each layer may import
@@ -153,7 +153,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.analysis.fatiguerun` | 197   | Evaluating every instrumented detail on a structure from stored spectra.    |
 | `shearstud.analysis.programrun` | 141   | Building the office's worklist out of the book, and saying what is missing. |
 | `shearstud.analysis.ratingrun`  | 330   | Rating a whole structure, which is where every other module gets used.      |
-| `shearstud.analysis.shearrun`   | 287   | Rating a structure in shear, which is a different run and not a variation.  |
+| `shearstud.analysis.shearrun`   | 297   | Rating a structure in shear, which is a different run and not a variation.  |
 
 ### cli
 
@@ -162,7 +162,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.cli.main`        | 149   | The command line, which is the only way anyone outside this package uses it. |
 | `shearstud.cli.measurement` | 304   | Commands for what was measured, and the fatigue evaluation that reads it.    |
 | `shearstud.cli.program`     | 150   | Commands for the inspection programme: what gets visited, and when.          |
-| `shearstud.cli.rating`      | 154   | Commands that rate a structure and decide whether to post it.                |
+| `shearstud.cli.rating`      | 215   | Commands that rate a structure and decide whether to post it.                |
 | `shearstud.cli.structures`  | 162   | Commands for the inventory: what is on the books and what it looks like.     |
 
 ### tools

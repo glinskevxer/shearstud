@@ -34,6 +34,7 @@ from the environment, because a rating office runs one book per district.
 | `program worklist`  | The office's list, gaps first.                                        |
 | `rate`              | Rate a structure against the legal fleet, or against the design load. |
 | `ratings`           | What the book already holds for a structure, newest first.            |
+| `shear`             | Rate a structure in shear, ends included.                             |
 | `spectrum`          | Read a two column range and count file into the book.                 |
 | `status`            | Report the schema version and what the book holds.                    |
 | `structure delete`  | Remove a structure and everything hanging off it.                     |
@@ -197,6 +198,22 @@ Takes `number`.
 | Option    | Default | What it does   |
 | --------- | ------- | -------------- |
 | `--limit` | `20`    | How many rows. |
+
+### `shearstud shear`
+
+Rate a structure in shear, ends included.
+
+Takes `number`.
+
+| Option        | Default | What it does                                      |
+| ------------- | ------- | ------------------------------------------------- |
+| `--stations`  | `10`    | Stations per span.                                |
+| `--overlay`   |         | Overlay, inches.                                  |
+| `--surface`   | `minor` | Riding surface, for the dynamic allowance.        |
+| `--condition` |         | Override the recorded member condition.           |
+| `--ends-only` |         | Print only the end stations, where shear governs. |
+| `--verbose`   |         | Print a line for every station.                   |
+| `--save`      |         | Write the results into the book.                  |
 
 ### `shearstud structure list`
 
