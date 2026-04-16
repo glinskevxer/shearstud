@@ -23,7 +23,7 @@ the same table, so the two cannot drift apart.
 | store       | 14      | 2163  | the book of record, its migrations and its repositories           |
 | analysis    | 6       | 1143  | dead load, and the runs that use everything below at once         |
 | cli         | 6       | 994   | the command line, which is how anyone outside the package uses it |
-| tools       | 21      | 2764  | the repository's own checks and generated documents               |
+| tools       | 22      | 2905  | the repository's own checks and generated documents               |
 
 ## What each layer may import
 
@@ -173,6 +173,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.tools.build_commands`     | 112   | The command reference, built by walking the command tree that ships.            |
 | `shearstud.tools.build_glossary`     | 104   | The glossary, built from the constants the code actually uses.                  |
 | `shearstud.tools.build_lock`         | 53    | Write ``migrations.lock`` from the migrations in the code.                      |
+| `shearstud.tools.check_changelog`    | 141   | The changelog says what the version is, so the version has to agree.            |
 | `shearstud.tools.check_cli`          | 99    | The command line documents itself: every command and every option has help.     |
 | `shearstud.tools.check_docstrings`   | 81    | Every module, public class, public function and public method says what it is.  |
 | `shearstud.tools.check_errors`       | 161   | Errors are the package's own, they carry a message, and nothing is swallowed.   |

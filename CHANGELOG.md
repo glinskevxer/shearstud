@@ -1,0 +1,91 @@
+# Changelog
+
+Newest first. Every entry says what changed for somebody using the tool, not
+what changed in the source. A refactor that moves four hundred lines and alters
+no answer does not get an entry; a corrected coefficient does, because a rating
+worked before it and a rating worked after it are different numbers and
+somebody will have to explain why.
+
+Entries that change an answer are marked **changes results**. Those are the
+ones a rating engineer has to read.
+
+## 0.4.0 - 2026-04-13
+
+### Added
+
+- `shearstud shear` rates a structure in shear. It is a separate run from the
+  moment rating and not an option on it: it rates the abutments, which the
+  moment run skips, and shear at an abutment is the largest it gets anywhere.
+  `--ends-only` prints just those stations.
+- Shear ratings are stored alongside moment ratings in the book, under their
+  own load effect, so a structure can carry both.
+
+### Changed
+
+- The rating run can write itself into the book. It used to be the command
+  line that knew how, which meant nothing else could store a run, and the
+  programme ranking reads the book rather than the run.
+
+## 0.3.0 - 2026-03-22
+
+### Added
+
+- The programme layer: inspection intervals, priority banding and the office
+  worklist. `shearstud program record`, `program show`, `program worklist` and
+  `program due`.
+- A `programme` table for what an inspection found: condition rating, traffic,
+  detour and whether a limit is posted. It is the one table in the book that
+  is overwritten rather than appended to, because there is no such thing as
+  last year's current condition rating.
+- Truck event extraction from a strain record, with a two level trigger so a
+  signal hovering near the threshold does not become a hundred events.
+- `check_wiring`, which fails the build on a public function nothing calls,
+  and `check_readme`, which checks the commands the README tells you to run.
+
+### Changed
+
+- **Changes results.** The fatigue re-evaluation interval is gone and the
+  inspection interval rule has replaced it. The old rule divided the remaining
+  life by four; the new one is the twelve, twenty four or forty eight months
+  the regulation allows, decided by the condition rating, the posting and the
+  fatigue life together.
+- An unmeasured structure is credited a hundred years of fatigue life rather
+  than being treated as unknown. Not knowing is not the same as knowing it is
+  bad, and putting every ungauged structure in the retrofit band buries the
+  ones that are cracking.
+- Limited redundancy is now recorded as its own word and treated as non
+  redundant everywhere a rule acts on it.
+
+## 0.2.0 - 2026-02-06
+
+### Added
+
+- Continuous unit analysis by the three moment equation, with exact moving
+  load traversal.
+- Fatigue evaluation end to end: rainflow counting checked against the worked
+  example in ASTM E1049, Miner damage, infinite life truncation and remaining
+  life with the traffic growing.
+- The book of record: numbered migrations, digest locked, with the inventory,
+  measurement and assessment schemas.
+- Continuous integration, and `check.sh` to run the same gates locally.
+
+### Fixed
+
+- **Changes results.** Temperature compensation now runs before the drift fit
+  and not after it. With a measured companion channel the subtraction is exact
+  and has to come first; doing the drift fit first lets it swallow part of the
+  thermal ramp, which the later subtraction then removes twice.
+- **Changes results.** The Fatigue I stud coefficient was 38, which is the
+  Category A detail constant. AASHTO gives 5.5.
+- **Changes results.** Two rolled shape catalogue rows had the wrong flange
+  width. Caught by the self consistency test against the published areas.
+- Correcting a campaign's seasonal factor no longer destroys every cycle count
+  on it. The save was a delete and insert, and the delete cascaded.
+
+## 0.1.0 - 2025-01-14
+
+### Added
+
+- Section properties from a plate idealisation, the three stage composite
+  stack, effective flange width under both the current and the pre 2008 rules,
+  and the section schedule along a girder.

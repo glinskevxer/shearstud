@@ -153,6 +153,13 @@ module and inches in the next, and because a fatigue calculation that mixes ksi
 and psi is off by a factor of a million and still returns a plausible looking
 number of years.
 
+## What changed and when
+
+[CHANGELOG.md](CHANGELOG.md), newest first. Entries that alter a number are
+marked **Changes results**, and those are the ones a rating engineer has to
+read: a rating worked before one of those and a rating worked after it are
+different numbers, and somebody will have to explain why.
+
 ## Licence
 
 Not licensed for redistribution.
