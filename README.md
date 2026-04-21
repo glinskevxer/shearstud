@@ -99,6 +99,20 @@ traffic decide the order. Adding a consequence term to a condition term is what
 lets a sound bridge on a busy road outrank a posted one, and no set of weights
 fixes that, because the two terms answer different questions.
 
+## Reports
+
+```
+shearstud report structure 18-SH-0473
+shearstud report structure 18-SH-0473 --silences
+shearstud report inventory
+shearstud report overdue
+```
+
+A structure report writes out what is missing as a line rather than leaving the
+line out. `--silences` prints only those lines, which is the shortest useful
+summary this tool produces: it is the list of everything nobody has done to the
+structure.
+
 ## How it is laid out
 
 Imports run one way through the package, and

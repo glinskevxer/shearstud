@@ -209,6 +209,71 @@ def load(path: Path | str, number: str) -> Structure:
     )
 
 
+@dataclass(frozen=True, slots=True)
+class StructureSummary:
+    """A structure as a listing or a report needs it, without the geometry.
+
+    Loading a whole structure means every plate of every section run, and a
+    listing of four hundred structures does not need one of them. This is four
+    counting queries and it is what the reports read.
+    """
+
+    number: str
+    name: str
+    year_built: int
+    spans: SpanArrangement
+    girder_count: int
+    detail_count: int
+    gauge_count: int
+
+    @property
+    def length_ft(self) -> float:
+        """End to end length of the unit."""
+        return self.spans.total_length_ft
+
+    @property
+    def is_instrumented(self) -> bool:
+        """True when at least one gauge is on the structure."""
+        return self.gauge_count > 0
+
+
+def summary(path: Path | str, number: str) -> StructureSummary:
+    """What a listing or a report needs about one structure."""
+    row = db.fetch_one(
+        path,
+        "SELECT number, name, year_built, span_lengths_ft, continuous "
+        "FROM structures WHERE number = ?",
+        (number,),
+    )
+    if row is None:
+        raise StorageError(f"no structure {number!r} in the book of record")
+    counts = db.fetch_one(
+        path,
+        "SELECT "
+        "(SELECT COUNT(*) FROM girders WHERE structure_number = ?) AS girders, "
+        "(SELECT COUNT(*) FROM details WHERE structure_number = ?) AS details, "
+        "(SELECT COUNT(*) FROM gauges g JOIN details d ON d.detail_id = g.detail_id "
+        " WHERE d.structure_number = ?) AS gauges",
+        (number, number, number),
+    )
+    if counts is None:  # pragma: no cover - a scalar subquery always returns a row
+        raise StorageError(f"could not count what hangs off {number!r}")
+    return StructureSummary(
+        number=str(row["number"]),
+        name=str(row["name"]),
+        year_built=int(row["year_built"]),
+        spans=_load_spans(str(row["span_lengths_ft"]), continuous=bool(row["continuous"])),
+        girder_count=int(counts["girders"]),
+        detail_count=int(counts["details"]),
+        gauge_count=int(counts["gauges"]),
+    )
+
+
+def summaries(path: Path | str) -> list[StructureSummary]:
+    """Every structure in the book, in file cabinet order."""
+    return [summary(path, number) for number in numbers(path)]
+
+
 def _load_spans(lengths_json: str, *, continuous: bool) -> SpanArrangement:
     lengths = [float(v) for v in json.loads(lengths_json)]
     return series(lengths, continuous=continuous)

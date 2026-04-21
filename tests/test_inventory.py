@@ -331,3 +331,44 @@ def test_limited_redundancy_gets_the_non_redundant_treatment() -> None:
 def test_the_redundancy_survives_the_round_trip(book: Path) -> None:
     inventory.save(book, structure(), StructurePolicy(redundancy=inventory.LIMITED))
     assert inventory.load_policy(book, "18-SH-0473").redundancy == inventory.LIMITED
+
+
+def test_a_summary_reads_the_identity_without_the_geometry(book: Path) -> None:
+    inventory.save(book, structure())
+    found = inventory.summary(book, "18-SH-0473")
+    assert found.number == "18-SH-0473"
+    assert found.name == structure().name
+    assert found.girder_count == structure().girder_count
+
+
+def test_a_summary_carries_the_spans(book: Path) -> None:
+    inventory.save(book, structure())
+    found = inventory.summary(book, "18-SH-0473")
+    assert found.spans.lengths_ft == structure().spans.lengths_ft
+    assert found.length_ft == pytest.approx(structure().length_ft)
+
+
+def test_a_summary_counts_the_details(book: Path) -> None:
+    inventory.save(book, structure())
+    assert inventory.summary(book, "18-SH-0473").detail_count == len(structure().details())
+
+
+def test_a_structure_with_no_gauges_is_not_instrumented(book: Path) -> None:
+    inventory.save(book, structure())
+    found = inventory.summary(book, "18-SH-0473")
+    assert found.gauge_count == 0
+    assert not found.is_instrumented
+
+
+def test_a_summary_of_a_structure_that_is_not_there_is_refused(book: Path) -> None:
+    with pytest.raises(StorageError, match="no structure"):
+        inventory.summary(book, "99-XX-9999")
+
+
+def test_every_structure_comes_back_in_file_cabinet_order(book: Path) -> None:
+    inventory.save(book, structure())
+    assert [record.number for record in inventory.summaries(book)] == inventory.numbers(book)
+
+
+def test_an_empty_book_has_no_summaries(book: Path) -> None:
+    assert inventory.summaries(book) == []

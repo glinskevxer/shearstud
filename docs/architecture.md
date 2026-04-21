@@ -20,10 +20,10 @@ the same table, so the two cannot drift apart.
 | structure   | 7       | 812   | the inventory: identity, spans, girders, details and gauges       |
 | rating      | 7       | 1014  | capacity, load factors, the rating equation, posting and permits  |
 | program     | 3       | 380   | what the office does with the numbers: intervals and priority     |
-| store       | 14      | 2163  | the book of record, its migrations and its repositories           |
-| analysis    | 6       | 1143  | dead load, and the runs that use everything below at once         |
-| cli         | 6       | 994   | the command line, which is how anyone outside the package uses it |
-| tools       | 22      | 2905  | the repository's own checks and generated documents               |
+| store       | 14      | 2228  | the book of record, its migrations and its repositories           |
+| analysis    | 7       | 1315  | dead load, and the runs that use everything below at once         |
+| cli         | 7       | 1067  | the command line, which is how anyone outside the package uses it |
+| tools       | 22      | 2906  | the repository's own checks and generated documents               |
 
 ## What each layer may import
 
@@ -42,7 +42,7 @@ the same table, so the two cannot drift apart.
 | cli         | analysis, fatigue, geometry, loads, program, rating, signals, store, structure      |
 | tools       | analysis, cli, fatigue, geometry, loads, program, rating, signals, store, structure |
 
-The package holds 77 SQL statements, all of them in the
+The package holds 79 SQL statements, all of them in the
 store layer. `check_sql` enforces that.
 
 ## Modules
@@ -135,7 +135,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.store.assessment`                  | 313   | Storing what was concluded: ratings, fatigue evaluations and postings.      |
 | `shearstud.store.db`                          | 158   | The book of record: one SQLite file, opened and closed around each unit of  |
 | `shearstud.store.importer`                    | 243   | Reading a structure out of a JSON document, and writing one back.           |
-| `shearstud.store.inventory`                   | 370   | Reading and writing whole structures.                                       |
+| `shearstud.store.inventory`                   | 435   | Reading and writing whole structures.                                       |
 | `shearstud.store.measurement`                 | 269   | Reading and writing what was measured: gauges, campaigns and spectra.       |
 | `shearstud.store.migrate`                     | 162   | Applying migrations, and refusing to run against a book that has diverged.  |
 | `shearstud.store.migrations.m001_structures`  | 87    | The inventory: structures, girders and the details welded to them.          |
@@ -153,6 +153,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.analysis.fatiguerun` | 197   | Evaluating every instrumented detail on a structure from stored spectra.    |
 | `shearstud.analysis.programrun` | 141   | Building the office's worklist out of the book, and saying what is missing. |
 | `shearstud.analysis.ratingrun`  | 330   | Rating a whole structure, which is where every other module gets used.      |
+| `shearstud.analysis.report`     | 172   | The two reports the office actually sends out.                              |
 | `shearstud.analysis.shearrun`   | 297   | Rating a structure in shear, which is a different run and not a variation.  |
 
 ### cli
@@ -163,7 +164,8 @@ store layer. `check_sql` enforces that.
 | `shearstud.cli.measurement` | 304   | Commands for what was measured, and the fatigue evaluation that reads it.    |
 | `shearstud.cli.program`     | 150   | Commands for the inspection programme: what gets visited, and when.          |
 | `shearstud.cli.rating`      | 215   | Commands that rate a structure and decide whether to post it.                |
-| `shearstud.cli.structures`  | 162   | Commands for the inventory: what is on the books and what it looks like.     |
+| `shearstud.cli.report`      | 65    | Commands that print the two reports the office sends out.                    |
+| `shearstud.cli.structures`  | 164   | Commands for the inventory: what is on the books and what it looks like.     |
 
 ### tools
 
@@ -182,7 +184,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.tools.check_naming`       | 156   | Names say what the thing is, in the words this domain already uses.             |
 | `shearstud.tools.check_readme`       | 166   | The README makes checkable claims, so they get checked.                         |
 | `shearstud.tools.check_sql`          | 178   | SQL is parameterised, lives in the store layer, and names its columns.          |
-| `shearstud.tools.check_tests`        | 140   | Every module has a test file, every test file has a marker, every test asserts. |
+| `shearstud.tools.check_tests`        | 141   | Every module has a test file, every test file has a marker, every test asserts. |
 | `shearstud.tools.check_units`        | 172   | Every float that crosses a public boundary carries its unit in its name.        |
 | `shearstud.tools.check_wiring`       | 153   | Nothing public is written and then left with no caller.                         |
 | `shearstud.tools.generated`          | 96    | The write-or-check contract every generated document follows.                   |

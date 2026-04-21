@@ -8,13 +8,14 @@ from the environment, because a rating office runs one book per district.
 
 ## Groups
 
-| Group       | What it covers                                                  |
-| ----------- | --------------------------------------------------------------- |
-| `campaign`  | Measurement campaigns.                                          |
-| `fatigue`   | Fatigue evaluation.                                             |
-| `gauge`     | Gauges on the structures.                                       |
-| `program`   | The inspection programme: intervals, priority and the worklist. |
-| `structure` | Look at and change the inventory.                               |
+| Group       | What it covers                                                    |
+| ----------- | ----------------------------------------------------------------- |
+| `campaign`  | Measurement campaigns.                                            |
+| `fatigue`   | Fatigue evaluation.                                               |
+| `gauge`     | Gauges on the structures.                                         |
+| `program`   | The inspection programme: intervals, priority and the worklist.   |
+| `report`    | Print what the book holds, for one structure or for the district. |
+| `structure` | Look at and change the inventory.                                 |
 
 ## Commands
 
@@ -34,6 +35,9 @@ from the environment, because a rating office runs one book per district.
 | `program worklist`  | The office's list, gaps first.                                        |
 | `rate`              | Rate a structure against the legal fleet, or against the design load. |
 | `ratings`           | What the book already holds for a structure, newest first.            |
+| `report inventory`  | The district's picture: how much is known, and what is due.           |
+| `report overdue`    | Structures past their inspection date, soonest due first.             |
+| `report structure`  | Everything on record about one structure, absences included.          |
 | `shear`             | Rate a structure in shear, ends included.                             |
 | `spectrum`          | Read a two column range and count file into the book.                 |
 | `status`            | Report the schema version and what the book holds.                    |
@@ -214,6 +218,32 @@ Takes `number`.
 | `--ends-only` |         | Print only the end stations, where shear governs. |
 | `--verbose`   |         | Print a line for every station.                   |
 | `--save`      |         | Write the results into the book.                  |
+
+### `shearstud report structure`
+
+Everything on record about one structure, absences included.
+
+Takes `number`.
+
+| Option       | Default | What it does                                 |
+| ------------ | ------- | -------------------------------------------- |
+| `--silences` |         | Print only the lines that report an absence. |
+
+### `shearstud report inventory`
+
+The district's picture: how much is known, and what is due.
+
+| Option | Default | What it does                                 |
+| ------ | ------- | -------------------------------------------- |
+| `--on` |         | Ask as at a date, YYYY-MM-DD. Default today. |
+
+### `shearstud report overdue`
+
+Structures past their inspection date, soonest due first.
+
+| Option | Default | What it does                                 |
+| ------ | ------- | -------------------------------------------- |
+| `--on` |         | Ask as at a date, YYYY-MM-DD. Default today. |
 
 ### `shearstud structure list`
 

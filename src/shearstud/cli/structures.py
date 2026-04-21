@@ -27,14 +27,16 @@ def structure() -> None:
 def list_structures(ctx: Context) -> None:
     """Every structure in the book, in file cabinet order."""
     path = ctx.require_book()
-    numbers = inventory.numbers(path)
-    if not numbers:
+    # Summaries rather than whole structures. A listing does not need every
+    # plate of every section run, and loading four hundred of them to print
+    # four hundred lines is the difference between a command and a wait.
+    records = inventory.summaries(path)
+    if not records:
         click.echo("no structures")
         return
-    for number in numbers:
-        record = inventory.load(path, number)
+    for record in records:
         click.echo(
-            f"{number:<14}{record.girder_count:>3} girders  "
+            f"{record.number:<14}{record.girder_count:>3} girders  "
             f"{record.length_ft:>7.1f} ft  {record.name}"
         )
 

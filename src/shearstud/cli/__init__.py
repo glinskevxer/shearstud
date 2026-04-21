@@ -8,7 +8,13 @@ the bare group, which is what the tests that check registration want.
 
 from __future__ import annotations
 
-from shearstud.cli import measurement, program, rating, structures  # noqa: F401
+from shearstud.cli import (  # noqa: F401
+    measurement,
+    program,
+    rating,
+    report,
+    structures,
+)
 from shearstud.cli.main import main, run
 
 __all__ = ["main", "run"]

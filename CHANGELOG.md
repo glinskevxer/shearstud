@@ -9,6 +9,21 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
+## 0.5.0 - 2026-04-24
+
+### Added
+
+- `shearstud report structure`, `report inventory` and `report overdue`. A
+  structure report writes an absence out as a line rather than leaving the line
+  out, and `--silences` prints only those.
+- A lightweight structure summary in the store, read by the listing and the
+  reports.
+
+### Changed
+
+- `shearstud structure list` reads summaries rather than whole structures. It
+  used to load every plate of every section run to print one line each.
+
 ## 0.4.0 - 2026-04-13
 
 ### Added
