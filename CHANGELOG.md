@@ -9,7 +9,18 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
-## 0.5.0 - 2026-04-24
+## 0.6.0 - 2026-04-29
+
+### Added
+
+- `shearstud record` reads a raw logger file and takes it through to a
+  spectrum: defects on the raw samples, then conditioning, then counting,
+  with the truck events pulled out alongside. Until now a cycle count had to
+  arrive from somewhere else.
+- Gauges can be looked up one at a time, which is how the channel limit
+  reaches the rail hit check.
+
+## 0.5.0 - 2026-04-20
 
 ### Added
 

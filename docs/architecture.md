@@ -20,9 +20,9 @@ the same table, so the two cannot drift apart.
 | structure   | 7       | 812   | the inventory: identity, spans, girders, details and gauges       |
 | rating      | 7       | 1014  | capacity, load factors, the rating equation, posting and permits  |
 | program     | 3       | 380   | what the office does with the numbers: intervals and priority     |
-| store       | 14      | 2228  | the book of record, its migrations and its repositories           |
-| analysis    | 7       | 1315  | dead load, and the runs that use everything below at once         |
-| cli         | 7       | 1067  | the command line, which is how anyone outside the package uses it |
+| store       | 14      | 2243  | the book of record, its migrations and its repositories           |
+| analysis    | 8       | 1493  | dead load, and the runs that use everything below at once         |
+| cli         | 7       | 1142  | the command line, which is how anyone outside the package uses it |
 | tools       | 22      | 2906  | the repository's own checks and generated documents               |
 
 ## What each layer may import
@@ -136,7 +136,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.store.db`                          | 158   | The book of record: one SQLite file, opened and closed around each unit of  |
 | `shearstud.store.importer`                    | 243   | Reading a structure out of a JSON document, and writing one back.           |
 | `shearstud.store.inventory`                   | 435   | Reading and writing whole structures.                                       |
-| `shearstud.store.measurement`                 | 269   | Reading and writing what was measured: gauges, campaigns and spectra.       |
+| `shearstud.store.measurement`                 | 284   | Reading and writing what was measured: gauges, campaigns and spectra.       |
 | `shearstud.store.migrate`                     | 162   | Applying migrations, and refusing to run against a book that has diverged.  |
 | `shearstud.store.migrations.m001_structures`  | 87    | The inventory: structures, girders and the details welded to them.          |
 | `shearstud.store.migrations.m002_measurement` | 71    | What is measured: gauges, campaigns, cycle spectra and thickness readings.  |
@@ -153,6 +153,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.analysis.fatiguerun` | 197   | Evaluating every instrumented detail on a structure from stored spectra.    |
 | `shearstud.analysis.programrun` | 141   | Building the office's worklist out of the book, and saying what is missing. |
 | `shearstud.analysis.ratingrun`  | 330   | Rating a whole structure, which is where every other module gets used.      |
+| `shearstud.analysis.recordrun`  | 178   | A raw logger file, taken all the way through to a spectrum in the book.     |
 | `shearstud.analysis.report`     | 172   | The two reports the office actually sends out.                              |
 | `shearstud.analysis.shearrun`   | 297   | Rating a structure in shear, which is a different run and not a variation.  |
 
@@ -161,7 +162,7 @@ store layer. `check_sql` enforces that.
 | Module                      | Lines | What it is                                                                   |
 | --------------------------- | ----- | ---------------------------------------------------------------------------- |
 | `shearstud.cli.main`        | 149   | The command line, which is the only way anyone outside this package uses it. |
-| `shearstud.cli.measurement` | 304   | Commands for what was measured, and the fatigue evaluation that reads it.    |
+| `shearstud.cli.measurement` | 379   | Commands for what was measured, and the fatigue evaluation that reads it.    |
 | `shearstud.cli.program`     | 150   | Commands for the inspection programme: what gets visited, and when.          |
 | `shearstud.cli.rating`      | 215   | Commands that rate a structure and decide whether to post it.                |
 | `shearstud.cli.report`      | 65    | Commands that print the two reports the office sends out.                    |

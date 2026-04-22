@@ -35,6 +35,7 @@ from the environment, because a rating office runs one book per district.
 | `program worklist`  | The office's list, gaps first.                                        |
 | `rate`              | Rate a structure against the legal fleet, or against the design load. |
 | `ratings`           | What the book already holds for a structure, newest first.            |
+| `record`            | Read a raw strain file, condition it, and count the cycles in it.     |
 | `report inventory`  | The district's picture: how much is known, and what is due.           |
 | `report overdue`    | Structures past their inspection date, soonest due first.             |
 | `report structure`  | Everything on record about one structure, absences included.          |
@@ -127,6 +128,21 @@ Takes `number`, `campaign_id`.
 | `--allow-poor-records` |         | Evaluate untrustworthy records too.                         |
 | `--save`               |         | Write the evaluations into the book.                        |
 | `--condition`          | `7`     | Lowest component condition rating from the last inspection. |
+
+### `shearstud record`
+
+Read a raw strain file, condition it, and count the cycles in it.
+
+Takes `campaign_id`, `gauge_id`, `strain`.
+
+| Option           | Default | What it does                                                   |
+| ---------------- | ------- | -------------------------------------------------------------- |
+| `--rate-hz`      |         | Sample rate the logger was set to.                             |
+| `--limit-ue`     |         | Channel limit. Defaults to the one recorded against the gauge. |
+| `--bin-width-ue` | `5.0`   | Spectrum bin width.                                            |
+| `--trigger-frac` | `0.35`  | Event trigger, as a fraction of the conditioned peak.          |
+| `--events`       |         | Print a line per truck event.                                  |
+| `--save`         |         | Write the spectrum into the book.                              |
 
 ### `shearstud program record`
 

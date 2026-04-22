@@ -71,9 +71,18 @@ wrote into the wrong one would be a bad afternoon.
 ```
 shearstud gauge add G2-BF-01 18SH0473-G2-D1 --installed 2026-03-30
 shearstud campaign add C-2026-04 18-SH-0473 --from 2026-04-01 --to 2026-04-14
+shearstud record C-2026-04 G2-BF-01 strain.csv --rate-hz 20 --save
 shearstud spectrum C-2026-04 G2-BF-01 counts.csv
 shearstud fatigue evaluate 18-SH-0473 C-2026-04 --save
 ```
+
+`record` takes a raw logger file the whole way: it looks for dropouts and rail
+hits on the raw samples, conditions the record, counts the cycles, and pulls
+the individual truck events out alongside. Defects are looked for first and on
+purpose. A dropout is a flat run at whatever the logger writes when the bridge
+is gone and a rail hit is a sample at the channel limit, and conditioning moves
+both of those somewhere else. `spectrum` is the shorter road in, for when
+something upstream has already done the counting.
 
 The evaluation reports what it skipped as well as what it evaluated. A detail
 with no gauge on it, a gauge that reads transverse strain, and a record too

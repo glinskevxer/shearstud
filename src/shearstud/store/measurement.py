@@ -136,6 +136,21 @@ def load_gauges(path: Path | str, detail_id: str | None = None) -> list[GaugeIns
     ]
 
 
+def load_gauge(path: Path | str, gauge_id: str) -> GaugeInstall:
+    """One gauge by its id.
+
+    Separate from the listing rather than a filter on it because the caller is
+    different: a listing is a report and this is a lookup that has to fail
+    loudly when the gauge is not there. Reading the channel limit off a gauge
+    that does not exist would default it, and a defaulted channel limit means
+    every rail hit goes unreported.
+    """
+    for install in load_gauges(path):
+        if install.gauge_id == gauge_id:
+            return install
+    raise StorageError(f"no gauge {gauge_id!r} in the book of record")
+
+
 def save_campaign(path: Path | str, campaign: CampaignRecord) -> None:
     """Write a campaign, updating any earlier record of it.
 

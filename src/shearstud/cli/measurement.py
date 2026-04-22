@@ -20,6 +20,7 @@ from pathlib import Path
 import click
 
 from shearstud.analysis import fatiguerun as fr
+from shearstud.analysis import recordrun as rec
 from shearstud.cli.main import Context, main, pass_context
 from shearstud.errors import InputError
 from shearstud.fatigue.life import TrafficModel, cycles_per_truck
@@ -302,3 +303,77 @@ def _traffic_for(path: Path, number: str, length_ft: float, growth: float | None
         growth_pct_per_yr=policy.growth_pct_per_yr if growth is None else growth,
         cycles_per_passage=cycles_per_truck(length_ft, continuous=continuous),
     )
+
+
+@main.command("record")
+@click.argument("campaign_id")
+@click.argument("gauge_id")
+@click.argument("strain", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option("--rate-hz", type=float, required=True, help="Sample rate the logger was set to.")
+@click.option(
+    "--limit-ue",
+    type=float,
+    default=None,
+    help="Channel limit. Defaults to the one recorded against the gauge.",
+)
+@click.option(
+    "--bin-width-ue", type=float, default=5.0, show_default=True, help="Spectrum bin width."
+)
+@click.option(
+    "--trigger-frac",
+    type=float,
+    default=rec.DEFAULT_TRIGGER_FRAC,
+    show_default=True,
+    help="Event trigger, as a fraction of the conditioned peak.",
+)
+@click.option("--events", "show_events", is_flag=True, help="Print a line per truck event.")
+@click.option("--save", is_flag=True, help="Write the spectrum into the book.")
+@pass_context
+def import_record(
+    ctx: Context,
+    campaign_id: str,
+    gauge_id: str,
+    strain: Path,
+    rate_hz: float,
+    limit_ue: float | None,
+    bin_width_ue: float,
+    trigger_frac: float,
+    show_events: bool,
+    save: bool,
+) -> None:
+    """Read a raw strain file, condition it, and count the cycles in it."""
+    path = ctx.require_book()
+    gauge = meas.load_gauge(path, gauge_id)
+    result = rec.run(
+        strain,
+        gauge_id,
+        rate_hz,
+        limit_ue if limit_ue is not None else gauge.channel_limit_ue,
+        bin_width_ue=bin_width_ue,
+        trigger_frac=trigger_frac,
+    )
+    click.echo(f"read      {result.sample_count} samples over {result.duration_s:.0f} s")
+    click.echo(
+        f"quality   {result.quality.usable_frac:.1%} usable, "
+        f"{result.quality.dropout_frac:.1%} dropout, {result.quality.railed_frac:.1%} railed"
+    )
+    if not result.quality.is_trustworthy:
+        click.echo("quality   NOT TRUSTWORTHY, the evaluation will skip this gauge")
+    click.echo(
+        f"events    {len(result.events)}, {result.events_per_day:.0f} a day, "
+        f"{result.cycles_per_event:.2f} cycles each"
+    )
+    click.echo(
+        f"cycles    {result.counted_cycles:.0f} in {len(result.spectrum)} bins, "
+        f"largest {result.spectrum.largest_range_ue:.0f} ue"
+    )
+    if show_events:
+        for event in result.events:
+            click.echo(
+                f"  {event.first:>7}  {event.seconds(result.conditioned):>6.2f} s  "
+                f"peak {event.peak_ue:>7.1f} ue"
+            )
+    if not save:
+        return
+    meas.save_spectrum(path, campaign_id, result.spectrum, result.quality)
+    click.echo(f"saved {len(result.spectrum)} bins against {campaign_id}")
