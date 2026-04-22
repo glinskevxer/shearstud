@@ -9,7 +9,16 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
-## 0.6.0 - 2026-04-29
+## 0.7.0 - 2026-05-04
+
+### Added
+
+- `shearstud book prune`, `book vacuum`, `book orphans` and `book counts`.
+  Retention was already written and had no way to reach it. The prune takes
+  two separate agreements: `--yes`, and a cutoff outside the ten year policy,
+  which the store refuses on its own.
+
+## 0.6.0 - 2026-04-21
 
 ### Added
 

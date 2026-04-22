@@ -149,6 +149,20 @@ each one's digest is recorded in `migrations.lock` and the build fails if an
 applied migration is edited. The remedy for a wrong migration is always another
 migration.
 
+## Looking after the book
+
+```
+shearstud book counts
+shearstud book prune --before 2014-01-01
+shearstud book prune --before 2014-01-01 --yes --vacuum
+```
+
+Pruning is the only thing this tool deletes on purpose, and it takes two
+separate agreements. `--yes` is one. The other is the cutoff itself: the store
+refuses any cutoff inside the ten year retention policy, whatever the command
+line says. Each structure keeps its newest rating and posting and each detail
+keeps its newest evaluation, so a structure last rated in 1998 loses nothing.
+
 ## Checking the repository
 
 ```

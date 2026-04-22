@@ -9,6 +9,7 @@ the bare group, which is what the tests that check registration want.
 from __future__ import annotations
 
 from shearstud.cli import (  # noqa: F401
+    book,
     measurement,
     program,
     rating,

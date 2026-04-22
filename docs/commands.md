@@ -10,6 +10,7 @@ from the environment, because a rating office runs one book per district.
 
 | Group       | What it covers                                                    |
 | ----------- | ----------------------------------------------------------------- |
+| `book`      | Look after the book of record itself.                             |
 | `campaign`  | Measurement campaigns.                                            |
 | `fatigue`   | Fatigue evaluation.                                               |
 | `gauge`     | Gauges on the structures.                                         |
@@ -21,6 +22,10 @@ from the environment, because a rating office runs one book per district.
 
 | Command             | What it does                                                          |
 | ------------------- | --------------------------------------------------------------------- |
+| `book counts`       | How many rows are in each table.                                      |
+| `book orphans`      | Spectra whose gauge is no longer in the book.                         |
+| `book prune`        | Remove superseded conclusions older than a cutoff.                    |
+| `book vacuum`       | Rebuild the file, giving back the space a prune freed.                |
 | `campaign add`      | Record a measurement campaign.                                        |
 | `campaign list`     | Campaigns on one structure, oldest first.                             |
 | `check`             | Run the structural checks SQLite can do on the book itself.           |
@@ -62,6 +67,36 @@ Report the schema version and what the book holds.
 ### `shearstud check`
 
 Run the structural checks SQLite can do on the book itself.
+
+### `shearstud book prune`
+
+Remove superseded conclusions older than a cutoff.
+
+    Each structure keeps its newest rating and posting and each detail keeps
+    its newest evaluation, whatever the cutoff says. A structure last rated in
+    1998 loses nothing.
+
+| Option     | Default | What it does                                       |
+| ---------- | ------- | -------------------------------------------------- |
+| `--before` |         | Cutoff date, YYYY-MM-DD. Nothing newer is touched. |
+| `--yes`    |         | Actually remove the rows. Without it, nothing is.  |
+| `--vacuum` |         | Rebuild the file afterwards to reclaim the space.  |
+
+### `shearstud book orphans`
+
+Spectra whose gauge is no longer in the book.
+
+    Always empty on a book this package has written, because the foreign key
+    cascade takes them. It is worth asking after a restore, which is the one
+    route by which they appear.
+
+### `shearstud book vacuum`
+
+Rebuild the file, giving back the space a prune freed.
+
+### `shearstud book counts`
+
+How many rows are in each table.
 
 ### `shearstud gauge list`
 

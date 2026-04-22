@@ -26,6 +26,11 @@ from shearstud.store import db
 #: that wants less is asking for something this module will not do.
 MIN_RETENTION_YEARS = 10
 
+#: The tables a prune touches, in the order the report lists them. Named here
+#: rather than in the command that prints them, so that adding a fourth
+#: conclusion table cannot leave the report describing three.
+PRUNED_TABLES: tuple[str, ...] = ("ratings", "evaluations", "postings")
+
 
 @dataclass(frozen=True, slots=True)
 class PruneReport:
