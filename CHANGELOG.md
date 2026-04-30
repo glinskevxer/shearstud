@@ -9,7 +9,19 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
-## 0.7.0 - 2026-05-04
+## 0.8.0 - 2026-05-11
+
+### Added
+
+- Ultrasonic thickness readings can be stored and read back as a reduced
+  section. The table has been in the schema since version two with nothing
+  writing to it; migration five gives it a note column and the unique index
+  that makes a second reading of one place on one day an overwrite rather
+  than a duplicate.
+- A corrosion rate from an old reading and a new one at the same place. One
+  reading gives nothing, which is the usual case and not an error.
+
+## 0.7.0 - 2026-04-21
 
 ### Added
 

@@ -21,6 +21,7 @@ from shearstud.store.migrations import (
     m002_measurement,
     m003_assessment,
     m004_programme,
+    m005_thickness,
 )
 
 #: Every migration, in the order they apply.
@@ -29,6 +30,7 @@ MIGRATIONS: tuple[ModuleType, ...] = (
     m002_measurement,
     m003_assessment,
     m004_programme,
+    m005_thickness,
 )
 
 __all__ = ["MIGRATIONS"]

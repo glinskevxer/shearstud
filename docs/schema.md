@@ -2,7 +2,7 @@
 
 # Schema
 
-What migration 4 leaves behind, read back out
+What migration 5 leaves behind, read back out
 of SQLite rather than transcribed from the migration text.
 
 16 tables: `campaigns`, `details`, `evaluations`, `gauges`, `girders`, `posting_lines`, `postings`, `programme`, `ratings`, `schema_version`, `section_plates`, `section_runs`, `spectra`, `spectrum_bins`, `structures`, `thickness_readings`.
@@ -300,12 +300,15 @@ of SQLite rather than transcribed from the migration text.
 | station_ft       | REAL            | no   |         |
 | remaining_in     | REAL            | no   |         |
 | measured_on      | TEXT            | no   |         |
+| note             | TEXT            | no   | ''      |
 
 | Column           | References               | On delete |
 | ---------------- | ------------------------ | --------- |
 | structure_number | girders.structure_number | CASCADE   |
 | girder_id        | girders.girder_id        | CASCADE   |
 
-| Index              | Unique | Columns                                  |
-| ------------------ | ------ | ---------------------------------------- |
-| readings_by_girder | no     | structure_number, girder_id, measured_on |
+| Index                    | Unique | Columns                                                           |
+| ------------------------ | ------ | ----------------------------------------------------------------- |
+| readings_by_date         | no     | measured_on                                                       |
+| readings_unique_location | yes    | structure_number, girder_id, plate_label, station_ft, measured_on |
+| readings_by_girder       | no     | structure_number, girder_id, measured_on                          |

@@ -20,10 +20,10 @@ the same table, so the two cannot drift apart.
 | structure   | 7       | 812   | the inventory: identity, spans, girders, details and gauges       |
 | rating      | 7       | 1014  | capacity, load factors, the rating equation, posting and permits  |
 | program     | 3       | 380   | what the office does with the numbers: intervals and priority     |
-| store       | 14      | 2248  | the book of record, its migrations and its repositories           |
+| store       | 16      | 2497  | the book of record, its migrations and its repositories           |
 | analysis    | 8       | 1493  | dead load, and the runs that use everything below at once         |
 | cli         | 8       | 1243  | the command line, which is how anyone outside the package uses it |
-| tools       | 22      | 2907  | the repository's own checks and generated documents               |
+| tools       | 22      | 2908  | the repository's own checks and generated documents               |
 
 ## What each layer may import
 
@@ -42,7 +42,7 @@ the same table, so the two cannot drift apart.
 | cli         | analysis, fatigue, geometry, loads, program, rating, signals, store, structure      |
 | tools       | analysis, cli, fatigue, geometry, loads, program, rating, signals, store, structure |
 
-The package holds 79 SQL statements, all of them in the
+The package holds 87 SQL statements, all of them in the
 store layer. `check_sql` enforces that.
 
 ## Modules
@@ -142,8 +142,10 @@ store layer. `check_sql` enforces that.
 | `shearstud.store.migrations.m002_measurement` | 71    | What is measured: gauges, campaigns, cycle spectra and thickness readings.  |
 | `shearstud.store.migrations.m003_assessment`  | 72    | What is concluded: ratings, fatigue evaluations and posting decisions.      |
 | `shearstud.store.migrations.m004_programme`   | 39    | The facts the inspection programme runs on, none of which are engineering.  |
+| `shearstud.store.migrations.m005_thickness`   | 38    | Finishing the thickness table, which has been in the schema and unused.     |
 | `shearstud.store.programme`                   | 200   | The inspection programme's own row for each structure.                      |
 | `shearstud.store.retention`                   | 143   | Pruning the record, which is the only place anything is deleted on purpose. |
+| `shearstud.store.thickness`                   | 209   | Storing ultrasonic thickness readings, and reading them back as a section.  |
 
 ### analysis
 
@@ -186,7 +188,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.tools.check_naming`       | 156   | Names say what the thing is, in the words this domain already uses.             |
 | `shearstud.tools.check_readme`       | 166   | The README makes checkable claims, so they get checked.                         |
 | `shearstud.tools.check_sql`          | 178   | SQL is parameterised, lives in the store layer, and names its columns.          |
-| `shearstud.tools.check_tests`        | 142   | Every module has a test file, every test file has a marker, every test asserts. |
+| `shearstud.tools.check_tests`        | 143   | Every module has a test file, every test file has a marker, every test asserts. |
 | `shearstud.tools.check_units`        | 172   | Every float that crosses a public boundary carries its unit in its name.        |
 | `shearstud.tools.check_wiring`       | 153   | Nothing public is written and then left with no caller.                         |
 | `shearstud.tools.generated`          | 96    | The write-or-check contract every generated document follows.                   |
