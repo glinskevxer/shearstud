@@ -19,8 +19,11 @@ from pathlib import Path
 
 from shearstud.errors import StorageError
 from shearstud.geometry.loss import ThicknessReading, measured_section
+from shearstud.geometry.schedule import SectionRun
 from shearstud.geometry.section import Section
 from shearstud.store import db
+from shearstud.structure.girder import GirderLine
+from shearstud.structure.record import Structure
 
 #: Every column a stored reading is built from.
 READING_COLUMNS = (
@@ -207,3 +210,38 @@ def corrosion_rate_in_per_yr(readings: list[StoredReading]) -> float | None:
 def delete(path: Path | str, number: str) -> int:
     """Forget every reading on a structure, returning how many went."""
     return db.execute(path, "DELETE FROM thickness_readings WHERE structure_number = ?", (number,))
+
+
+def measured_girder(path: Path | str, number: str, girder: GirderLine) -> GirderLine:
+    """A girder whose every run is reduced by the readings taken on that run.
+
+    Run by run rather than girder by girder, which matters on any girder with a
+    cover plate. The corrosion is under the leaking joint at one end; applying
+    its loss to the heavy section over the pier would take a sixteenth off a
+    plate nobody has measured and quietly move the rating.
+    """
+    readings = newest_per_location(load(path, number, girder.girder_id))
+    if not readings:
+        return girder
+
+    def reduce(run: SectionRun) -> Section:
+        on_this_run = [
+            row.as_reading()
+            for row in readings
+            if run.from_station_ft <= row.station_ft <= run.to_station_ft
+        ]
+        if not on_this_run:
+            return run.section
+        return measured_section(run.section, on_this_run)
+
+    return girder.with_schedule(girder.schedule.mapped(reduce))
+
+
+def measured_structure(path: Path | str, structure: Structure) -> Structure:
+    """Every girder on a structure reduced by its own readings."""
+    number = str(structure.number)
+    if not has_readings(path, number):
+        return structure
+    return structure.with_girders(
+        [measured_girder(path, number, girder) for girder in structure.girders]
+    )

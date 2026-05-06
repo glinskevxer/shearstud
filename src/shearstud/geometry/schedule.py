@@ -15,7 +15,7 @@ clamping would hide that until the answer came out strange.
 from __future__ import annotations
 
 from bisect import bisect_right
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from dataclasses import dataclass
 
 from shearstud.errors import GeometryError
@@ -120,6 +120,21 @@ class GirderSchedule:
     def sections(self) -> tuple[Section, ...]:
         """Every distinct section in the schedule, in station order."""
         return tuple(run.section for run in self.runs)
+
+    def mapped(self, transform: Callable[[SectionRun], Section]) -> GirderSchedule:
+        """A copy with each run's section put through a transform.
+
+        The transform is given the whole run and not just its section, because
+        the thing it is nearly always doing is looking up something that varies
+        along the girder, and a section on its own does not know where it is.
+        """
+        return GirderSchedule(
+            self.label,
+            tuple(
+                SectionRun(run.from_station_ft, run.to_station_ft, transform(run))
+                for run in self.runs
+            ),
+        )
 
 
 def uniform(label: str, section: Section, length_ft: float) -> GirderSchedule:

@@ -251,3 +251,20 @@ def test_gauges_can_be_replaced_wholesale() -> None:
 def test_replacing_gauges_still_checks_the_details_exist() -> None:
     with pytest.raises(InputError, match="not on this structure"):
         structure().with_gauges([gauge("g1", "ghost")])
+
+
+def test_a_structure_can_swap_its_girders() -> None:
+    original = structure()
+    swapped = original.with_girders(original.girders[:2])
+    assert swapped.girder_count == 2
+    assert swapped.number == original.number
+    assert swapped.spans is original.spans
+
+
+def test_swapping_girders_keeps_the_gauges() -> None:
+    # Measuring a plate does not move a gauge.
+    original = structure()
+    swapped = original.with_girders(original.girders)
+    assert swapped.gauges == original.gauges
+    assert swapped.year_built == original.year_built
+    assert swapped.effective_width_rule == original.effective_width_rule

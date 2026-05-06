@@ -8,11 +8,18 @@ from pathlib import Path
 import pytest
 
 from shearstud.errors import StorageError
+from shearstud.geometry.composite import DeckSlab
+from shearstud.geometry.effective import DeckLayout
 from shearstud.geometry.plate import flange, web
+from shearstud.geometry.schedule import from_breaks, uniform
 from shearstud.geometry.section import Section
-from shearstud.store import db
+from shearstud.store import db, inventory
 from shearstud.store import thickness as th
 from shearstud.store.thickness import StoredReading
+from shearstud.structure.girder import GirderLine
+from shearstud.structure.identity import parse
+from shearstud.structure.record import Structure
+from shearstud.structure.span import simple
 
 pytestmark = pytest.mark.store
 
@@ -300,3 +307,149 @@ def test_a_gap_wider_than_the_tolerance_starts_a_new_location() -> None:
 
 def test_grouping_nothing_gives_nothing() -> None:
     assert th.locations([]) == []
+
+
+def three_run_girder() -> GirderLine:
+    """A girder with a light section at each end and a heavy one in the middle."""
+    return GirderLine(
+        girder_id=GIRDER,
+        schedule=from_breaks(
+            GIRDER,
+            [section(), heavy_section(), section()],
+            [30.0, 90.0],
+            120.0,
+        ),
+        layout=DeckLayout(
+            girder_index=0,
+            spacing_left_ft=7.5,
+            spacing_right_ft=7.5,
+            overhang_ft=0.0,
+            slab_thickness_in=8.0,
+        ),
+        deck=DeckSlab(thickness_in=8.0, effective_width_in=90.0, haunch_in=2.0, fc_ksi=4.0),
+    )
+
+
+def heavy_section() -> Section:
+    return Section(
+        "G3-heavy",
+        (
+            flange("bottom", width_in=18.0, thickness_in=2.5, y_center_in=1.25),
+            web("web", thickness_in=0.5, depth_in=52.0, y_center_in=28.0),
+            flange("top", width_in=16.0, thickness_in=1.0, y_center_in=54.5),
+        ),
+    )
+
+
+def test_a_girder_with_no_readings_comes_back_unchanged(seeded_book: Path) -> None:
+    girder = three_run_girder()
+    assert th.measured_girder(seeded_book, NUMBER, girder) is girder
+
+
+def test_a_reading_reduces_the_run_it_sits_on(seeded_book: Path) -> None:
+    th.save(seeded_book, reading(station_ft=10.0, remaining_in=1.20))
+    reduced = th.measured_girder(seeded_book, NUMBER, three_run_girder())
+    assert reduced.section_at(10.0).plate("bottom").height_in == pytest.approx(1.20)
+
+
+def test_a_reading_leaves_the_other_runs_alone(seeded_book: Path) -> None:
+    # The corrosion is under the leaking joint at one end. Applying its loss to
+    # the heavy section over the pier would take a sixteenth off a plate nobody
+    # has measured.
+    th.save(seeded_book, reading(station_ft=10.0, remaining_in=1.20))
+    reduced = th.measured_girder(seeded_book, NUMBER, three_run_girder())
+    assert reduced.section_at(60.0).plate("bottom").height_in == pytest.approx(2.5)
+    assert reduced.section_at(110.0).plate("bottom").height_in == pytest.approx(1.5)
+
+
+def test_each_run_takes_its_own_worst_reading(seeded_book: Path) -> None:
+    th.save(seeded_book, reading(station_ft=10.0, remaining_in=1.30))
+    th.save(seeded_book, reading(station_ft=110.0, remaining_in=1.10))
+    reduced = th.measured_girder(seeded_book, NUMBER, three_run_girder())
+    assert reduced.section_at(10.0).plate("bottom").height_in == pytest.approx(1.30)
+    assert reduced.section_at(110.0).plate("bottom").height_in == pytest.approx(1.10)
+
+
+def test_the_reduced_girder_keeps_its_length(seeded_book: Path) -> None:
+    th.save(seeded_book, reading(station_ft=10.0, remaining_in=1.20))
+    reduced = th.measured_girder(seeded_book, NUMBER, three_run_girder())
+    assert reduced.length_ft == pytest.approx(120.0)
+    assert len(reduced.schedule) == 3
+
+
+def test_the_reduced_girder_keeps_its_details(seeded_book: Path) -> None:
+    # A reduced section does not move a weld.
+    girder = three_run_girder()
+    th.save(seeded_book, reading(station_ft=10.0, remaining_in=1.20))
+    reduced = th.measured_girder(seeded_book, NUMBER, girder)
+    assert reduced.details == girder.details
+    assert reduced.girder_id == girder.girder_id
+
+
+def test_a_schedule_can_be_mapped_run_by_run() -> None:
+    girder = three_run_girder()
+    mapped = girder.schedule.mapped(lambda run: run.section)
+    assert mapped.sections() == girder.schedule.sections()
+    assert mapped.transitions_ft == girder.schedule.transitions_ft
+
+
+def test_mapping_a_schedule_keeps_its_label_and_its_runs() -> None:
+    schedule = three_run_girder().schedule
+    mapped = schedule.mapped(lambda run: run.section)
+    assert mapped.label == schedule.label
+    assert len(mapped) == len(schedule)
+    assert mapped.length_ft == pytest.approx(schedule.length_ft)
+
+
+def test_every_girder_on_a_structure_is_reduced(book: Path) -> None:
+    inventory.save(book, whole_structure())
+    th.save(book, reading(station_ft=10.0, remaining_in=1.20, girder_id="G1"))
+    reduced = th.measured_structure(book, inventory.load(book, NUMBER))
+    assert reduced.girder("G1").section_at(10.0).plate("bottom").height_in == pytest.approx(1.20)
+    assert reduced.girder("G2").section_at(10.0).plate("bottom").height_in == pytest.approx(1.5)
+
+
+def test_a_structure_nobody_has_measured_comes_back_as_it_was(book: Path) -> None:
+    inventory.save(book, whole_structure())
+    loaded = inventory.load(book, NUMBER)
+    assert th.measured_structure(book, loaded) is loaded
+
+
+def test_the_reduced_structure_keeps_its_identity(book: Path) -> None:
+    inventory.save(book, whole_structure())
+    th.save(book, reading(station_ft=10.0, remaining_in=1.20, girder_id="G1"))
+    loaded = inventory.load(book, NUMBER)
+    reduced = th.measured_structure(book, loaded)
+    assert str(reduced.number) == NUMBER
+    assert reduced.girder_count == loaded.girder_count
+    assert reduced.length_ft == pytest.approx(loaded.length_ft)
+
+
+def whole_structure() -> Structure:
+    """Two girders on one span, so a reading on one can be seen not to reach
+    the other."""
+    return Structure(
+        number=parse(NUMBER),
+        name="Salt Fork Creek",
+        spans=simple(120.0),
+        girders=(
+            plain_girder("G1", 0),
+            plain_girder("G2", 1),
+        ),
+        year_built=1968,
+    )
+
+
+def plain_girder(girder_id: str, index: int) -> GirderLine:
+    return GirderLine(
+        girder_id=girder_id,
+        schedule=uniform(girder_id, section(), 120.0),
+        layout=DeckLayout(
+            girder_index=index,
+            spacing_left_ft=7.5,
+            spacing_right_ft=7.5,
+            overhang_ft=0.0,
+            slab_thickness_in=8.0,
+        ),
+        deck=DeckSlab(thickness_in=8.0, effective_width_in=90.0, haunch_in=2.0, fc_ksi=4.0),
+    )

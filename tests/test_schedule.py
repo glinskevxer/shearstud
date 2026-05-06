@@ -201,3 +201,34 @@ def test_the_ends_of_the_girder_are_inside_the_schedule() -> None:
     s = three_run_schedule()
     assert s.run_at(0.0).section.label == "end"
     assert s.run_at(120.0).section.label == "far"
+
+
+def test_a_schedule_can_be_mapped_run_by_run() -> None:
+    schedule = three_run_schedule()
+    thinner = schedule.mapped(lambda run: girder(run.section.label, 0.75))
+    assert len(thinner) == len(schedule)
+    assert thinner.transitions_ft == schedule.transitions_ft
+    assert thinner.length_ft == pytest.approx(schedule.length_ft)
+
+
+def test_the_transform_sees_where_the_run_is() -> None:
+    # The whole run and not just its section, because what a transform is
+    # nearly always doing is looking up something that varies along the girder.
+    seen: list[tuple[float, float]] = []
+
+    def watch(run: SectionRun) -> Section:
+        seen.append((run.from_station_ft, run.to_station_ft))
+        return run.section
+
+    three_run_schedule().mapped(watch)
+    assert seen == [(0.0, 28.0), (28.0, 92.0), (92.0, 120.0)]
+
+
+def test_mapping_to_the_same_sections_changes_nothing() -> None:
+    schedule = three_run_schedule()
+    assert schedule.mapped(lambda run: run.section).sections() == schedule.sections()
+
+
+def test_a_uniform_schedule_maps_to_a_uniform_one() -> None:
+    schedule = uniform("G1", girder("only", 1.25), 84.0)
+    assert schedule.mapped(lambda run: run.section).is_uniform

@@ -112,6 +112,21 @@ class GirderLine:
             details=ordered,
         )
 
+    def with_schedule(self, schedule: GirderSchedule) -> GirderLine:
+        """A copy carrying a different section schedule.
+
+        The details come across unchanged. They are located by station and a
+        reduced section does not move a weld, so a girder reduced by measured
+        section loss carries the same details as the girder on the drawing.
+        """
+        return GirderLine(
+            girder_id=self.girder_id,
+            schedule=schedule,
+            layout=self.layout,
+            deck=self.deck,
+            details=self.details,
+        )
+
     def add_detail(self, new_detail: FatigueDetail) -> GirderLine:
         """A copy with one more detail on it."""
         return self.with_details([*self.details, new_detail])

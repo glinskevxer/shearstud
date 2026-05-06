@@ -139,6 +139,23 @@ class Structure:
             raise InputError(f"{self.number}: the year built is not recorded")
         return when.year - self.year_built
 
+    def with_girders(self, girders: Sequence[GirderLine]) -> Structure:
+        """A copy carrying a different set of girder lines.
+
+        Used to swap the drawing sections for measured ones. Everything else
+        comes across, gauges included, because measuring a plate does not move
+        a gauge.
+        """
+        return Structure(
+            number=self.number,
+            name=self.name,
+            spans=self.spans,
+            girders=tuple(girders),
+            gauges=self.gauges,
+            year_built=self.year_built,
+            effective_width_rule=self.effective_width_rule,
+        )
+
     def with_gauges(self, gauges: Sequence[GaugeInstall]) -> Structure:
         """A copy carrying a different set of gauge installations."""
         return Structure(

@@ -13,14 +13,14 @@ the same table, so the two cannot drift apart.
 | Layer       | Modules | Lines | What it is for                                                    |
 | ----------- | ------- | ----- | ----------------------------------------------------------------- |
 | (top level) | 3       | 186   | units, the error tree, and nothing that knows about a bridge      |
-| geometry    | 8       | 1026  | plates, sections, composite stages and section loss               |
+| geometry    | 8       | 1041  | plates, sections, composite stages and section loss               |
 | loads       | 9       | 1283  | vehicles, influence lines, distribution and the dynamic allowance |
 | signals     | 7       | 1106  | strain records, conditioning, defects, rainflow and spectra       |
 | fatigue     | 5       | 624   | detail categories, Miner damage, remaining life and evaluation    |
-| structure   | 7       | 812   | the inventory: identity, spans, girders, details and gauges       |
+| structure   | 7       | 844   | the inventory: identity, spans, girders, details and gauges       |
 | rating      | 7       | 1014  | capacity, load factors, the rating equation, posting and permits  |
 | program     | 3       | 380   | what the office does with the numbers: intervals and priority     |
-| store       | 16      | 2497  | the book of record, its migrations and its repositories           |
+| store       | 16      | 2535  | the book of record, its migrations and its repositories           |
 | analysis    | 8       | 1493  | dead load, and the runs that use everything below at once         |
 | cli         | 8       | 1243  | the command line, which is how anyone outside the package uses it |
 | tools       | 22      | 2908  | the repository's own checks and generated documents               |
@@ -63,7 +63,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.geometry.loss`      | 160   | Section loss, from ultrasonic thickness readings to a reduced section.      |
 | `shearstud.geometry.plate`     | 98    | Rectangular plate elements, the only primitive the section builder knows.   |
 | `shearstud.geometry.rolled`    | 134   | The rolled shape catalogue, and the three plate idealisation of a W shape.  |
-| `shearstud.geometry.schedule`  | 145   | The section schedule: which cross section is in force at which station.     |
+| `shearstud.geometry.schedule`  | 160   | The section schedule: which cross section is in force at which station.     |
 | `shearstud.geometry.section`   | 183   | A cross section is an ordered bag of plates and the properties that follow. |
 
 ### loads
@@ -105,9 +105,9 @@ store layer. `check_sql` enforces that.
 | ------------------------------ | ----- | ----------------------------------------------------------------------------- |
 | `shearstud.structure.detail`   | 145   | Fatigue details: where they are, what category they are, and what watches     |
 | `shearstud.structure.gauge`    | 129   | Gauge installations: what is on the structure, and what its readings mean.    |
-| `shearstud.structure.girder`   | 117   | A girder line: the section schedule, where it sits in the deck, and what is   |
+| `shearstud.structure.girder`   | 132   | A girder line: the section schedule, where it sits in the deck, and what is   |
 | `shearstud.structure.identity` | 102   | Structure numbers, as this agency writes them.                                |
-| `shearstud.structure.record`   | 152   | The structure record: everything about one bridge that a rating starts from.  |
+| `shearstud.structure.record`   | 169   | The structure record: everything about one bridge that a rating starts from.  |
 | `shearstud.structure.span`     | 160   | Span arrangements, and the two coordinate systems a structure is measured in. |
 
 ### rating
@@ -145,7 +145,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.store.migrations.m005_thickness`   | 38    | Finishing the thickness table, which has been in the schema and unused.     |
 | `shearstud.store.programme`                   | 200   | The inspection programme's own row for each structure.                      |
 | `shearstud.store.retention`                   | 143   | Pruning the record, which is the only place anything is deleted on purpose. |
-| `shearstud.store.thickness`                   | 209   | Storing ultrasonic thickness readings, and reading them back as a section.  |
+| `shearstud.store.thickness`                   | 247   | Storing ultrasonic thickness readings, and reading them back as a section.  |
 
 ### analysis
 
