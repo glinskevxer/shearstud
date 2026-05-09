@@ -9,7 +9,17 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
-## 0.8.0 - 2026-05-11
+## 0.9.0 - 2026-05-11
+
+### Added
+
+- `shearstud thickness add`, `thickness import`, `thickness list`,
+  `thickness loss` and `thickness rate`.
+- `--measured` on `rate` and `shear` rates the sections the meter left rather
+  than the ones on the drawing. Asking for it where there are no readings
+  says so rather than quietly rating the drawing.
+
+## 0.8.0 - 2026-05-05
 
 ### Added
 

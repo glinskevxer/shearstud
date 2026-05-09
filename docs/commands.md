@@ -17,6 +17,7 @@ from the environment, because a rating office runs one book per district.
 | `program`   | The inspection programme: intervals, priority and the worklist.   |
 | `report`    | Print what the book holds, for one structure or for the district. |
 | `structure` | Look at and change the inventory.                                 |
+| `thickness` | Ultrasonic readings, and what they leave of the section.          |
 
 ## Commands
 
@@ -53,6 +54,11 @@ from the environment, because a rating office runs one book per district.
 | `structure import`  | Read a structure document into the book.                              |
 | `structure list`    | Every structure in the book, in file cabinet order.                   |
 | `structure show`    | Everything the book holds about one structure.                        |
+| `thickness add`     | Record one reading off a field sheet.                                 |
+| `thickness import`  | Read a whole field sheet: plate, station, remaining thickness, note.  |
+| `thickness list`    | Every reading on a structure, newest first.                           |
+| `thickness loss`    | What the readings leave of each plate, worst first.                   |
+| `thickness rate`    | Loss per year at each place that has been measured twice.             |
 
 ## Detail
 
@@ -222,15 +228,16 @@ Rate a structure against the legal fleet, or against the design load.
 
 Takes `number`.
 
-| Option        | Default | What it does                                     |
-| ------------- | ------- | ------------------------------------------------ |
-| `--stations`  | `10`    | Stations per span.                               |
-| `--overlay`   |         | Overlay, inches.                                 |
-| `--surface`   | `minor` | Riding surface, for the dynamic allowance.       |
-| `--condition` |         | Override the recorded member condition.          |
-| `--design`    |         | Rate the design load instead of the legal fleet. |
-| `--verbose`   |         | Print a line for every station.                  |
-| `--save`      |         | Write the results into the book.                 |
+| Option        | Default | What it does                                      |
+| ------------- | ------- | ------------------------------------------------- |
+| `--stations`  | `10`    | Stations per span.                                |
+| `--overlay`   |         | Overlay, inches.                                  |
+| `--surface`   | `minor` | Riding surface, for the dynamic allowance.        |
+| `--condition` |         | Override the recorded member condition.           |
+| `--design`    |         | Rate the design load instead of the legal fleet.  |
+| `--measured`  |         | Rate the measured sections, not the drawing ones. |
+| `--verbose`   |         | Print a line for every station.                   |
+| `--save`      |         | Write the results into the book.                  |
 
 ### `shearstud posting`
 
@@ -266,6 +273,7 @@ Takes `number`.
 | `--overlay`   |         | Overlay, inches.                                  |
 | `--surface`   | `minor` | Riding surface, for the dynamic allowance.        |
 | `--condition` |         | Override the recorded member condition.           |
+| `--measured`  |         | Rate the measured sections, not the drawing ones. |
 | `--ends-only` |         | Print only the end stations, where shear governs. |
 | `--verbose`   |         | Print a line for every station.                   |
 | `--save`      |         | Write the results into the book.                  |
@@ -351,3 +359,53 @@ Takes `number`.
 | Option          | Default | What it does                           |
 | --------------- | ------- | -------------------------------------- |
 | `--worst-first` |         | Order by category rather than station. |
+
+### `shearstud thickness add`
+
+Record one reading off a field sheet.
+
+Takes `number`, `girder_id`, `plate_label`.
+
+| Option           | Default | What it does                                |
+| ---------------- | ------- | ------------------------------------------- |
+| `--station-ft`   |         | Distance from the near abutment.            |
+| `--remaining-in` |         | What the meter read.                        |
+| `--measured`     |         | Date of the reading, YYYY-MM-DD.            |
+| `--note`         | ``      | What the inspector wrote beside the number. |
+
+### `shearstud thickness import`
+
+Read a whole field sheet: plate, station, remaining thickness, note.
+
+Takes `number`, `girder_id`, `sheet`.
+
+| Option       | Default | What it does                      |
+| ------------ | ------- | --------------------------------- |
+| `--measured` |         | Date of the readings, YYYY-MM-DD. |
+
+### `shearstud thickness list`
+
+Every reading on a structure, newest first.
+
+Takes `number`.
+
+| Option     | Default | What it does                           |
+| ---------- | ------- | -------------------------------------- |
+| `--girder` |         | Only the readings on one girder.       |
+| `--newest` |         | Only the newest reading at each place. |
+
+### `shearstud thickness loss`
+
+What the readings leave of each plate, worst first.
+
+Takes `number`, `girder_id`.
+
+### `shearstud thickness rate`
+
+Loss per year at each place that has been measured twice.
+
+Takes `number`.
+
+| Option     | Default | What it does     |
+| ---------- | ------- | ---------------- |
+| `--girder` |         | Only one girder. |

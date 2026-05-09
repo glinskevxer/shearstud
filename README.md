@@ -108,6 +108,26 @@ traffic decide the order. Adding a consequence term to a condition term is what
 lets a sound bridge on a busy road outrank a posted one, and no set of weights
 fixes that, because the two terms answer different questions.
 
+## Section loss
+
+```
+shearstud thickness import 18-SH-0473 G1 sheet.csv --measured 2026-04-02
+shearstud thickness loss 18-SH-0473 G1
+shearstud thickness rate 18-SH-0473
+shearstud rate 18-SH-0473 --measured
+```
+
+Readings are remaining thickness, because that is what the meter reads, and
+the loss is worked out against the plate on the drawing rather than stored. A
+location measured twice is a corrosion rate; measured once it is a number, and
+`thickness rate` says which of those it has.
+
+`--measured` rates the reduced sections. The reduction is run by run, so
+corrosion under a leaking joint at one end does not take a sixteenth off the
+heavy section over the pier. Asking for it on a structure nobody has measured
+is not an error and does not silently rate the drawing either: it says which it
+did.
+
 ## Reports
 
 ```

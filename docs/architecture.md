@@ -22,8 +22,8 @@ the same table, so the two cannot drift apart.
 | program     | 3       | 380   | what the office does with the numbers: intervals and priority     |
 | store       | 16      | 2535  | the book of record, its migrations and its repositories           |
 | analysis    | 8       | 1493  | dead load, and the runs that use everything below at once         |
-| cli         | 8       | 1243  | the command line, which is how anyone outside the package uses it |
-| tools       | 22      | 2908  | the repository's own checks and generated documents               |
+| cli         | 9       | 1459  | the command line, which is how anyone outside the package uses it |
+| tools       | 22      | 2909  | the repository's own checks and generated documents               |
 
 ## What each layer may import
 
@@ -167,9 +167,10 @@ store layer. `check_sql` enforces that.
 | `shearstud.cli.main`        | 149   | The command line, which is the only way anyone outside this package uses it. |
 | `shearstud.cli.measurement` | 379   | Commands for what was measured, and the fatigue evaluation that reads it.    |
 | `shearstud.cli.program`     | 150   | Commands for the inspection programme: what gets visited, and when.          |
-| `shearstud.cli.rating`      | 215   | Commands that rate a structure and decide whether to post it.                |
+| `shearstud.cli.rating`      | 239   | Commands that rate a structure and decide whether to post it.                |
 | `shearstud.cli.report`      | 65    | Commands that print the two reports the office sends out.                    |
 | `shearstud.cli.structures`  | 164   | Commands for the inventory: what is on the books and what it looks like.     |
+| `shearstud.cli.thickness`   | 191   | Commands for ultrasonic thickness readings and the loss they represent.      |
 
 ### tools
 
@@ -188,7 +189,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.tools.check_naming`       | 156   | Names say what the thing is, in the words this domain already uses.             |
 | `shearstud.tools.check_readme`       | 166   | The README makes checkable claims, so they get checked.                         |
 | `shearstud.tools.check_sql`          | 178   | SQL is parameterised, lives in the store layer, and names its columns.          |
-| `shearstud.tools.check_tests`        | 143   | Every module has a test file, every test file has a marker, every test asserts. |
+| `shearstud.tools.check_tests`        | 144   | Every module has a test file, every test file has a marker, every test asserts. |
 | `shearstud.tools.check_units`        | 172   | Every float that crosses a public boundary carries its unit in its name.        |
 | `shearstud.tools.check_wiring`       | 153   | Nothing public is written and then left with no caller.                         |
 | `shearstud.tools.generated`          | 96    | The write-or-check contract every generated document follows.                   |

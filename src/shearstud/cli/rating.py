@@ -27,6 +27,26 @@ from shearstud.rating import factors as fac
 from shearstud.rating import posting as post
 from shearstud.store import assessment as asm
 from shearstud.store import inventory
+from shearstud.store import thickness as th
+from shearstud.structure.record import Structure
+
+
+def _record_for(path: Path, number: str, measured: bool) -> Structure:
+    """The structure to rate: the drawing one, or the one the meter left.
+
+    Asking for measured sections on a structure nobody has measured is not an
+    error and is not silently the same thing either. It says so, because the
+    difference between "rated with the loss in" and "rated with no loss to put
+    in" is the whole reason somebody typed the flag.
+    """
+    record = inventory.load(path, number)
+    if not measured:
+        return record
+    if not th.has_readings(path, number):
+        click.echo(f"{number} has no thickness readings, rating the drawing sections")
+        return record
+    click.echo(f"rating {number} with section loss from its readings")
+    return th.measured_structure(path, record)
 
 
 def _settings_from(path: Path, number: str, **overrides: object) -> RatingSettings:
@@ -57,6 +77,7 @@ def _settings_from(path: Path, number: str, **overrides: object) -> RatingSettin
 )
 @click.option("--condition", default=None, help="Override the recorded member condition.")
 @click.option("--design", is_flag=True, help="Rate the design load instead of the legal fleet.")
+@click.option("--measured", is_flag=True, help="Rate the measured sections, not the drawing ones.")
 @click.option("--verbose", is_flag=True, help="Print a line for every station.")
 @click.option("--save", is_flag=True, help="Write the results into the book.")
 @pass_context
@@ -68,12 +89,13 @@ def rate_command(
     surface: str,
     condition: str | None,
     design: bool,
+    measured: bool,
     verbose: bool,
     save: bool,
 ) -> None:
     """Rate a structure against the legal fleet, or against the design load."""
     path = ctx.require_book()
-    record = inventory.load(path, number)
+    record = _record_for(path, number, measured)
     settings = _settings_from(
         path,
         number,
@@ -169,6 +191,7 @@ def ratings_command(ctx: Context, number: str, limit: int) -> None:
     help="Riding surface, for the dynamic allowance.",
 )
 @click.option("--condition", default=None, help="Override the recorded member condition.")
+@click.option("--measured", is_flag=True, help="Rate the measured sections, not the drawing ones.")
 @click.option("--ends-only", is_flag=True, help="Print only the end stations, where shear governs.")
 @click.option("--verbose", is_flag=True, help="Print a line for every station.")
 @click.option("--save", is_flag=True, help="Write the results into the book.")
@@ -180,13 +203,14 @@ def shear_command(
     overlay_in: float,
     surface: str,
     condition: str | None,
+    measured: bool,
     ends_only: bool,
     verbose: bool,
     save: bool,
 ) -> None:
     """Rate a structure in shear, ends included."""
     path = ctx.require_book()
-    record = inventory.load(path, number)
+    record = _record_for(path, number, measured)
     settings = _settings_from(
         path,
         number,

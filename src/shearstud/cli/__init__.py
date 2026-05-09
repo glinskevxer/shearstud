@@ -15,6 +15,7 @@ from shearstud.cli import (  # noqa: F401
     rating,
     report,
     structures,
+    thickness,
 )
 from shearstud.cli.main import main, run
 
