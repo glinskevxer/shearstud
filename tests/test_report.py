@@ -23,6 +23,7 @@ from shearstud.store import db
 from shearstud.store import programme as prog
 from shearstud.store.assessment import StoredRating
 from shearstud.store.programme import ProgrammeRow
+from tests import support
 
 pytestmark = pytest.mark.store
 
@@ -258,11 +259,10 @@ def test_the_overdue_list_carries_the_interval_it_used(seeded_book: Path) -> Non
 def test_the_overdue_list_comes_back_soonest_first(seeded_book: Path) -> None:
     db.execute(
         seeded_book,
-        "INSERT INTO structures (number, name, county_code, route_class, sequence, "
-        "parallel, year_built, span_lengths_ft, continuous, effective_width_rule, "
-        "steel_grade, member_condition, redundancy, adtt, lanes_available, "
-        "growth_pct_per_yr) VALUES ('07-CR-0112', 'Other', 7, 'CR', 112, '', 1962, "
-        "'[84.0]', 0, 'tributary', 'A36', 'good', 'redundant', 500, 2, 1.0)",
+        support.insert_structure_sql(),
+        support.structure_row(
+            "07-CR-0112", name="Other", county_code=7, route_class="CR", sequence=112
+        ),
     )
     add_programme(seeded_book, inspected=date(2019, 4, 1))
     prog.save(

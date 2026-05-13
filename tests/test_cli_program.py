@@ -12,6 +12,7 @@ from shearstud.cli import main
 from shearstud.store import assessment as asm
 from shearstud.store import db
 from shearstud.store.assessment import StoredRating
+from tests import support
 
 pytestmark = pytest.mark.cli
 
@@ -27,12 +28,17 @@ def runner() -> CliRunner:
 def add_structure(book: Path, number: str, redundancy: str = "redundant") -> None:
     db.execute(
         book,
-        "INSERT INTO structures (number, name, county_code, route_class, sequence, "
-        "parallel, year_built, span_lengths_ft, continuous, effective_width_rule, "
-        "steel_grade, member_condition, redundancy, adtt, lanes_available, "
-        "growth_pct_per_yr) VALUES (?, 'A bridge', 7, 'CR', 112, '', 1962, '[84.0]', "
-        "0, 'tributary', 'A36', 'good', ?, 500, 2, 1.0)",
-        (number, redundancy),
+        support.insert_structure_sql(),
+        support.structure_row(
+            number,
+            name="A bridge",
+            county_code=7,
+            route_class="CR",
+            sequence=112,
+            redundancy=redundancy,
+            year_built=1962,
+            span_lengths_ft="[84.0]",
+        ),
     )
 
 

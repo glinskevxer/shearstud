@@ -11,6 +11,7 @@ from click.testing import CliRunner
 
 from shearstud.cli import main
 from shearstud.store import assessment as asm
+from tests.support import document
 
 pytestmark = pytest.mark.cli
 
@@ -20,47 +21,6 @@ NUMBER = "18-SH-0473"
 @pytest.fixture
 def runner() -> CliRunner:
     return CliRunner()
-
-
-def plate(label: str, width: float, height: float, y: float) -> dict[str, Any]:
-    return {"label": label, "width_in": width, "height_in": height, "y_center_in": y}
-
-
-def document(bottom_in: float = 1.5) -> dict[str, Any]:
-    plates = [
-        plate("bottom", 18.0, bottom_in, bottom_in / 2.0),
-        plate("web", 0.5625, 52.0, bottom_in + 26.0),
-        plate("top", 16.0, 1.0, bottom_in + 52.5),
-    ]
-    girders = []
-    for index in range(4):
-        exterior = index in (0, 3)
-        girders.append(
-            {
-                "girder_id": f"G{index + 1}",
-                "girder_index": index,
-                "spacing_left_ft": 0.0 if index == 0 else 8.0,
-                "spacing_right_ft": 0.0 if index == 3 else 8.0,
-                "overhang_ft": 3.5 if exterior else 0.0,
-                "slab_thickness_in": 8.0,
-                "haunch_in": 2.0,
-                "runs": [
-                    {
-                        "from_station_ft": 0.0,
-                        "to_station_ft": 90.0,
-                        "label": "PG52",
-                        "plates": plates,
-                    }
-                ],
-            }
-        )
-    return {
-        "number": NUMBER,
-        "name": "Salt Fork Creek",
-        "year_built": 1968,
-        "spans": [90.0],
-        "girders": girders,
-    }
 
 
 @pytest.fixture

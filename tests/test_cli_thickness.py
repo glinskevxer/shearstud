@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
 
 import pytest
 from click.testing import CliRunner, Result
 
 from shearstud.cli import main
 from shearstud.store import db
+from tests.support import document
 
 pytestmark = pytest.mark.cli
 
@@ -20,38 +20,6 @@ NUMBER = "18-SH-0473"
 @pytest.fixture
 def runner() -> CliRunner:
     return CliRunner()
-
-
-def document(bottom_in: float = 1.5) -> dict[str, Any]:
-    plates = [
-        {"label": "bottom", "width_in": 18.0, "height_in": bottom_in, "y_center_in": 0.75},
-        {"label": "web", "width_in": 0.5625, "height_in": 52.0, "y_center_in": 27.5},
-        {"label": "top", "width_in": 16.0, "height_in": 1.0, "y_center_in": 54.0},
-    ]
-    girders = []
-    for index in range(4):
-        exterior = index in (0, 3)
-        girders.append(
-            {
-                "girder_id": f"G{index + 1}",
-                "girder_index": index,
-                "spacing_left_ft": 0.0 if index == 0 else 8.0,
-                "spacing_right_ft": 0.0 if index == 3 else 8.0,
-                "overhang_ft": 3.5 if exterior else 0.0,
-                "slab_thickness_in": 8.0,
-                "haunch_in": 2.0,
-                "deck_fc_ksi": 4.0,
-                "runs": [{"from_station_ft": 0.0, "to_station_ft": 90.0, "plates": plates}],
-                "details": [],
-            }
-        )
-    return {
-        "number": NUMBER,
-        "name": "Salt Fork Creek",
-        "year_built": 1968,
-        "spans": [90.0],
-        "girders": girders,
-    }
 
 
 @pytest.fixture

@@ -9,6 +9,7 @@ import pytest
 from shearstud.errors import MigrationError
 from shearstud.store import db, migrate
 from shearstud.store.migrations import m001_structures, m005_thickness
+from tests import support
 
 pytestmark = pytest.mark.store
 
@@ -94,28 +95,8 @@ def test_the_assessment_tables_are_there(book: Path) -> None:
 def test_a_structure_can_be_written_and_read_back(book: Path) -> None:
     db.execute(
         book,
-        "INSERT INTO structures (number, name, county_code, route_class, sequence, "
-        "parallel, year_built, span_lengths_ft, continuous, effective_width_rule, "
-        "steel_grade, member_condition, redundancy, adtt, lanes_available, "
-        "growth_pct_per_yr) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (
-            "18-SH-0473",
-            "Salt Fork Creek",
-            18,
-            "SH",
-            473,
-            "",
-            1968,
-            "84.0",
-            0,
-            "tributary",
-            "A36",
-            "fair",
-            "redundant",
-            1200.0,
-            2,
-            2.0,
-        ),
+        support.insert_structure_sql(),
+        support.structure_row(member_condition="fair", span_lengths_ft="84.0"),
     )
     row = db.fetch_one(book, "SELECT name FROM structures WHERE number = ?", ("18-SH-0473",))
     assert row is not None
@@ -224,11 +205,8 @@ def test_the_programme_table_refuses_a_condition_rating_off_the_scale(book: Path
     # row written by anything at all is held to it.
     db.execute(
         book,
-        "INSERT INTO structures (number, name, county_code, route_class, sequence, "
-        "parallel, year_built, span_lengths_ft, continuous, effective_width_rule, "
-        "steel_grade, member_condition, redundancy, adtt, lanes_available, "
-        "growth_pct_per_yr) VALUES ('18-SH-0473', 'Salt Fork Creek', 18, 'SH', 473, "
-        "'', 1962, '[84.0]', 0, 'tributary', 'A36', 'good', 'redundant', 500, 2, 1.0)",
+        support.insert_structure_sql(),
+        support.structure_row(year_built=1962, span_lengths_ft="[84.0]"),
     )
     with pytest.raises(Exception, match="CHECK constraint"):
         db.execute(
@@ -274,11 +252,8 @@ def test_the_thickness_note_arrives_with_its_migration(tmp_path: Path) -> None:
 def test_the_thickness_table_refuses_two_readings_of_one_place_on_one_day(book: Path) -> None:
     db.execute(
         book,
-        "INSERT INTO structures (number, name, county_code, route_class, sequence, "
-        "parallel, year_built, span_lengths_ft, continuous, effective_width_rule, "
-        "steel_grade, member_condition, redundancy, adtt, lanes_available, "
-        "growth_pct_per_yr) VALUES ('18-SH-0473', 'Salt Fork Creek', 18, 'SH', 473, "
-        "'', 1962, '[84.0]', 0, 'tributary', 'A36', 'good', 'redundant', 500, 2, 1.0)",
+        support.insert_structure_sql(),
+        support.structure_row(year_built=1962, span_lengths_ft="[84.0]"),
     )
     db.execute(
         book,

@@ -11,6 +11,7 @@ from shearstud.errors import StorageError
 from shearstud.store import assessment as asm
 from shearstud.store import db, retention
 from shearstud.store.assessment import StoredRating
+from tests import support
 
 pytestmark = pytest.mark.store
 
@@ -40,27 +41,21 @@ def rating(when: date, number: str = NUMBER, vehicle: str = "TYPE3") -> StoredRa
 def add_second_structure(path: Path) -> None:
     with db.transaction(path) as connection:
         connection.execute(
-            "INSERT INTO structures (number, name, county_code, route_class, sequence, "
-            "parallel, year_built, span_lengths_ft, continuous, effective_width_rule, "
-            "steel_grade, member_condition, redundancy, adtt, lanes_available, "
-            "growth_pct_per_yr) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (
+            support.insert_structure_sql(),
+            support.structure_row(
                 "07-CR-1204",
-                "Dry Creek",
-                7,
-                "CR",
-                1204,
-                "",
-                1954,
-                "[62.0]",
-                0,
-                "legacy",
-                "A7",
-                "poor",
-                "non_redundant",
-                80.0,
-                2,
-                0.5,
+                name="Dry Creek",
+                county_code=7,
+                route_class="CR",
+                sequence=1204,
+                redundancy="nonredundant",
+                year_built=1954,
+                span_lengths_ft="[62.0]",
+                effective_width_rule="legacy",
+                steel_grade="A7",
+                member_condition="poor",
+                adtt=80.0,
+                growth_pct_per_yr=0.5,
             ),
         )
 

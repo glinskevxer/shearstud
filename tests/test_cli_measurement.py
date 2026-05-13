@@ -13,6 +13,7 @@ from shearstud.cli import main
 from shearstud.store import assessment as asm
 from shearstud.store import db
 from shearstud.store import measurement as meas
+from tests.support import cover_plate_end, document, stiffener_weld
 
 pytestmark = pytest.mark.cli
 
@@ -26,51 +27,18 @@ def runner() -> CliRunner:
     return CliRunner()
 
 
-def document() -> dict[str, Any]:
-    plates = [
-        {"label": "bottom", "width_in": 18.0, "height_in": 1.5, "y_center_in": 0.75},
-        {"label": "web", "width_in": 0.5625, "height_in": 52.0, "y_center_in": 27.5},
-        {"label": "top", "width_in": 16.0, "height_in": 1.0, "y_center_in": 54.0},
-    ]
-    return {
-        "number": NUMBER,
-        "name": "Salt Fork Creek",
-        "year_built": 1968,
-        "spans": [90.0],
-        "girders": [
-            {
-                "girder_id": "G1",
-                "girder_index": 0,
-                "spacing_right_ft": 8.0,
-                "overhang_ft": 3.5,
-                "slab_thickness_in": 8.0,
-                "haunch_in": 2.0,
-                "runs": [{"from_station_ft": 0.0, "to_station_ft": 90.0, "plates": plates}],
-                "details": [
-                    {
-                        "detail_id": "D1",
-                        "kind": "cover_plate_end",
-                        "category_name": "E",
-                        "station_ft": 24.0,
-                        "fibre": "bottom",
-                    },
-                    {
-                        "detail_id": "D2",
-                        "kind": "stiffener_weld",
-                        "category_name": "C",
-                        "station_ft": 45.0,
-                        "fibre": "web",
-                    },
-                ],
-            }
-        ],
-    }
+def instrumented() -> dict[str, Any]:
+    """One girder carrying the two details the measurement tests use."""
+    return document(
+        girder_count=1,
+        details_on_first=[cover_plate_end(), stiffener_weld()],
+    )
 
 
 @pytest.fixture
 def wired(runner: CliRunner, book: Path, tmp_path: Path) -> Path:
     doc = tmp_path / "structure.json"
-    doc.write_text(json.dumps(document()), encoding="utf-8")
+    doc.write_text(json.dumps(instrumented()), encoding="utf-8")
     assert (
         runner.invoke(
             main,

@@ -18,6 +18,7 @@ from shearstud.geometry.composite import CompositeGirder, DeckSlab
 from shearstud.geometry.plate import flange, web
 from shearstud.geometry.section import Section
 from shearstud.store import db, migrate
+from tests import support
 
 
 @pytest.fixture
@@ -104,28 +105,8 @@ def seeded_book(book: Path) -> Path:
     """
     with db.transaction(book) as connection:
         connection.execute(
-            "INSERT INTO structures (number, name, county_code, route_class, sequence, "
-            "parallel, year_built, span_lengths_ft, continuous, effective_width_rule, "
-            "steel_grade, member_condition, redundancy, adtt, lanes_available, "
-            "growth_pct_per_yr) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (
-                SEED_NUMBER,
-                "Salt Fork Creek",
-                18,
-                "SH",
-                473,
-                "",
-                1968,
-                "[120.0]",
-                0,
-                "tributary",
-                "A36",
-                "good",
-                "redundant",
-                1200.0,
-                2,
-                2.0,
-            ),
+            support.insert_structure_sql(),
+            support.structure_row(SEED_NUMBER, span_lengths_ft="[120.0]"),
         )
         connection.execute(
             "INSERT INTO girders (structure_number, girder_id, girder_index, "
