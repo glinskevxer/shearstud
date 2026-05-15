@@ -9,6 +9,16 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
+## 0.10.0 - 2026-05-18
+
+### Added
+
+- `shearstud vehicle list`, `vehicle show` and `vehicle envelope`.
+- `shearstud permit` rates a permit vehicle at every level of control the
+  permit allows and prints all of them, then names the loosest one that
+  clears. A permit that cannot be issued is reported as an answer rather
+  than as an error.
+
 ## 0.9.0 - 2026-05-11
 
 ### Added

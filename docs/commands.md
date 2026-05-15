@@ -8,16 +8,17 @@ from the environment, because a rating office runs one book per district.
 
 ## Groups
 
-| Group       | What it covers                                                    |
-| ----------- | ----------------------------------------------------------------- |
-| `book`      | Look after the book of record itself.                             |
-| `campaign`  | Measurement campaigns.                                            |
-| `fatigue`   | Fatigue evaluation.                                               |
-| `gauge`     | Gauges on the structures.                                         |
-| `program`   | The inspection programme: intervals, priority and the worklist.   |
-| `report`    | Print what the book holds, for one structure or for the district. |
-| `structure` | Look at and change the inventory.                                 |
-| `thickness` | Ultrasonic readings, and what they leave of the section.          |
+| Group       | What it covers                                                          |
+| ----------- | ----------------------------------------------------------------------- |
+| `book`      | Look after the book of record itself.                                   |
+| `campaign`  | Measurement campaigns.                                                  |
+| `fatigue`   | Fatigue evaluation.                                                     |
+| `gauge`     | Gauges on the structures.                                               |
+| `program`   | The inspection programme: intervals, priority and the worklist.         |
+| `report`    | Print what the book holds, for one structure or for the district.       |
+| `structure` | Look at and change the inventory.                                       |
+| `thickness` | Ultrasonic readings, and what they leave of the section.                |
+| `vehicle`   | The rating vehicles: what is in the fleet and what each one looks like. |
 
 ## Commands
 
@@ -34,6 +35,7 @@ from the environment, because a rating office runs one book per district.
 | `gauge add`         | Record a gauge installation.                                          |
 | `gauge list`        | Every gauge in the book.                                              |
 | `init`              | Create the book of record, or bring an existing one up to date.       |
+| `permit`            | Rate a structure for one permit vehicle, at every level of control.   |
 | `posting`           | Work the posting decision from the legal load ratings.                |
 | `program due`       | Structures whose inspection date has gone past.                       |
 | `program record`    | Write down what an inspection found.                                  |
@@ -59,6 +61,9 @@ from the environment, because a rating office runs one book per district.
 | `thickness list`    | Every reading on a structure, newest first.                           |
 | `thickness loss`    | What the readings leave of each plate, worst first.                   |
 | `thickness rate`    | Loss per year at each place that has been measured twice.             |
+| `vehicle envelope`  | The moment a vehicle puts at each tenth point of a simple span.       |
+| `vehicle list`      | Every vehicle this tool can rate against.                             |
+| `vehicle show`      | One vehicle's axles, spacings and running weight.                     |
 
 ## Detail
 
@@ -409,3 +414,41 @@ Takes `number`.
 | Option     | Default | What it does     |
 | ---------- | ------- | ---------------- |
 | `--girder` |         | Only one girder. |
+
+### `shearstud vehicle list`
+
+Every vehicle this tool can rate against.
+
+| Option          | Default | What it does                       |
+| --------------- | ------- | ---------------------------------- |
+| `--class`       |         | Only one class of vehicle.         |
+| `--sort-weight` |         | Heaviest first instead of by name. |
+
+### `shearstud vehicle show`
+
+One vehicle's axles, spacings and running weight.
+
+Takes `name`.
+
+### `shearstud vehicle envelope`
+
+The moment a vehicle puts at each tenth point of a simple span.
+
+Takes `name`.
+
+| Option      | Default | What it does                    |
+| ----------- | ------- | ------------------------------- |
+| `--span-ft` |         | Simple span to drive it across. |
+| `--points`  | `10`    | Stations to report.             |
+
+### `shearstud permit`
+
+Rate a structure for one permit vehicle, at every level of control.
+
+Takes `number`, `vehicle_name`.
+
+| Option       | Default       | What it does                                           |
+| ------------ | ------------- | ------------------------------------------------------ |
+| `--kind`     | `single_trip` | Routine authorisation, or one crossing on a known day. |
+| `--stations` | `10`          | Stations per span.                                     |
+| `--overlay`  |               | Overlay, inches.                                       |

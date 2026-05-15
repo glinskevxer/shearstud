@@ -108,6 +108,21 @@ traffic decide the order. Adding a consequence term to a condition term is what
 lets a sound bridge on a busy road outrank a posted one, and no set of weights
 fixes that, because the two terms answer different questions.
 
+## Vehicles and permits
+
+```
+shearstud vehicle list --class legal
+shearstud vehicle show TYPE3
+shearstud vehicle envelope TYPE3 --span-ft 90
+shearstud permit 18-SH-0473 TYPE3-3
+```
+
+`permit` rates the vehicle at every level of control the permit allows and
+prints all of them, not only the one that clears. An engineer deciding whether
+to escort a load needs to see that escorting would have made it issuable, and
+an agency that always answers "escorted" is charging for margin it does not
+need.
+
 ## Section loss
 
 ```
