@@ -12,6 +12,7 @@ from click.testing import CliRunner
 
 from shearstud.cli import main
 from shearstud.store import inventory
+from tests.support import NUMBER
 
 pytestmark = pytest.mark.cli
 
@@ -299,3 +300,135 @@ def test_a_structure_with_no_details_says_so(runner: CliRunner, book: Path, tmp_
     runner.invoke(main, ["--book", str(book), "structure", "import", str(path)])
     result = runner.invoke(main, ["--book", str(book), "structure", "details", "07-CR-1204"])
     assert "no details" in result.output
+
+
+@pytest.fixture
+def imported_book(runner: CliRunner, book: Path, tmp_path: Path) -> Path:
+    """A book holding the four girder structure the section tests read."""
+    return imported(runner, book, tmp_path)
+
+
+def section_call(runner: CliRunner, book: Path, *extra: str) -> Any:
+    argv = [
+        "--book",
+        str(book),
+        "structure",
+        "section",
+        NUMBER,
+        "G1",
+        "--station-ft",
+        "45",
+        *extra,
+    ]
+    return runner.invoke(main, argv)
+
+
+def test_the_section_command_names_the_run_it_is_in(runner: CliRunner, imported_book: Path) -> None:
+    result = section_call(runner, imported_book)
+    assert result.exit_code == 0, result.output
+    assert "in the run from 0 to 90 ft" in result.output
+
+
+def test_the_section_command_lists_the_plates(runner: CliRunner, imported_book: Path) -> None:
+    result = section_call(runner, imported_book)
+    for label in ("bottom", "web", "top"):
+        assert label in result.output
+
+
+def test_the_section_command_reports_three_stages(runner: CliRunner, imported_book: Path) -> None:
+    # A composite girder has a different section for the dead load it carried
+    # before the deck cured, for the sustained load afterwards, and for a
+    # truck. Reporting one of them is how a dead load stress gets worked out
+    # on a section that did not exist yet.
+    result = section_call(runner, imported_book)
+    for stage in ("noncomposite", "long term", "short term"):
+        assert stage in result.output
+
+
+def test_the_composite_stages_get_stiffer_in_order(runner: CliRunner, imported_book: Path) -> None:
+    result = section_call(runner, imported_book)
+    inertias = [
+        float(line.split("I")[1].split()[0])
+        for line in result.output.splitlines()
+        if line.startswith(("noncomposite", "long term", "short term"))
+    ]
+    assert inertias == sorted(inertias)
+
+
+def test_the_steel_only_flag_reports_one_section(runner: CliRunner, imported_book: Path) -> None:
+    result = section_call(runner, imported_book, "--steel-only")
+    assert "steel " in result.output
+    assert "short term" not in result.output
+
+
+def test_the_section_command_says_where_the_numbers_came_from(
+    runner: CliRunner, imported_book: Path
+) -> None:
+    assert "source   the drawing" in section_call(runner, imported_book).output
+    assert "measured sections" in section_call(runner, imported_book, "--measured").output
+
+
+def test_a_thickness_reading_shows_up_in_the_measured_section(
+    runner: CliRunner, imported_book: Path
+) -> None:
+    runner.invoke(
+        main,
+        [
+            "--book",
+            str(imported_book),
+            "thickness",
+            "add",
+            NUMBER,
+            "G1",
+            "bottom",
+            "--station-ft",
+            "45",
+            "--remaining-in",
+            "1.10",
+            "--measured",
+            "2026-04-02",
+        ],
+    )
+    nominal = section_call(runner, imported_book)
+    reduced = section_call(runner, imported_book, "--measured")
+    assert _inertia(reduced, "short term") < _inertia(nominal, "short term")
+
+
+def test_a_station_past_the_end_is_refused(runner: CliRunner, imported_book: Path) -> None:
+    result = runner.invoke(
+        main,
+        [
+            "--book",
+            str(imported_book),
+            "structure",
+            "section",
+            NUMBER,
+            "G1",
+            "--station-ft",
+            "500",
+        ],
+    )
+    assert result.exit_code != 0
+    assert "past the end" in result.output
+
+
+def test_a_girder_that_is_not_there_is_refused(runner: CliRunner, imported_book: Path) -> None:
+    result = runner.invoke(
+        main,
+        [
+            "--book",
+            str(imported_book),
+            "structure",
+            "section",
+            NUMBER,
+            "G9",
+            "--station-ft",
+            "45",
+        ],
+    )
+    assert result.exit_code != 0
+
+
+def _inertia(result: Any, stage: str) -> float:
+    line = next(line for line in result.output.splitlines() if line.startswith(stage))
+    return float(line.split("I")[1].split()[0])

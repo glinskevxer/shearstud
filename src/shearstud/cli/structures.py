@@ -13,7 +13,9 @@ from pathlib import Path
 import click
 
 from shearstud.cli.main import Context, main, pass_context
+from shearstud.geometry.section import Section
 from shearstud.store import importer, inventory
+from shearstud.store import thickness as th
 from shearstud.store.inventory import StructurePolicy
 
 
@@ -162,3 +164,60 @@ def list_details(ctx: Context, number: str, worst_first: bool) -> None:
             f"{detail.detail_id:<12}{girder_id:<6}{detail.station_ft:>7.1f} ft  "
             f"{detail.category_name:<3}{detail.fibre:<8}{detail.kind}{flag}"
         )
+
+
+@structure.command("section")
+@click.argument("number")
+@click.argument("girder_id")
+@click.option("--station-ft", type=float, required=True, help="Where along the girder to look.")
+@click.option("--measured", is_flag=True, help="The section the meter left, not the drawing one.")
+@click.option("--composite/--steel-only", default=True, help="Show the three composite stages.")
+@pass_context
+def show_section(
+    ctx: Context,
+    number: str,
+    girder_id: str,
+    station_ft: float,
+    measured: bool,
+    composite: bool,
+) -> None:
+    """Section properties at one station.
+
+    Three stages and not one. A composite girder has a different section for
+    the dead load it carried before the deck cured, for the sustained load
+    afterwards, and for a truck, and reporting only the last of those is how a
+    dead load stress gets worked out on a section that did not exist yet.
+    """
+    path = ctx.require_book()
+    record = inventory.load(path, number)
+    girder = record.girder(girder_id)
+    if measured:
+        girder = th.measured_girder(path, number, girder)
+    run = girder.schedule.run_at(station_ft)
+    click.echo(f"girder   {girder_id} of {number}")
+    click.echo(
+        f"station  {station_ft:g} ft, in the run from {run.from_station_ft:g} "
+        f"to {run.to_station_ft:g} ft"
+    )
+    click.echo(f"source   {'measured sections' if measured else 'the drawing'}")
+    for plate in run.section:
+        click.echo(
+            f"  {plate.label:<10}{plate.width_in:>7.3f} wide  {plate.height_in:>7.3f} deep  "
+            f"at {plate.y_center_in:>7.3f}"
+        )
+    if not composite:
+        _echo_properties("steel", run.section)
+        return
+    stack = girder.composite_at(station_ft)
+    _echo_properties("noncomposite", stack.noncomposite)
+    _echo_properties("long term", stack.long_term)
+    _echo_properties("short term", stack.short_term)
+
+
+def _echo_properties(label: str, section: Section) -> None:
+    """One line of section properties, the four numbers a rating uses."""
+    click.echo(
+        f"{label:<14}A {section.area_in2:>8.2f}  I {section.inertia_in4:>10.1f}  "
+        f"Sb {section.section_modulus_bottom_in3:>8.1f}  "
+        f"St {section.section_modulus_top_in3:>8.1f}"
+    )

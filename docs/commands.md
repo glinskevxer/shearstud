@@ -55,6 +55,7 @@ from the environment, because a rating office runs one book per district.
 | `structure export`  | Write a structure back out as a document.                             |
 | `structure import`  | Read a structure document into the book.                              |
 | `structure list`    | Every structure in the book, in file cabinet order.                   |
+| `structure section` | Section properties at one station.                                    |
 | `structure show`    | Everything the book holds about one structure.                        |
 | `thickness add`     | Record one reading off a field sheet.                                 |
 | `thickness import`  | Read a whole field sheet: plate, station, remaining thickness, note.  |
@@ -364,6 +365,23 @@ Takes `number`.
 | Option          | Default | What it does                           |
 | --------------- | ------- | -------------------------------------- |
 | `--worst-first` |         | Order by category rather than station. |
+
+### `shearstud structure section`
+
+Section properties at one station.
+
+    Three stages and not one. A composite girder has a different section for
+    the dead load it carried before the deck cured, for the sustained load
+    afterwards, and for a truck, and reporting only the last of those is how a
+    dead load stress gets worked out on a section that did not exist yet.
+
+Takes `number`, `girder_id`.
+
+| Option         | Default | What it does                                     |
+| -------------- | ------- | ------------------------------------------------ |
+| `--station-ft` |         | Where along the girder to look.                  |
+| `--measured`   |         | The section the meter left, not the drawing one. |
+| `--composite`  | `True`  | Show the three composite stages.                 |
 
 ### `shearstud thickness add`
 

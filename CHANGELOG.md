@@ -9,7 +9,16 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
-## 0.10.0 - 2026-05-18
+## 0.11.0 - 2026-05-18
+
+### Added
+
+- `shearstud structure section` reports the section properties at a station,
+  as all three composite stages rather than one. A dead load stress worked
+  out on the short term section is worked out on a section that did not
+  exist when the load went on. `--measured` reads the reduced sections.
+
+## 0.10.0 - 2026-05-14
 
 ### Added
 
