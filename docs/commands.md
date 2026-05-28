@@ -57,6 +57,7 @@ from the environment, because a rating office runs one book per district.
 | `structure list`    | Every structure in the book, in file cabinet order.                   |
 | `structure section` | Section properties at one station.                                    |
 | `structure show`    | Everything the book holds about one structure.                        |
+| `studs`             | Stud spacing from fatigue, and stud count from strength.              |
 | `thickness add`     | Record one reading off a field sheet.                                 |
 | `thickness import`  | Read a whole field sheet: plate, station, remaining thickness, note.  |
 | `thickness list`    | Every reading on a structure, newest first.                           |
@@ -382,6 +383,21 @@ Takes `number`, `girder_id`.
 | `--station-ft` |         | Where along the girder to look.                  |
 | `--measured`   |         | The section the meter left, not the drawing one. |
 | `--composite`  | `True`  | Show the three composite stages.                 |
+
+### `shearstud studs`
+
+Stud spacing from fatigue, and stud count from strength.
+
+Takes `number`, `girder_id`.
+
+| Option           | Default | What it does                                                    |
+| ---------------- | ------- | --------------------------------------------------------------- |
+| `--diameter-in`  | `0.875` | Stud diameter. The standard sizes are 5/8, 3/4, 7/8 and 1 inch. |
+| `--height-in`    | `5.0`   | Stud height after welding.                                      |
+| `--strength-ksi` | `60.0`  | Stud tensile strength.                                          |
+| `--per-row`      | `3`     | Studs across the flange.                                        |
+| `--cycles`       |         | Design cycles. Omit for the infinite life resistance.           |
+| `--stations`     | `10`    | Stations per span.                                              |
 
 ### `shearstud thickness add`
 

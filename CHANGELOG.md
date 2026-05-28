@@ -9,7 +9,15 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
-## 0.11.0 - 2026-05-18
+## 0.12.0 - 2026-05-22
+
+### Added
+
+- `shearstud studs` reports the fatigue pitch and the strength row count for
+  a girder's shear connectors, taking the shear range from a shear run rather
+  than from a number typed on the command line.
+
+## 0.11.0 - 2026-05-15
 
 ### Added
 

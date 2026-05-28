@@ -143,6 +143,19 @@ heavy section over the pier. Asking for it on a structure nobody has measured
 is not an error and does not silently rate the drawing either: it says which it
 did.
 
+## Shear connectors
+
+```
+shearstud studs 18-SH-0473 G2 --per-row 3
+```
+
+Two checks, reported separately because they answer different questions in
+different units. Fatigue decides the pitch, in inches, from the live load shear
+range at each station. Strength decides the number of rows between maximum
+moment and zero moment. Combining them into one number is how a girder ends up
+with the right total number of studs at the wrong spacing, which loses
+composite action gradually and shows nothing on the outside of the deck.
+
 ## Reports
 
 ```
