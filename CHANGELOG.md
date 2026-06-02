@@ -9,7 +9,22 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
-## 0.12.0 - 2026-05-22
+## 0.13.0 - 2026-06-02
+
+### Added
+
+- `check_constants` fails the build on a float literal buried in a function
+  body in the domain layers. A rating is a number somebody signs, and the
+  question asked about it two years later is where a coefficient came from.
+
+### Changed
+
+- The AASHTO distribution factor coefficients, the shear buckling limits, the
+  design truck axles and the legacy overhang divisor are all named constants
+  now, each with the clause it came from. Thirty numbers were written into
+  expressions; none of the answers moved.
+
+## 0.12.0 - 2026-05-27
 
 ### Added
 

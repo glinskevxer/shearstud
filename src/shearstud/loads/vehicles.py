@@ -34,6 +34,14 @@ DESIGN_LANE_KLF: Final[float] = 0.64
 DESIGN_REAR_GAP_MIN_FT: Final[float] = 14.0
 DESIGN_REAR_GAP_MAX_FT: Final[float] = 30.0
 
+#: The design truck's axles, LRFD 3.6.1.2.2: a light steer axle and two equal
+#: drive axles. Written out here rather than in the function because the fixed
+#: front gap is a specified number and the rear one is not, and having them in
+#: two different places is how the wrong one gets varied.
+DESIGN_STEER_KIP: Final[float] = 8.0
+DESIGN_DRIVE_KIP: Final[float] = 32.0
+DESIGN_FRONT_GAP_FT: Final[float] = 14.0
+
 _DEFINITIONS: Final[dict[str, tuple[str, list[float], list[float]]]] = {
     "HL93-TRUCK": (CLASS_DESIGN, [8.0, 32.0, 32.0], [14.0, 14.0]),
     "HL93-TANDEM": (CLASS_DESIGN, [25.0, 25.0], [4.0]),
@@ -103,7 +111,11 @@ def design_truck(rear_gap_ft: float = DESIGN_REAR_GAP_MIN_FT) -> AxleTrain:
             f"rear axle gap {rear_gap_ft} ft is outside "
             f"{DESIGN_REAR_GAP_MIN_FT} to {DESIGN_REAR_GAP_MAX_FT}"
         )
-    return train("HL93-TRUCK", [8.0, 32.0, 32.0], [14.0, rear_gap_ft])
+    return train(
+        "HL93-TRUCK",
+        [DESIGN_STEER_KIP, DESIGN_DRIVE_KIP, DESIGN_DRIVE_KIP],
+        [DESIGN_FRONT_GAP_FT, rear_gap_ft],
+    )
 
 
 def legal_fleet() -> list[AxleTrain]:

@@ -225,7 +225,8 @@ The self checks are the unusual part and they are worth explaining. They walk
 this repository's own source and fail the build on things a linter has no
 opinion about: an import that runs the wrong way through the layers, a float
 parameter with no unit in its name, a public function nothing calls, a test
-that asserts nothing, SQL outside the store, a module with no test file. Every
+that asserts nothing, SQL outside the store, a module with no test file, a
+coefficient written into an expression instead of being named. Every
 one of them was written after it found a real defect in this code, and several
 of them found more than one.
 

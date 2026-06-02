@@ -54,6 +54,14 @@ STEEL_ALPHA_PER_DEGF: Final[float] = 6.5e-6
 _INCHES_PER_FOOT: Final[float] = 12.0
 _FEET_PER_MILE: Final[float] = 5280.0
 
+#: Time, which a strain record measures in and a traffic count reports in.
+#: Named here rather than written into the arithmetic because a record scaled
+#: to a day and a speed reported in miles an hour both want the same numbers
+#: and neither wants to define them.
+SECONDS_PER_HOUR: Final[float] = 3600.0
+SECONDS_PER_DAY: Final[float] = 86400.0
+FEET_PER_MILE: Final[float] = _FEET_PER_MILE
+
 
 def ft_to_in(length_ft: float) -> float:
     """Feet to inches."""

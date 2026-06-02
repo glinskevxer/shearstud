@@ -26,7 +26,7 @@ from typing import Final
 
 from shearstud.errors import InputError
 from shearstud.geometry.section import Section
-from shearstud.units import STEEL_E_KSI, kipin_to_kipft
+from shearstud.units import STEEL_E_KSI, ft_to_in, kipin_to_kipft
 
 #: Yield stresses this inventory holds, by the steel the drawing calls for.
 YIELD_BY_GRADE_KSI: Final[dict[str, float]] = {
@@ -47,6 +47,13 @@ UNSTIFFENED_SHEAR_K: Final[float] = 5.0
 
 #: Ratio of shear yield to tensile yield used by the shear provisions.
 SHEAR_YIELD_RATIO: Final[float] = 0.58
+
+#: The three coefficients of AASHTO LRFD 6.10.9.3.2, which decide whether the
+#: web yields in shear, buckles inelastically, or buckles elastically. They are
+#: the boundaries of the C factor and are the numbers a shear rating turns on.
+SHEAR_YIELD_LIMIT_COEFF: Final[float] = 1.12
+SHEAR_INELASTIC_LIMIT_COEFF: Final[float] = 1.40
+SHEAR_ELASTIC_COEFF: Final[float] = 1.57
 
 
 def yield_stress_ksi(grade: str) -> float:
@@ -177,8 +184,8 @@ def shear_capacity_kip(
     else:
         if stiffener_spacing_ft <= 0.0:
             raise InputError(f"stiffener spacing {stiffener_spacing_ft} is not a spacing")
-        ratio = stiffener_spacing_ft * 12.0 / depth_in
-        k = 5.0 + 5.0 / (ratio * ratio)
+        ratio = ft_to_in(stiffener_spacing_ft) / depth_in
+        k = UNSTIFFENED_SHEAR_K + UNSTIFFENED_SHEAR_K / (ratio * ratio)
     return plastic_kip * shear_buckling_ratio(depth_in / thickness_in, fy_ksi, k)
 
 
@@ -190,10 +197,10 @@ def shear_buckling_ratio(slenderness: float, fy_ksi: float, k: float) -> float:
         raise InputError(f"yield stress {fy_ksi} is not a stress")
     if k <= 0.0:
         raise InputError(f"buckling coefficient {k} is not a coefficient")
-    yield_limit = 1.12 * math.sqrt(STEEL_E_KSI * k / fy_ksi)
-    inelastic_limit = 1.40 * math.sqrt(STEEL_E_KSI * k / fy_ksi)
+    yield_limit = SHEAR_YIELD_LIMIT_COEFF * math.sqrt(STEEL_E_KSI * k / fy_ksi)
+    inelastic_limit = SHEAR_INELASTIC_LIMIT_COEFF * math.sqrt(STEEL_E_KSI * k / fy_ksi)
     if slenderness <= yield_limit:
         return 1.0
     if slenderness <= inelastic_limit:
         return yield_limit / slenderness
-    return 1.57 * STEEL_E_KSI * k / (slenderness * slenderness * fy_ksi)
+    return SHEAR_ELASTIC_COEFF * STEEL_E_KSI * k / (slenderness * slenderness * fy_ksi)

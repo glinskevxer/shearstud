@@ -39,6 +39,46 @@ SPAN_RANGE_FT: Final[tuple[float, float]] = (20.0, 240.0)
 STIFFNESS_RANGE_IN4: Final[tuple[float, float]] = (10_000.0, 7_000_000.0)
 MIN_BEAMS: Final[int] = 4
 
+#: How far from the web to the curb the exterior correction was fitted over.
+#: Negative means the curb is inboard of the exterior web, which happens on the
+#: narrow decks in this inventory.
+CURB_DISTANCE_RANGE_FT: Final[tuple[float, float]] = (-1.0, 5.5)
+
+#: The interior moment equation, AASHTO LRFD table 4.6.2.2.2b-1, k coefficients
+#: for a concrete deck on steel beams. Every one of these came off that table
+#: and none of them is derivable from anything else, which is why they are
+#: written out one to a line rather than folded into the expression: the
+#: question asked about a rating two years later is where a number came from.
+ONE_LANE_INTERCEPT: Final[float] = 0.06
+ONE_LANE_SPACING_FT: Final[float] = 14.0
+ONE_LANE_SPACING_EXPONENT: Final[float] = 0.4
+ONE_LANE_SPAN_EXPONENT: Final[float] = 0.3
+
+TWO_LANE_INTERCEPT: Final[float] = 0.075
+TWO_LANE_SPACING_FT: Final[float] = 9.5
+TWO_LANE_SPACING_EXPONENT: Final[float] = 0.6
+TWO_LANE_SPAN_EXPONENT: Final[float] = 0.2
+
+#: The stiffness term's exponent, which is the same for one lane and two and is
+#: the only part of the moment equation the shear equation drops.
+STIFFNESS_EXPONENT: Final[float] = 0.1
+
+#: The interior shear equation, table 4.6.2.2.3a-1. The two lane form is a
+#: quadratic in the spacing rather than a power law, which is why it cannot be
+#: written in the same shape as the moment one.
+SHEAR_ONE_LANE_INTERCEPT: Final[float] = 0.36
+SHEAR_ONE_LANE_DIVISOR_FT: Final[float] = 25.0
+SHEAR_TWO_LANE_INTERCEPT: Final[float] = 0.2
+SHEAR_TWO_LANE_DIVISOR_FT: Final[float] = 12.0
+SHEAR_TWO_LANE_QUADRATIC_FT: Final[float] = 35.0
+
+#: The exterior correction factors, tables 4.6.2.2.2d-1 and 4.6.2.2.3b-1. Two
+#: different fits, which is the whole reason there are two functions.
+MOMENT_E_INTERCEPT: Final[float] = 0.77
+MOMENT_E_DIVISOR_FT: Final[float] = 9.1
+SHEAR_E_INTERCEPT: Final[float] = 0.6
+SHEAR_E_DIVISOR_FT: Final[float] = 10.0
+
 
 def presence_factor(lanes_loaded: int) -> float:
     """Multiple presence factor for a number of loaded lanes."""
@@ -87,6 +127,20 @@ class GirderStiffness:
         return self.modular_ratio * (self.inertia_in4 + transfer)
 
 
+def _check_curb_distance(distance_to_curb_ft: float) -> None:
+    """Refuse an overhang the e factors were not fitted for.
+
+    Both fits share this range, and they used to check it twice with the
+    numbers written out twice. Two copies of a range is one copy too many when
+    one of them can be edited on its own.
+    """
+    low_ft, high_ft = CURB_DISTANCE_RANGE_FT
+    if not low_ft <= distance_to_curb_ft <= high_ft:
+        raise InputError(
+            f"distance from web to curb {distance_to_curb_ft} ft is outside {low_ft} to {high_ft}"
+        )
+
+
 def _check_applicability(
     spacing_ft: float, span_ft: float, slab_in: float, kg_in4: float, beams: int
 ) -> None:
@@ -107,7 +161,8 @@ def _check_applicability(
 
 
 def _stiffness_term(kg_in4: float, span_ft: float, slab_in: float) -> float:
-    return math.pow(kg_in4 / (12.0 * span_ft * slab_in**3), 0.1)
+    """The Kg term the moment equations carry and the shear ones do not."""
+    return math.pow(kg_in4 / (12.0 * span_ft * math.pow(slab_in, 3.0)), STIFFNESS_EXPONENT)
 
 
 def interior_moment(
@@ -124,10 +179,14 @@ def interior_moment(
     _check_applicability(spacing_ft, span_ft, slab_in, kg_in4, beams)
     term = _stiffness_term(kg_in4, span_ft, slab_in)
     if lanes_loaded <= 1:
-        shape = math.pow(spacing_ft / 14.0, 0.4) * math.pow(spacing_ft / span_ft, 0.3)
-        return 0.06 + shape * term
-    shape = math.pow(spacing_ft / 9.5, 0.6) * math.pow(spacing_ft / span_ft, 0.2)
-    return 0.075 + shape * term
+        shape = math.pow(spacing_ft / ONE_LANE_SPACING_FT, ONE_LANE_SPACING_EXPONENT) * math.pow(
+            spacing_ft / span_ft, ONE_LANE_SPAN_EXPONENT
+        )
+        return ONE_LANE_INTERCEPT + shape * term
+    shape = math.pow(spacing_ft / TWO_LANE_SPACING_FT, TWO_LANE_SPACING_EXPONENT) * math.pow(
+        spacing_ft / span_ft, TWO_LANE_SPAN_EXPONENT
+    )
+    return TWO_LANE_INTERCEPT + shape * term
 
 
 def interior_shear(spacing_ft: float, *, lanes_loaded: int) -> float:
@@ -140,26 +199,24 @@ def interior_shear(spacing_ft: float, *, lanes_loaded: int) -> float:
     if not low_ft <= spacing_ft <= high_ft:
         raise InputError(f"girder spacing {spacing_ft} ft is outside {low_ft} to {high_ft}")
     if lanes_loaded <= 1:
-        return 0.36 + spacing_ft / 25.0
-    return 0.2 + spacing_ft / 12.0 - (spacing_ft / 35.0) ** 2
+        return SHEAR_ONE_LANE_INTERCEPT + spacing_ft / SHEAR_ONE_LANE_DIVISOR_FT
+    return (
+        SHEAR_TWO_LANE_INTERCEPT
+        + spacing_ft / SHEAR_TWO_LANE_DIVISOR_FT
+        - math.pow(spacing_ft / SHEAR_TWO_LANE_QUADRATIC_FT, 2.0)
+    )
 
 
 def exterior_correction_moment(distance_to_curb_ft: float) -> float:
     """The e factor that turns an interior moment factor into an exterior one."""
-    if not -1.0 <= distance_to_curb_ft <= 5.5:
-        raise InputError(
-            f"distance from web to curb {distance_to_curb_ft} ft is outside -1.0 to 5.5"
-        )
-    return max(1.0, 0.77 + distance_to_curb_ft / 9.1)
+    _check_curb_distance(distance_to_curb_ft)
+    return max(1.0, MOMENT_E_INTERCEPT + distance_to_curb_ft / MOMENT_E_DIVISOR_FT)
 
 
 def exterior_correction_shear(distance_to_curb_ft: float) -> float:
     """The e factor for shear, which is a different fit from the moment one."""
-    if not -1.0 <= distance_to_curb_ft <= 5.5:
-        raise InputError(
-            f"distance from web to curb {distance_to_curb_ft} ft is outside -1.0 to 5.5"
-        )
-    return max(1.0, 0.6 + distance_to_curb_ft / 10.0)
+    _check_curb_distance(distance_to_curb_ft)
+    return max(1.0, SHEAR_E_INTERCEPT + distance_to_curb_ft / SHEAR_E_DIVISOR_FT)
 
 
 def lever_rule(spacing_ft: float, wheel_offsets_ft: list[float]) -> float:

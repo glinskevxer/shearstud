@@ -33,6 +33,11 @@ LEGACY_SLAB_MULTIPLE: Final[float] = 12.0
 #: Slab multiplier in the legacy overhang limit, half the interior one.
 LEGACY_OVERHANG_SLAB_MULTIPLE: Final[float] = 6.0
 
+#: The overhang limit the pre 2008 rule takes as an eighth of the span, against
+#: the quarter the interior rule takes. Halving one of these by accident is a
+#: mistake that produces a plausible width, so both are written down.
+LEGACY_OVERHANG_SPAN_DIVISOR: Final[float] = 8.0
+
 
 @dataclass(frozen=True, slots=True)
 class DeckLayout:
@@ -104,7 +109,7 @@ def legacy_exterior_width_in(layout: DeckLayout, section: Section, span_ft: floa
     """Half the interior width plus the least of the three overhang limits."""
     top = section.plate("top")
     web_thickness_in = section.plate("web").width_in
-    eighth_span_in = ft_to_in(span_ft) / 8.0
+    eighth_span_in = ft_to_in(span_ft) / LEGACY_OVERHANG_SPAN_DIVISOR
     slab_limit_in = LEGACY_OVERHANG_SLAB_MULTIPLE * layout.slab_thickness_in + max(
         web_thickness_in / 2.0, top.width_in / 4.0
     )

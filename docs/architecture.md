@@ -12,18 +12,18 @@ the same table, so the two cannot drift apart.
 
 | Layer       | Modules | Lines | What it is for                                                    |
 | ----------- | ------- | ----- | ----------------------------------------------------------------- |
-| (top level) | 3       | 186   | units, the error tree, and nothing that knows about a bridge      |
-| geometry    | 8       | 1041  | plates, sections, composite stages and section loss               |
-| loads       | 9       | 1283  | vehicles, influence lines, distribution and the dynamic allowance |
-| signals     | 7       | 1106  | strain records, conditioning, defects, rainflow and spectra       |
+| (top level) | 3       | 194   | units, the error tree, and nothing that knows about a bridge      |
+| geometry    | 8       | 1046  | plates, sections, composite stages and section loss               |
+| loads       | 9       | 1352  | vehicles, influence lines, distribution and the dynamic allowance |
+| signals     | 7       | 1107  | strain records, conditioning, defects, rainflow and spectra       |
 | fatigue     | 5       | 624   | detail categories, Miner damage, remaining life and evaluation    |
 | structure   | 7       | 844   | the inventory: identity, spans, girders, details and gauges       |
-| rating      | 7       | 1014  | capacity, load factors, the rating equation, posting and permits  |
+| rating      | 7       | 1021  | capacity, load factors, the rating equation, posting and permits  |
 | program     | 3       | 380   | what the office does with the numbers: intervals and priority     |
 | store       | 16      | 2535  | the book of record, its migrations and its repositories           |
 | analysis    | 8       | 1493  | dead load, and the runs that use everything below at once         |
 | cli         | 11      | 1814  | the command line, which is how anyone outside the package uses it |
-| tools       | 22      | 2911  | the repository's own checks and generated documents               |
+| tools       | 23      | 3048  | the repository's own checks and generated documents               |
 
 ## What each layer may import
 
@@ -52,14 +52,14 @@ store layer. `check_sql` enforces that.
 | Module             | Lines | What it is                                     |
 | ------------------ | ----- | ---------------------------------------------- |
 | `shearstud.errors` | 58    | Every exception the package raises on purpose. |
-| `shearstud.units`  | 123   | Unit discipline.                               |
+| `shearstud.units`  | 131   | Unit discipline.                               |
 
 ### geometry
 
 | Module                         | Lines | What it is                                                                  |
 | ------------------------------ | ----- | --------------------------------------------------------------------------- |
 | `shearstud.geometry.composite` | 154   | Transformed composite sections, and the three stage stress stack.           |
-| `shearstud.geometry.effective` | 126   | Effective flange width, under both editions this inventory is rated with.   |
+| `shearstud.geometry.effective` | 131   | Effective flange width, under both editions this inventory is rated with.   |
 | `shearstud.geometry.loss`      | 160   | Section loss, from ultrasonic thickness readings to a reduced section.      |
 | `shearstud.geometry.plate`     | 98    | Rectangular plate elements, the only primitive the section builder knows.   |
 | `shearstud.geometry.rolled`    | 134   | The rolled shape catalogue, and the three plate idealisation of a W shape.  |
@@ -72,12 +72,12 @@ store layer. `check_sql` enforces that.
 | ------------------------------ | ----- | --------------------------------------------------------------------------- |
 | `shearstud.loads.axles`        | 154   | Axle trains: the vehicles that get driven across an influence line.         |
 | `shearstud.loads.continuous`   | 256   | Influence lines for continuous units, from the three moment equation.       |
-| `shearstud.loads.distribution` | 180   | Live load distribution factors: how much of a lane one girder carries.      |
+| `shearstud.loads.distribution` | 237   | Live load distribution factors: how much of a lane one girder carries.      |
 | `shearstud.loads.impact`       | 100   | Dynamic load allowance, and the one load it is never applied to.            |
 | `shearstud.loads.influence`    | 219   | Influence lines as piecewise linear functions of load position.             |
 | `shearstud.loads.live`         | 116   | Assembling one live load effect out of the four things that make it.        |
 | `shearstud.loads.traverse`     | 138   | Driving a vehicle across an influence line and finding where it hurts most. |
-| `shearstud.loads.vehicles`     | 113   | The vehicle catalogue: design, legal, specialized hauling and emergency.    |
+| `shearstud.loads.vehicles`     | 125   | The vehicle catalogue: design, legal, specialized hauling and emergency.    |
 
 ### signals
 
@@ -85,7 +85,7 @@ store layer. `check_sql` enforces that.
 | -------------------------------- | ----- | ----------------------------------------------------------------------------- |
 | `shearstud.signals.conditioning` | 189   | Getting the load out of a strain record and the rest of it out of the way.    |
 | `shearstud.signals.defects`      | 185   | Finding the parts of a record that are the instrument rather than the bridge. |
-| `shearstud.signals.events`       | 148   | Pulling individual truck events out of a continuous strain record.            |
+| `shearstud.signals.events`       | 149   | Pulling individual truck events out of a continuous strain record.            |
 | `shearstud.signals.rainflow`     | 186   | Rainflow cycle counting, four point method.                                   |
 | `shearstud.signals.series`       | 181   | Strain records: a gauge, a start time, a sample rate and a run of samples.    |
 | `shearstud.signals.spectrum`     | 210   | Binning a cycle count into a histogram, which is how it gets stored.          |
@@ -114,7 +114,7 @@ store layer. `check_sql` enforces that.
 
 | Module                      | Lines | What it is                                                                  |
 | --------------------------- | ----- | --------------------------------------------------------------------------- |
-| `shearstud.rating.capacity` | 199   | Member capacity: what the girder can carry before the rating divides by it. |
+| `shearstud.rating.capacity` | 206   | Member capacity: what the girder can carry before the rating divides by it. |
 | `shearstud.rating.factors`  | 168   | Load and resistance factors for a load and resistance factor rating.        |
 | `shearstud.rating.permit`   | 140   | Permit ratings: one heavy load, crossing once, under stated conditions.     |
 | `shearstud.rating.posting`  | 151   | Turning rating factors into a posting sign.                                 |
@@ -184,6 +184,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.tools.build_lock`         | 53    | Write ``migrations.lock`` from the migrations in the code.                      |
 | `shearstud.tools.check_changelog`    | 141   | The changelog says what the version is, so the version has to agree.            |
 | `shearstud.tools.check_cli`          | 99    | The command line documents itself: every command and every option has help.     |
+| `shearstud.tools.check_constants`    | 137   | A coefficient buried in an expression is a coefficient nobody can check.        |
 | `shearstud.tools.check_docstrings`   | 81    | Every module, public class, public function and public method says what it is.  |
 | `shearstud.tools.check_errors`       | 161   | Errors are the package's own, they carry a message, and nothing is swallowed.   |
 | `shearstud.tools.check_layers`       | 143   | Imports run one way through the package, and this is where that is written.     |

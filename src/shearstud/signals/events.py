@@ -19,6 +19,7 @@ from typing import Final
 
 from shearstud.errors import RecordError
 from shearstud.signals.series import StrainRecord
+from shearstud.units import FEET_PER_MILE, SECONDS_PER_DAY, SECONDS_PER_HOUR
 
 #: Fraction of the trigger at which an event is considered over.
 RELEASE_FRAC: Final[float] = 0.4
@@ -70,7 +71,7 @@ class Event:
         duration_s = self.seconds(record)
         if duration_s <= 0.0:
             raise RecordError("an event with no duration has no speed")
-        return span_ft / duration_s * 3600.0 / 5280.0
+        return span_ft / duration_s * SECONDS_PER_HOUR / FEET_PER_MILE
 
 
 def find(
@@ -133,7 +134,7 @@ def daily_rate(record: StrainRecord, events: list[Event]) -> float:
     duration_s = record.duration_s
     if duration_s <= 0.0:
         raise RecordError(f"{record.gauge_id}: a record with no duration has no rate")
-    return len(events) * 86400.0 / duration_s
+    return len(events) * SECONDS_PER_DAY / duration_s
 
 
 def heaviest(events: list[Event]) -> Event:
