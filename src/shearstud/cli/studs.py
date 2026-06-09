@@ -18,8 +18,8 @@ from __future__ import annotations
 
 import click
 
+from shearstud.analysis import ratingrun as rr
 from shearstud.analysis import shearrun as sr
-from shearstud.analysis.ratingrun import RatingSettings
 from shearstud.cli.main import Context, main, pass_context
 from shearstud.loads import vehicles
 from shearstud.rating import studs
@@ -70,7 +70,6 @@ def stud_command(
     """Stud spacing from fatigue, and stud count from strength."""
     path = ctx.require_book()
     record = inventory.load(path, number)
-    policy = inventory.load_policy(path, number)
     girder = record.girder(girder_id)
     spec = StudSpec(diameter_in=diameter_in, height_in=height_in, tensile_strength_ksi=strength_ksi)
 
@@ -80,13 +79,7 @@ def stud_command(
     low_in, high_in = studs.pitch_limits_in(spec)
     click.echo(f"limits   pitch between {low_in:.2f} and {high_in:.2f} in")
 
-    settings = RatingSettings(
-        steel_grade=policy.steel_grade,
-        member_condition=policy.member_condition,
-        redundancy=policy.redundancy,
-        adtt=policy.adtt,
-        stations_per_span=stations,
-    )
+    settings = rr.settings_for(path, number, stations_per_span=stations)
     results = [
         station
         for station in sr.rate_structure(record, vehicles.legal_fleet(), settings)

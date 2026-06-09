@@ -39,6 +39,7 @@ from shearstud.rating import capacity as cap
 from shearstud.rating import factors as fac
 from shearstud.rating.rate import DeadLoad, RatingFactor, rate
 from shearstud.store import assessment as asm
+from shearstud.store import inventory
 from shearstud.structure.girder import GirderLine
 from shearstud.structure.record import Structure
 
@@ -103,6 +104,30 @@ class StationRating:
         if not self.ratings:
             raise InputError(f"{self.girder_id} at {self.station_ft} has no ratings")
         return min(self.ratings, key=lambda r: (r.value, r.vehicle))
+
+
+def settings_for(path: Path | str, number: str, **overrides: object) -> RatingSettings:
+    """A structure's rating settings, read off its record and then overridden.
+
+    Four of the settings are agency judgement recorded against the structure
+    and the rest are how this particular run is being done. Reading the first
+    four here means a command cannot forget one, which is a mistake that
+    produces a rating rather than an error: a girder rated as A36 when the
+    drawing says A572-50 comes back low and plausible.
+
+    An override of ``None`` is not an override. Click hands a missing option
+    through as ``None`` and every command would otherwise have to strip those
+    out itself.
+    """
+    policy = inventory.load_policy(path, number)
+    fields: dict[str, object] = {
+        "steel_grade": policy.steel_grade,
+        "member_condition": policy.member_condition,
+        "redundancy": policy.redundancy,
+        "adtt": policy.adtt,
+    }
+    fields.update({name: value for name, value in overrides.items() if value is not None})
+    return RatingSettings(**fields)  # type: ignore[arg-type]
 
 
 def stations_for(structure: Structure, settings: RatingSettings) -> list[float]:

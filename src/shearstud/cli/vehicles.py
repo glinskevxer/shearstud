@@ -115,14 +115,7 @@ def permit_command(
     by_control: dict[str, float] = {}
     for control in controls:
         conditions = permit.PermitConditions(kind=kind, control=control, adtt=policy.adtt)
-        settings = rr.RatingSettings(
-            steel_grade=policy.steel_grade,
-            member_condition=policy.member_condition,
-            redundancy=policy.redundancy,
-            adtt=policy.adtt,
-            overlay_in=overlay_in,
-            stations_per_span=stations,
-        )
+        settings = rr.settings_for(path, number, overlay_in=overlay_in, stations_per_span=stations)
         results = rr.rate_structure(record, [train], settings, level=fac.OPERATING, legal=True)
         worst = rr.governing(results)
         # The run applies the legal live factor, so the permit factor goes on

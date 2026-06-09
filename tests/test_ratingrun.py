@@ -9,7 +9,7 @@ import pytest
 
 from shearstud.analysis import ratingrun as rr
 from shearstud.analysis.ratingrun import RatingSettings
-from shearstud.errors import InputError
+from shearstud.errors import InputError, StorageError
 from shearstud.geometry.composite import DeckSlab
 from shearstud.geometry.effective import DeckLayout
 from shearstud.geometry.plate import flange, web
@@ -19,6 +19,7 @@ from shearstud.loads import vehicles
 from shearstud.rating import factors as fac
 from shearstud.store import assessment as asm
 from shearstud.store import db, inventory
+from shearstud.store.inventory import StructurePolicy
 from shearstud.structure.girder import GirderLine
 from shearstud.structure.identity import parse
 from shearstud.structure.record import Structure
@@ -362,3 +363,52 @@ def test_storing_nothing_writes_nothing(book: Path) -> None:
 
 def test_both_levels_the_rating_package_knows_are_accepted(book: Path) -> None:
     assert set(rr.RATING_LEVELS) == set(fac.LEVELS)
+
+
+def test_the_settings_are_read_off_the_structure(book: Path) -> None:
+    inventory.save(
+        book,
+        structure(),
+        StructurePolicy(steel_grade="A572-50", member_condition="fair", adtt=2400.0),
+    )
+    settings = rr.settings_for(book, "18-SH-0473")
+    assert settings.steel_grade == "A572-50"
+    assert settings.member_condition == "fair"
+    assert settings.adtt == pytest.approx(2400.0)
+
+
+def test_an_override_wins_over_the_record(book: Path) -> None:
+    inventory.save(book, structure(), StructurePolicy(member_condition="fair"))
+    assert rr.settings_for(book, "18-SH-0473", member_condition="poor").member_condition == "poor"
+
+
+def test_an_override_of_nothing_is_not_an_override(book: Path) -> None:
+    # Click hands a missing option through as None, and every command would
+    # otherwise have to strip those out for itself.
+    inventory.save(book, structure(), StructurePolicy(member_condition="fair"))
+    settings = rr.settings_for(book, "18-SH-0473", member_condition=None)
+    assert settings.member_condition == "fair"
+
+
+def test_a_run_setting_can_be_given_without_a_record_field(book: Path) -> None:
+    inventory.save(book, structure())
+    settings = rr.settings_for(book, "18-SH-0473", stations_per_span=4, overlay_in=2.0)
+    assert settings.stations_per_span == 4
+    assert settings.overlay_in == pytest.approx(2.0)
+
+
+def test_a_setting_the_run_does_not_have_is_refused(book: Path) -> None:
+    inventory.save(book, structure())
+    with pytest.raises(TypeError):
+        rr.settings_for(book, "18-SH-0473", riding_conditions="wet")
+
+
+def test_a_structure_that_is_not_there_has_no_settings(book: Path) -> None:
+    with pytest.raises(StorageError, match="no structure"):
+        rr.settings_for(book, "99-XX-9999")
+
+
+def test_a_grade_the_record_does_not_know_is_refused(book: Path) -> None:
+    inventory.save(book, structure())
+    with pytest.raises(InputError, match="unknown steel grade"):
+        rr.settings_for(book, "18-SH-0473", steel_grade="A999")

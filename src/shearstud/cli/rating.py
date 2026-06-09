@@ -20,7 +20,6 @@ import click
 
 from shearstud.analysis import ratingrun as rr
 from shearstud.analysis import shearrun as sr
-from shearstud.analysis.ratingrun import RatingSettings
 from shearstud.cli.main import Context, main, pass_context
 from shearstud.loads import vehicles
 from shearstud.rating import factors as fac
@@ -47,19 +46,6 @@ def _record_for(path: Path, number: str, measured: bool) -> Structure:
         return record
     click.echo(f"rating {number} with section loss from its readings")
     return th.measured_structure(path, record)
-
-
-def _settings_from(path: Path, number: str, **overrides: object) -> RatingSettings:
-    """Build the settings from the structure record, then apply overrides."""
-    policy = inventory.load_policy(path, number)
-    fields: dict[str, object] = {
-        "steel_grade": policy.steel_grade,
-        "member_condition": policy.member_condition,
-        "redundancy": policy.redundancy,
-        "adtt": policy.adtt,
-    }
-    fields.update({k: v for k, v in overrides.items() if v is not None})
-    return RatingSettings(**fields)  # type: ignore[arg-type]
 
 
 @main.command("rate")
@@ -96,7 +82,7 @@ def rate_command(
     """Rate a structure against the legal fleet, or against the design load."""
     path = ctx.require_book()
     record = _record_for(path, number, measured)
-    settings = _settings_from(
+    settings = rr.settings_for(
         path,
         number,
         stations_per_span=stations,
@@ -138,7 +124,7 @@ def posting_command(
     """Work the posting decision from the legal load ratings."""
     path = ctx.require_book()
     record = inventory.load(path, number)
-    settings = _settings_from(path, number, stations_per_span=stations, overlay_in=overlay_in)
+    settings = rr.settings_for(path, number, stations_per_span=stations, overlay_in=overlay_in)
     by_silhouette = {}
     for silhouette, vehicle_name in post.SIGN_VEHICLES.items():
         train = vehicles.vehicle(vehicle_name)
@@ -211,7 +197,7 @@ def shear_command(
     """Rate a structure in shear, ends included."""
     path = ctx.require_book()
     record = _record_for(path, number, measured)
-    settings = _settings_from(
+    settings = rr.settings_for(
         path,
         number,
         stations_per_span=stations,
