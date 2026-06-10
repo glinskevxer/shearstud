@@ -9,7 +9,21 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
-## 0.13.0 - 2026-06-02
+## 0.14.0 - 2026-06-15
+
+### Added
+
+- `shearstud record --temperature` subtracts a companion temperature channel
+  before the drift fit. The compensation was written and had nothing feeding
+  it. The temperature channel may be logged far slower than the strain one.
+
+### Changed
+
+- The logger file parser is shared between the strain and temperature reads,
+  so a temperature channel at a reading a minute is no longer held to the
+  strain record's sample rate limits.
+
+## 0.13.0 - 2026-06-01
 
 ### Added
 

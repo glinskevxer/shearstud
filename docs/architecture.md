@@ -21,8 +21,8 @@ the same table, so the two cannot drift apart.
 | rating      | 7       | 1021  | capacity, load factors, the rating equation, posting and permits  |
 | program     | 3       | 380   | what the office does with the numbers: intervals and priority     |
 | store       | 16      | 2535  | the book of record, its migrations and its repositories           |
-| analysis    | 8       | 1518  | dead load, and the runs that use everything below at once         |
-| cli         | 11      | 1786  | the command line, which is how anyone outside the package uses it |
+| analysis    | 8       | 1561  | dead load, and the runs that use everything below at once         |
+| cli         | 11      | 1816  | the command line, which is how anyone outside the package uses it |
 | tools       | 23      | 3048  | the repository's own checks and generated documents               |
 
 ## What each layer may import
@@ -155,7 +155,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.analysis.fatiguerun` | 197   | Evaluating every instrumented detail on a structure from stored spectra.    |
 | `shearstud.analysis.programrun` | 141   | Building the office's worklist out of the book, and saying what is missing. |
 | `shearstud.analysis.ratingrun`  | 355   | Rating a whole structure, which is where every other module gets used.      |
-| `shearstud.analysis.recordrun`  | 178   | A raw logger file, taken all the way through to a spectrum in the book.     |
+| `shearstud.analysis.recordrun`  | 221   | A raw logger file, taken all the way through to a spectrum in the book.     |
 | `shearstud.analysis.report`     | 172   | The two reports the office actually sends out.                              |
 | `shearstud.analysis.shearrun`   | 297   | Rating a structure in shear, which is a different run and not a variation.  |
 
@@ -165,7 +165,7 @@ store layer. `check_sql` enforces that.
 | --------------------------- | ----- | ----------------------------------------------------------------------------- |
 | `shearstud.cli.book`        | 100   | Commands that operate on the book itself rather than on what is in it.        |
 | `shearstud.cli.main`        | 149   | The command line, which is the only way anyone outside this package uses it.  |
-| `shearstud.cli.measurement` | 379   | Commands for what was measured, and the fatigue evaluation that reads it.     |
+| `shearstud.cli.measurement` | 409   | Commands for what was measured, and the fatigue evaluation that reads it.     |
 | `shearstud.cli.program`     | 150   | Commands for the inspection programme: what gets visited, and when.           |
 | `shearstud.cli.rating`      | 225   | Commands that rate a structure and decide whether to post it.                 |
 | `shearstud.cli.report`      | 65    | Commands that print the two reports the office sends out.                     |

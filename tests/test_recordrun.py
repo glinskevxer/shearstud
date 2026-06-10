@@ -84,7 +84,7 @@ def test_blank_rows_are_skipped(tmp_path: Path) -> None:
 def test_a_reading_that_is_not_a_number_is_refused(tmp_path: Path) -> None:
     path = tmp_path / "strain.csv"
     path.write_text("timestamp,ue\n,1.0\n,over range\n", encoding="utf-8")
-    with pytest.raises(RecordError, match="not a strain reading"):
+    with pytest.raises(RecordError, match="is not a reading"):
         rec.read(path, "G2-BF-01", RATE_HZ)
 
 
@@ -98,7 +98,7 @@ def test_a_timestamp_that_is_not_a_timestamp_is_refused(tmp_path: Path) -> None:
 def test_an_empty_file_is_refused(tmp_path: Path) -> None:
     path = tmp_path / "strain.csv"
     path.write_text("timestamp,ue\n", encoding="utf-8")
-    with pytest.raises(RecordError, match="holds no strain readings"):
+    with pytest.raises(RecordError, match="holds no readings"):
         rec.read(path, "G2-BF-01", RATE_HZ)
 
 
@@ -239,3 +239,71 @@ def test_a_higher_trigger_finds_fewer_events(tmp_path: Path) -> None:
     low = rec.run(path, "G2-BF-01", RATE_HZ, LIMIT_UE, trigger_frac=0.2)
     high = rec.run(path, "G2-BF-01", RATE_HZ, LIMIT_UE, trigger_frac=0.95)
     assert len(high.events) <= len(low.events)
+
+
+def temperature_file(tmp_path: Path, samples: list[float]) -> Path:
+    path = tmp_path / "temperature.csv"
+    rows = ["timestamp,degf", f"2026-04-01T06:00:00,{samples[0]:.4f}"]
+    rows.extend(f",{value:.4f}" for value in samples[1:])
+    path.write_text("\n".join(rows), encoding="utf-8")
+    return path
+
+
+def ramp(count: int, low_degf: float = 55.0, high_degf: float = 95.0) -> list[float]:
+    """A morning warming up, which is what a spring campaign records."""
+    return [low_degf + (high_degf - low_degf) * index / (count - 1) for index in range(count)]
+
+
+def test_a_temperature_channel_reads(tmp_path: Path) -> None:
+    record = rec.read_temperature(temperature_file(tmp_path, ramp(40)), "G2-TEMP", 0.1)
+    assert record.channel_id == "G2-TEMP"
+    assert record.mean_degf == pytest.approx(75.0)
+    assert record.swing_degf == pytest.approx(40.0)
+
+
+def test_a_run_without_a_temperature_channel_says_so(tmp_path: Path) -> None:
+    result = rec.run(written(tmp_path, history()), "G2-BF-01", RATE_HZ, LIMIT_UE)
+    assert not result.was_compensated
+    assert result.temperature_swing_degf is None
+
+
+def test_a_run_with_a_temperature_channel_records_the_swing(tmp_path: Path) -> None:
+    companion = rec.read_temperature(temperature_file(tmp_path, ramp(40)), "G2-TEMP", 0.1)
+    result = rec.run(
+        written(tmp_path, history()), "G2-BF-01", RATE_HZ, LIMIT_UE, temperatures=companion
+    )
+    assert result.was_compensated
+    assert result.temperature_swing_degf == pytest.approx(40.0)
+
+
+def test_the_temperature_channel_takes_the_thermal_ramp_out(tmp_path: Path) -> None:
+    # A forty degree swing on steel is about 260 microstrain, which is bigger
+    # than the trucks. The compensated record should not carry it.
+    samples = history(trucks=8)
+    degrees = ramp(len(samples))
+    thermal = [6.5e-6 * (value - 75.0) * 1.0e6 for value in degrees]
+    drifting = [value + shift for value, shift in zip(samples, thermal, strict=True)]
+    companion = rec.read_temperature(temperature_file(tmp_path, degrees), "G2-TEMP", RATE_HZ)
+    compensated = rec.run(
+        written(tmp_path, drifting), "G2-BF-01", RATE_HZ, LIMIT_UE, temperatures=companion
+    )
+    plain = rec.run(written(tmp_path, samples), "G2-BF-01", RATE_HZ, LIMIT_UE)
+    assert compensated.conditioned.peak_ue == pytest.approx(plain.conditioned.peak_ue, rel=0.05)
+
+
+def test_the_temperature_channel_may_be_logged_slower(tmp_path: Path) -> None:
+    # A temperature logger set to a reading a minute against strain at 20 Hz.
+    # The two are lined up by position, so the rates do not have to match.
+    companion = rec.read_temperature(temperature_file(tmp_path, ramp(12)), "G2-TEMP", 0.017)
+    result = rec.run(
+        written(tmp_path, history()), "G2-BF-01", RATE_HZ, LIMIT_UE, temperatures=companion
+    )
+    assert result.was_compensated
+    assert result.conditioned.sample_count == result.raw.sample_count
+
+
+def test_a_temperature_file_that_is_not_numbers_is_refused(tmp_path: Path) -> None:
+    path = tmp_path / "temperature.csv"
+    path.write_text("timestamp,degf\n,55.0\n,too warm\n", encoding="utf-8")
+    with pytest.raises(RecordError, match="is not a reading"):
+        rec.read_temperature(path, "G2-TEMP", 0.1)

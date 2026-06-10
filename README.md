@@ -76,6 +76,17 @@ shearstud spectrum C-2026-04 G2-BF-01 counts.csv
 shearstud fatigue evaluate 18-SH-0473 C-2026-04 --save
 ```
 
+```
+shearstud record C-2026-04 G2-BF-01 strain.csv --rate-hz 20   --temperature temp.csv --temperature-rate-hz 0.017
+```
+
+A temperature channel, where the campaign logged one, is subtracted before the
+drift fit and not after it. With a measured companion channel the subtraction
+is exact; fitting the drift first lets it swallow part of the thermal ramp,
+which the later subtraction then removes twice. The temperature logger is
+usually set far slower than the strain logger and does not have to match: the
+two are lined up by position in the record.
+
 `record` takes a raw logger file the whole way: it looks for dropouts and rail
 hits on the raw samples, conditions the record, counts the cycles, and pulls
 the individual truck events out alongside. Defects are looked for first and on

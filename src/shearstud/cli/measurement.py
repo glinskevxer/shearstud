@@ -326,6 +326,18 @@ def _traffic_for(path: Path, number: str, length_ft: float, growth: float | None
     show_default=True,
     help="Event trigger, as a fraction of the conditioned peak.",
 )
+@click.option(
+    "--temperature",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    default=None,
+    help="A temperature channel logged alongside, in degrees fahrenheit.",
+)
+@click.option(
+    "--temperature-rate-hz",
+    type=float,
+    default=None,
+    help="Sample rate of the temperature channel. Defaults to the strain rate.",
+)
 @click.option("--events", "show_events", is_flag=True, help="Print a line per truck event.")
 @click.option("--save", is_flag=True, help="Write the spectrum into the book.")
 @pass_context
@@ -338,12 +350,23 @@ def import_record(
     limit_ue: float | None,
     bin_width_ue: float,
     trigger_frac: float,
+    temperature: Path | None,
+    temperature_rate_hz: float | None,
     show_events: bool,
     save: bool,
 ) -> None:
     """Read a raw strain file, condition it, and count the cycles in it."""
     path = ctx.require_book()
     gauge = meas.load_gauge(path, gauge_id)
+    companion = (
+        None
+        if temperature is None
+        else rec.read_temperature(
+            temperature,
+            f"{gauge_id}-TEMP",
+            temperature_rate_hz if temperature_rate_hz is not None else rate_hz,
+        )
+    )
     result = rec.run(
         strain,
         gauge_id,
@@ -351,6 +374,7 @@ def import_record(
         limit_ue if limit_ue is not None else gauge.channel_limit_ue,
         bin_width_ue=bin_width_ue,
         trigger_frac=trigger_frac,
+        temperatures=companion,
     )
     click.echo(f"read      {result.sample_count} samples over {result.duration_s:.0f} s")
     click.echo(
@@ -359,6 +383,12 @@ def import_record(
     )
     if not result.quality.is_trustworthy:
         click.echo("quality   NOT TRUSTWORTHY, the evaluation will skip this gauge")
+    if result.was_compensated:
+        click.echo(
+            f"thermal   compensated against a {result.temperature_swing_degf:.1f} degF swing"
+        )
+    else:
+        click.echo("thermal   no temperature channel, the drift fit carries the thermal ramp")
     click.echo(
         f"events    {len(result.events)}, {result.events_per_day:.0f} a day, "
         f"{result.cycles_per_event:.2f} cycles each"

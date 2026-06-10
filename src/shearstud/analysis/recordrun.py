@@ -31,6 +31,7 @@ from typing import Final
 
 from shearstud.errors import RecordError
 from shearstud.signals import conditioning, defects, events, rainflow, spectrum
+from shearstud.signals.conditioning import TemperatureRecord
 from shearstud.signals.events import Event
 from shearstud.signals.series import StrainRecord
 from shearstud.signals.spectrum import Spectrum
@@ -55,6 +56,12 @@ class RecordRun:
     quality: SpectrumQuality
     spectrum: Spectrum
     events: tuple[Event, ...]
+    temperature_swing_degf: float | None = None
+
+    @property
+    def was_compensated(self) -> bool:
+        """True when a temperature channel was subtracted off."""
+        return self.temperature_swing_degf is not None
 
     @property
     def sample_count(self) -> int:
@@ -89,13 +96,46 @@ class RecordRun:
         return self.counted_cycles / len(self.events)
 
 
+def read_temperature(path: Path | str, channel_id: str, sample_rate_hz: float) -> TemperatureRecord:
+    """A temperature channel logged alongside a strain channel.
+
+    Read through the shared column parser and not through :func:`read`, which
+    would hold it to the strain record's sample rate limits. A temperature
+    logger is frequently set to a reading a minute, which is a hundredth of a
+    hertz and a long way under what a strain channel is allowed to be. The two
+    are lined up by position in the record rather than by sample index, so the
+    rates do not have to match at all.
+    """
+    started_at, samples = _read_columns(path)
+    return TemperatureRecord(
+        channel_id=channel_id,
+        started_at=started_at or datetime(1970, 1, 1),
+        sample_rate_hz=sample_rate_hz,
+        samples_degf=tuple(samples),
+    )
+
+
 def read(path: Path | str, gauge_id: str, sample_rate_hz: float) -> StrainRecord:
     """One column of microstrain from a logger file.
 
+    The sample rate is passed in rather than inferred from the timestamps,
+    because a logger that drops a sample leaves a gap the inference would read
+    as a slower rate for the whole file.
+    """
+    started_at, samples = _read_columns(path)
+    return StrainRecord(
+        gauge_id=gauge_id,
+        started_at=started_at or datetime(1970, 1, 1),
+        sample_rate_hz=sample_rate_hz,
+        samples_ue=tuple(samples),
+    )
+
+
+def _read_columns(path: Path | str) -> tuple[datetime | None, list[float]]:
+    """The timestamp of the first row and every value, from a logger file.
+
     Two columns are accepted, a timestamp and a value, and the timestamp is
-    read only for the first row. The sample rate is passed in rather than
-    inferred from the timestamps because a logger that drops a sample leaves a
-    gap the inference would read as a slower rate for the whole file.
+    read only for the first row.
     """
     source = Path(path)
     samples: list[float] = []
@@ -122,16 +162,11 @@ def read(path: Path | str, gauge_id: str, sample_rate_hz: float) -> StrainRecord
                 if line_number == 1:
                     continue
                 raise RecordError(
-                    f"{source.name} line {line_number}: {row[-1]!r} is not a strain reading"
+                    f"{source.name} line {line_number}: {row[-1]!r} is not a reading"
                 ) from None
     if not samples:
-        raise RecordError(f"{source.name} holds no strain readings")
-    return StrainRecord(
-        gauge_id=gauge_id,
-        started_at=started_at or datetime(1970, 1, 1),
-        sample_rate_hz=sample_rate_hz,
-        samples_ue=tuple(samples),
-    )
+        raise RecordError(f"{source.name} holds no readings")
+    return started_at, samples
 
 
 def quality_of(record: StrainRecord, limit_ue: float) -> SpectrumQuality:
@@ -160,11 +195,18 @@ def run(
     *,
     bin_width_ue: float = 5.0,
     trigger_frac: float = DEFAULT_TRIGGER_FRAC,
+    temperatures: TemperatureRecord | None = None,
 ) -> RecordRun:
-    """Read a logger file and take it through to a spectrum."""
+    """Read a logger file and take it through to a spectrum.
+
+    A temperature channel, where there is one, is subtracted before the drift
+    fit rather than after it. With a measured companion channel the subtraction
+    is exact; doing the drift fit first lets it swallow part of the thermal
+    ramp, which the later subtraction then removes twice.
+    """
     raw = read(path, gauge_id, sample_rate_hz)
     quality = quality_of(raw, limit_ue)
-    conditioned = conditioning.condition(defects.despike(raw))
+    conditioned = conditioning.condition(defects.despike(raw), temperatures)
     cycles = rainflow.count_cycles(list(conditioned.samples_ue))
     counted = spectrum.build(gauge_id, cycles, bin_width_ue)
     found = events.find(conditioned, trigger_for(conditioned, trigger_frac))
@@ -175,4 +217,5 @@ def run(
         quality=quality,
         spectrum=counted,
         events=tuple(found),
+        temperature_swing_degf=None if temperatures is None else temperatures.swing_degf,
     )

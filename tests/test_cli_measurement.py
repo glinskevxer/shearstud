@@ -490,3 +490,52 @@ def test_a_wider_bin_gives_fewer_bins(runner: CliRunner, wired: Path, tmp_path: 
 def _bins(result: Any) -> int:
     line = next(line for line in result.output.splitlines() if line.startswith("cycles"))
     return int(line.split(" in ")[1].split()[0])
+
+
+def temperature_file(tmp_path: Path, count: int = 12) -> Path:
+    """A morning warming up, logged a reading a minute."""
+    path = tmp_path / "temperature.csv"
+    rows = ["timestamp,degf", "2026-04-01T06:00:00,55.0"]
+    rows.extend(f",{55.0 + 40.0 * index / (count - 1):.2f}" for index in range(1, count))
+    path.write_text("\n".join(rows), encoding="utf-8")
+    return path
+
+
+def test_a_record_with_no_temperature_channel_says_so(
+    runner: CliRunner, wired: Path, tmp_path: Path
+) -> None:
+    result = imported_record(runner, wired, tmp_path)
+    assert "no temperature channel" in result.output
+
+
+def test_a_record_with_a_temperature_channel_reports_the_swing(
+    runner: CliRunner, wired: Path, tmp_path: Path
+) -> None:
+    result = imported_record(
+        runner,
+        wired,
+        tmp_path,
+        "--temperature",
+        str(temperature_file(tmp_path)),
+        "--temperature-rate-hz",
+        "0.017",
+    )
+    assert result.exit_code == 0, result.output
+    assert "compensated against a 40.0 degF swing" in result.output
+
+
+def test_the_temperature_rate_defaults_to_the_strain_rate(
+    runner: CliRunner, wired: Path, tmp_path: Path
+) -> None:
+    result = imported_record(
+        runner, wired, tmp_path, "--temperature", str(temperature_file(tmp_path))
+    )
+    assert result.exit_code == 0, result.output
+    assert "compensated" in result.output
+
+
+def test_a_temperature_file_that_is_not_there_is_refused(
+    runner: CliRunner, wired: Path, tmp_path: Path
+) -> None:
+    result = imported_record(runner, wired, tmp_path, "--temperature", str(tmp_path / "gone.csv"))
+    assert result.exit_code != 0

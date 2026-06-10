@@ -183,14 +183,16 @@ Read a raw strain file, condition it, and count the cycles in it.
 
 Takes `campaign_id`, `gauge_id`, `strain`.
 
-| Option           | Default | What it does                                                   |
-| ---------------- | ------- | -------------------------------------------------------------- |
-| `--rate-hz`      |         | Sample rate the logger was set to.                             |
-| `--limit-ue`     |         | Channel limit. Defaults to the one recorded against the gauge. |
-| `--bin-width-ue` | `5.0`   | Spectrum bin width.                                            |
-| `--trigger-frac` | `0.35`  | Event trigger, as a fraction of the conditioned peak.          |
-| `--events`       |         | Print a line per truck event.                                  |
-| `--save`         |         | Write the spectrum into the book.                              |
+| Option                  | Default | What it does                                                         |
+| ----------------------- | ------- | -------------------------------------------------------------------- |
+| `--rate-hz`             |         | Sample rate the logger was set to.                                   |
+| `--limit-ue`            |         | Channel limit. Defaults to the one recorded against the gauge.       |
+| `--bin-width-ue`        | `5.0`   | Spectrum bin width.                                                  |
+| `--trigger-frac`        | `0.35`  | Event trigger, as a fraction of the conditioned peak.                |
+| `--temperature`         |         | A temperature channel logged alongside, in degrees fahrenheit.       |
+| `--temperature-rate-hz` |         | Sample rate of the temperature channel. Defaults to the strain rate. |
+| `--events`              |         | Print a line per truck event.                                        |
+| `--save`                |         | Write the spectrum into the book.                                    |
 
 ### `shearstud program record`
 
