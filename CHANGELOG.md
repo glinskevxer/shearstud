@@ -9,7 +9,22 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
-## 0.14.0 - 2026-06-15
+## 0.15.0 - 2026-06-22
+
+### Fixed
+
+- **Changes results.** A yield moment was taken at a nominated fibre even
+  when the other one yields first. On a singly symmetric girder the two
+  section moduli differ by a third, so the nominated one reported a moment
+  the section cannot reach. A bare steel section is now rated at whichever
+  fibre yields first; a composite one keeps its tension fibre, because the
+  deck holds the other flange.
+- **Changes results.** Sections near a pier on a continuous unit were rated
+  as composite and driven for the sagging placement. The deck over a pier is
+  in tension and cracked, so the capacity comes off the bare steel, and the
+  governing placement is the one that hogs most.
+
+## 0.14.0 - 2026-06-09
 
 ### Added
 

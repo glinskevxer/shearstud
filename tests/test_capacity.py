@@ -107,7 +107,7 @@ def test_the_yield_moment_can_be_taken_at_the_top_fibre() -> None:
 
 
 def test_an_unknown_fibre_is_refused() -> None:
-    with pytest.raises(InputError, match="expected top or bottom"):
+    with pytest.raises(InputError, match="unknown fibre"):
         cap.yield_moment_kipft(stocky_girder(), 50.0, fibre="middle")
 
 
@@ -262,3 +262,61 @@ def test_the_buckling_ratio_is_continuous_at_the_second_limit() -> None:
 def test_a_bad_buckling_input_is_refused(args: tuple[float, ...], message: str) -> None:
     with pytest.raises(InputError, match=message):
         cap.shear_buckling_ratio(*args)
+
+
+def test_the_governing_fibre_is_the_one_with_the_smaller_modulus(
+    positive_moment_girder: Section,
+) -> None:
+    # A heavy bottom flange puts the elastic axis low, so the top fibre is
+    # further away, its modulus is smaller, and it yields first.
+    section = positive_moment_girder
+    assert section.section_modulus_top_in3 < section.section_modulus_bottom_in3
+    assert cap.governing_fibre(section) == cap.FIBRE_TOP
+
+
+def test_a_doubly_symmetric_section_yields_at_either_fibre(
+    symmetric_plate_girder: Section,
+) -> None:
+    section = symmetric_plate_girder
+    assert section.section_modulus_top_in3 == pytest.approx(section.section_modulus_bottom_in3)
+    assert cap.governing_fibre(section) in cap.FIBRES
+
+
+def test_the_governing_yield_moment_is_the_smaller_of_the_two(
+    positive_moment_girder: Section,
+) -> None:
+    section = positive_moment_girder
+    at_top = cap.yield_moment_kipft(section, 36.0, fibre=cap.FIBRE_TOP)
+    at_bottom = cap.yield_moment_kipft(section, 36.0, fibre=cap.FIBRE_BOTTOM)
+    governing = cap.yield_moment_kipft(section, 36.0)
+    assert governing == pytest.approx(min(at_top, at_bottom))
+    assert governing < at_bottom
+
+
+def test_a_bare_section_cannot_be_rated_above_its_first_yield(
+    positive_moment_girder: Section,
+) -> None:
+    # Nominating the far fibre reports a moment the section cannot reach,
+    # because the other flange yielded on the way there.
+    section = positive_moment_girder
+    bare = cap.flexural_capacity(section, "A36", composite=False)
+    optimistic = cap.yield_moment_kipft(section, 36.0, fibre=cap.FIBRE_BOTTOM)
+    assert bare.moment_kipft < optimistic
+
+
+def test_a_bare_capacity_never_exceeds_the_plastic_moment(
+    positive_moment_girder: Section,
+) -> None:
+    section = positive_moment_girder
+    bare = cap.flexural_capacity(section, "A36", composite=False)
+    assert bare.moment_kipft <= cap.plastic_moment_kipft(section, 36.0)
+
+
+def test_a_composite_section_is_rated_on_its_tension_fibre(
+    positive_moment_girder: Section,
+) -> None:
+    # The deck holds the top flange, so the fibre that decides is the bottom.
+    section = positive_moment_girder
+    composite = cap.flexural_capacity(section, "A36", composite=True, fibre=cap.FIBRE_BOTTOM)
+    bare = cap.flexural_capacity(section, "A36", composite=False)
+    assert composite.moment_kipft > bare.moment_kipft

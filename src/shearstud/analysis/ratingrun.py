@@ -42,6 +42,7 @@ from shearstud.store import assessment as asm
 from shearstud.store import inventory
 from shearstud.structure.girder import GirderLine
 from shearstud.structure.record import Structure
+from shearstud.structure.span import STATION_TOLERANCE_FT
 
 #: How many stations are sampled along each span.
 DEFAULT_STATIONS_PER_SPAN: Final[int] = 10
@@ -58,6 +59,17 @@ RATING_LEVELS: Final[tuple[str, ...]] = fac.LEVELS
 #: name the day a shear run is written, and naming it here rather than passing
 #: a bare string keeps that day from being a search for a string literal.
 EFFECT_MOMENT: Final[str] = "moment"
+
+#: How far either side of a pier the section is rated as a negative moment
+#: section, as a fraction of the shorter adjoining span.
+#:
+#: The exact boundary is the point of contraflexure, which moves with the load
+#: placement and is therefore not a station. A quarter of the span is where the
+#: dead load contraflexure point sits on a balanced unit and is what a rating
+#: sheet uses. Getting this wrong in the safe direction means rating a positive
+#: moment section on its top flange with the deck ignored, which understates it;
+#: getting it wrong the other way credits a deck that has cracked.
+NEGATIVE_REGION_FRAC: Final[float] = 0.25
 
 
 @dataclass(frozen=True, slots=True)
@@ -143,6 +155,46 @@ def stations_for(structure: Structure, settings: RatingSettings) -> list[float]:
     return out
 
 
+def is_negative_region(structure: Structure, global_station_ft: float) -> bool:
+    """Whether a station is close enough to a pier to hog under live load.
+
+    A simple span has no negative region at all, which is why this asks the
+    span arrangement rather than the station. On a continuous unit the deck
+    over the pier is in tension and cracked, so the section that resists there
+    is the bare steel and the flange in compression is the bottom one.
+    """
+    if not structure.spans.continuous:
+        return False
+    for pier_ft in structure.spans.interior_support_stations_ft:
+        index = structure.spans.span_index_at(pier_ft - STATION_TOLERANCE_FT)
+        left_ft = structure.spans.spans[index].length_ft
+        right_ft = structure.spans.spans[min(index + 1, structure.spans.span_count - 1)].length_ft
+        reach_ft = NEGATIVE_REGION_FRAC * min(left_ft, right_ft)
+        if abs(global_station_ft - pier_ft) <= reach_ft:
+            return True
+    return False
+
+
+def capacity_at(
+    structure: Structure, girder: GirderLine, station_ft: float, settings: RatingSettings
+) -> cap.FlexuralCapacity:
+    """The moment capacity in force at a station.
+
+    Two different sections and two different fibres. In a positive moment
+    region the deck works and the section can reach its plastic moment; over a
+    pier the deck is cracked, the capacity comes off the bare steel, and the
+    fibre in compression is the bottom flange rather than the top one. Rating
+    a pier section as composite is a mistake that reads as a comfortable
+    rating on the girder that is actually cracking.
+    """
+    section = girder.section_at(station_ft)
+    if is_negative_region(structure, station_ft):
+        return cap.flexural_capacity(section, settings.steel_grade, composite=False)
+    return cap.flexural_capacity(
+        section, settings.steel_grade, composite=True, fibre=cap.FIBRE_BOTTOM
+    )
+
+
 def influence_for(structure: Structure, global_station_ft: float) -> InfluenceLine:
     """Moment influence line at a station, continuity accounted for."""
     span_index, local_ft = structure.spans.to_local(global_station_ft)
@@ -217,9 +269,8 @@ def rate_station(
     """Rate one station against a fleet."""
     if not vehicles:
         raise InputError("a rating run needs at least one vehicle")
-    flexural = cap.flexural_capacity(
-        girder.section_at(station_ft), settings.steel_grade, composite=True
-    )
+    hogging = is_negative_region(structure, station_ft)
+    flexural = capacity_at(structure, girder, station_ft, settings)
     factors = fac.resistance_factors(settings.member_condition, settings.redundancy)
     dead = dead_load_at(structure, girder, station_ft, settings)
     gamma_dc, gamma_dw = fac.dead_load_factors(limit_state, surface_measured=False)
@@ -242,7 +293,10 @@ def rate_station(
     )
     ratings = []
     for vehicle in vehicles:
-        effect = evaluate(case, vehicle)
+        # Over a pier the governing placement is the one that hogs most, which
+        # is a different placement from the one that sags most and is found by
+        # driving the same vehicle for the minimum rather than the maximum.
+        effect = evaluate(case, vehicle, maximum=not hogging)
         ratings.append(
             rate(
                 label=case.label,
@@ -252,7 +306,7 @@ def rate_station(
                 dead=dead,
                 gamma_dc=gamma_dc,
                 gamma_dw=gamma_dw,
-                live_effect=effect.distributed,
+                live_effect=abs(effect.distributed),
                 gamma_live=gamma_live,
                 gross_weight_kip=vehicle.gross_kip,
             )

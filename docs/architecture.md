@@ -18,10 +18,10 @@ the same table, so the two cannot drift apart.
 | signals     | 7       | 1107  | strain records, conditioning, defects, rainflow and spectra       |
 | fatigue     | 5       | 624   | detail categories, Miner damage, remaining life and evaluation    |
 | structure   | 7       | 844   | the inventory: identity, spans, girders, details and gauges       |
-| rating      | 7       | 1021  | capacity, load factors, the rating equation, posting and permits  |
+| rating      | 7       | 1052  | capacity, load factors, the rating equation, posting and permits  |
 | program     | 3       | 380   | what the office does with the numbers: intervals and priority     |
 | store       | 16      | 2535  | the book of record, its migrations and its repositories           |
-| analysis    | 8       | 1561  | dead load, and the runs that use everything below at once         |
+| analysis    | 8       | 1615  | dead load, and the runs that use everything below at once         |
 | cli         | 11      | 1816  | the command line, which is how anyone outside the package uses it |
 | tools       | 23      | 3048  | the repository's own checks and generated documents               |
 
@@ -114,7 +114,7 @@ store layer. `check_sql` enforces that.
 
 | Module                      | Lines | What it is                                                                  |
 | --------------------------- | ----- | --------------------------------------------------------------------------- |
-| `shearstud.rating.capacity` | 206   | Member capacity: what the girder can carry before the rating divides by it. |
+| `shearstud.rating.capacity` | 237   | Member capacity: what the girder can carry before the rating divides by it. |
 | `shearstud.rating.factors`  | 168   | Load and resistance factors for a load and resistance factor rating.        |
 | `shearstud.rating.permit`   | 140   | Permit ratings: one heavy load, crossing once, under stated conditions.     |
 | `shearstud.rating.posting`  | 151   | Turning rating factors into a posting sign.                                 |
@@ -154,7 +154,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.analysis.deadload`   | 175   | Dead load, and which of the three composite sections each part lands on.    |
 | `shearstud.analysis.fatiguerun` | 197   | Evaluating every instrumented detail on a structure from stored spectra.    |
 | `shearstud.analysis.programrun` | 141   | Building the office's worklist out of the book, and saying what is missing. |
-| `shearstud.analysis.ratingrun`  | 355   | Rating a whole structure, which is where every other module gets used.      |
+| `shearstud.analysis.ratingrun`  | 409   | Rating a whole structure, which is where every other module gets used.      |
 | `shearstud.analysis.recordrun`  | 221   | A raw logger file, taken all the way through to a spectrum in the book.     |
 | `shearstud.analysis.report`     | 172   | The two reports the office actually sends out.                              |
 | `shearstud.analysis.shearrun`   | 297   | Rating a structure in shear, which is a different run and not a variation.  |

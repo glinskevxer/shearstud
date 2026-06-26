@@ -48,6 +48,14 @@ UNSTIFFENED_SHEAR_K: Final[float] = 5.0
 #: Ratio of shear yield to tensile yield used by the shear provisions.
 SHEAR_YIELD_RATIO: Final[float] = 0.58
 
+#: Which fibre a yield moment is taken about. ``governing`` means whichever of
+#: the two yields first, which is what a bare steel section does and is the
+#: only answer that is a moment the section can actually reach.
+FIBRE_BOTTOM: Final[str] = "bottom"
+FIBRE_TOP: Final[str] = "top"
+FIBRE_GOVERNING: Final[str] = "governing"
+FIBRES: Final[tuple[str, ...]] = (FIBRE_BOTTOM, FIBRE_TOP, FIBRE_GOVERNING)
+
 #: The three coefficients of AASHTO LRFD 6.10.9.3.2, which decide whether the
 #: web yields in shear, buckles inelastically, or buckles elastically. They are
 #: the boundaries of the C factor and are the numbers a shear rating turns on.
@@ -88,17 +96,34 @@ def is_compact_web(section: Section, fy_ksi: float) -> bool:
     return web_slenderness(section) <= limit
 
 
-def yield_moment_kipft(section: Section, fy_ksi: float, *, fibre: str = "bottom") -> float:
-    """First yield moment at one fibre."""
+def yield_moment_kipft(section: Section, fy_ksi: float, *, fibre: str = FIBRE_GOVERNING) -> float:
+    """First yield moment, at a nominated fibre or at whichever yields first.
+
+    The default is the governing fibre and it is the default for a reason. On a
+    singly symmetric girder the two section moduli differ by a third, and
+    asking for the larger one reports a moment the section cannot reach,
+    because the other flange yielded on the way there. A caller nominates a
+    fibre only when something outside the bare section decides which one
+    matters, which in this package means a deck holding the top flange.
+    """
     if fy_ksi <= 0.0:
         raise InputError(f"yield stress {fy_ksi} is not a stress")
-    if fibre == "bottom":
+    if fibre == FIBRE_BOTTOM:
         modulus_in3 = section.section_modulus_bottom_in3
-    elif fibre == "top":
+    elif fibre == FIBRE_TOP:
         modulus_in3 = section.section_modulus_top_in3
+    elif fibre == FIBRE_GOVERNING:
+        modulus_in3 = min(section.section_modulus_bottom_in3, section.section_modulus_top_in3)
     else:
-        raise InputError(f"unknown fibre {fibre!r}, expected top or bottom")
+        raise InputError(f"unknown fibre {fibre!r}, expected one of {FIBRES}")
     return kipin_to_kipft(modulus_in3 * fy_ksi)
+
+
+def governing_fibre(section: Section) -> str:
+    """Which fibre a bare section yields at first."""
+    if section.section_modulus_top_in3 <= section.section_modulus_bottom_in3:
+        return FIBRE_TOP
+    return FIBRE_BOTTOM
 
 
 def plastic_moment_kipft(section: Section, fy_ksi: float) -> float:
@@ -146,9 +171,15 @@ def plastic_neutral_axis_in(section: Section) -> float:
 
 
 def flexural_capacity(
-    section: Section, grade: str, *, composite: bool, fibre: str = "bottom"
+    section: Section, grade: str, *, composite: bool, fibre: str = FIBRE_GOVERNING
 ) -> FlexuralCapacity:
-    """Moment capacity under the mechanism that governs."""
+    """Moment capacity under the mechanism that governs.
+
+    ``composite`` says the deck holds the top flange, which is what lets a
+    compact section reach its plastic moment. Without it the section is bare
+    steel, both flanges are free to yield, and the capacity is the first yield
+    moment at whichever fibre gets there first.
+    """
     fy_ksi = yield_stress_ksi(grade)
     compact = is_compact_web(section, fy_ksi)
     if composite and compact:

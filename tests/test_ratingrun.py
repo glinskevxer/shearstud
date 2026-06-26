@@ -412,3 +412,85 @@ def test_a_grade_the_record_does_not_know_is_refused(book: Path) -> None:
     inventory.save(book, structure())
     with pytest.raises(InputError, match="unknown steel grade"):
         rr.settings_for(book, "18-SH-0473", steel_grade="A999")
+
+
+def test_a_simple_span_has_no_negative_region() -> None:
+    unit = structure()
+    assert not any(
+        rr.is_negative_region(unit, station) for station in rr.stations_for(unit, RatingSettings())
+    )
+
+
+def test_the_station_at_a_pier_is_a_negative_region() -> None:
+    assert rr.is_negative_region(structure(continuous=True), SPAN_FT)
+
+
+def test_a_station_a_quarter_span_from_the_pier_is_still_negative() -> None:
+    unit = structure(continuous=True)
+    reach_ft = rr.NEGATIVE_REGION_FRAC * SPAN_FT
+    assert rr.is_negative_region(unit, SPAN_FT - reach_ft)
+    assert rr.is_negative_region(unit, SPAN_FT + reach_ft)
+
+
+def test_a_station_beyond_the_reach_is_a_positive_region() -> None:
+    unit = structure(continuous=True)
+    reach_ft = rr.NEGATIVE_REGION_FRAC * SPAN_FT
+    assert not rr.is_negative_region(unit, SPAN_FT - reach_ft - 1.0)
+    assert not rr.is_negative_region(unit, SPAN_FT + reach_ft + 1.0)
+
+
+def test_midspan_is_never_a_negative_region() -> None:
+    assert not rr.is_negative_region(structure(continuous=True), SPAN_FT / 2.0)
+
+
+def test_the_pier_section_is_rated_on_bare_steel() -> None:
+    # The deck over a pier is in tension and cracked, so it carries nothing.
+    unit = structure(continuous=True)
+    girder_line = unit.girder("G2")
+    over_pier = rr.capacity_at(unit, girder_line, SPAN_FT, RatingSettings())
+    at_midspan = rr.capacity_at(unit, girder_line, SPAN_FT / 2.0, RatingSettings())
+    assert over_pier.moment_kipft < at_midspan.moment_kipft
+
+
+def test_the_midspan_section_can_reach_its_plastic_moment() -> None:
+    unit = structure(continuous=True)
+    at_midspan = rr.capacity_at(unit, unit.girder("G2"), SPAN_FT / 2.0, RatingSettings())
+    assert at_midspan.mechanism in ("plastic", "yield")
+
+
+def test_the_pier_section_never_reaches_its_plastic_moment() -> None:
+    unit = structure(continuous=True)
+    over_pier = rr.capacity_at(unit, unit.girder("G2"), SPAN_FT, RatingSettings())
+    assert over_pier.mechanism == "yield"
+
+
+def test_a_simple_span_is_rated_composite_everywhere() -> None:
+    simple_unit = structure()
+    at_midspan = rr.capacity_at(
+        simple_unit, simple_unit.girder("G2"), SPAN_FT / 2.0, RatingSettings()
+    )
+    continuous_unit = structure(continuous=True)
+    same = rr.capacity_at(
+        continuous_unit, continuous_unit.girder("G2"), SPAN_FT / 2.0, RatingSettings()
+    )
+    assert at_midspan.moment_kipft == pytest.approx(same.moment_kipft)
+
+
+def test_a_pier_station_rates_against_the_hogging_placement() -> None:
+    # Driving for the maximum finds the sagging placement, which at a pier is
+    # smaller than the hogging one and would overstate the rating.
+    unit = structure(continuous=True)
+    settings = RatingSettings(stations_per_span=4)
+    at_pier = rr.rate_station(unit, unit.girder("G2"), SPAN_FT, vehicles.legal_fleet(), settings)
+    assert at_pier.governing.factored_live > 0.0
+    assert at_pier.governing.value > 0.0
+
+
+def test_every_rating_on_a_continuous_unit_is_positive() -> None:
+    # The live effect goes into the equation as a magnitude. A negative one
+    # would come back as a rating factor above one on a section that is failing.
+    unit = structure(continuous=True)
+    results = rr.rate_structure(unit, vehicles.legal_fleet(), RatingSettings(stations_per_span=4))
+    for station in results:
+        for factor in station.ratings:
+            assert factor.factored_live >= 0.0
