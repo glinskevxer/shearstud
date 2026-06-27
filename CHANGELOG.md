@@ -9,7 +9,17 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
-## 0.15.0 - 2026-06-22
+## 0.16.0 - 2026-06-29
+
+### Added
+
+- `shearstud shape list`, `shape show` and `shape compare`. The catalogue is
+  what the older stringers are made of, and `shape compare` prints the shapes
+  the three rectangle idealisation fits least well, which is the answer to
+  the question somebody asks when a hand calculation disagrees by two per
+  cent.
+
+## 0.15.0 - 2026-06-25
 
 ### Fixed
 

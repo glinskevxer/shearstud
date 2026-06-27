@@ -14,6 +14,7 @@ from shearstud.cli import (  # noqa: F401
     program,
     rating,
     report,
+    shapes,
     structures,
     studs,
     thickness,

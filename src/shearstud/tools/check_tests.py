@@ -56,6 +56,7 @@ ALIASES: Final[dict[str, str]] = {
     "shearstud.cli.thickness": "test_cli_thickness.py",
     "shearstud.cli.vehicles": "test_cli_vehicles.py",
     "shearstud.cli.studs": "test_cli_studs.py",
+    "shearstud.cli.shapes": "test_cli_shapes.py",
     "shearstud.store.migrations.m001_structures": "test_migrate.py",
     "shearstud.store.migrations.m002_measurement": "test_migrate.py",
     "shearstud.store.migrations.m003_assessment": "test_migrate.py",

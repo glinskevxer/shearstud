@@ -16,56 +16,60 @@ from the environment, because a rating office runs one book per district.
 | `gauge`     | Gauges on the structures.                                               |
 | `program`   | The inspection programme: intervals, priority and the worklist.         |
 | `report`    | Print what the book holds, for one structure or for the district.       |
+| `shape`     | The rolled shape catalogue the older stringers come out of.             |
 | `structure` | Look at and change the inventory.                                       |
 | `thickness` | Ultrasonic readings, and what they leave of the section.                |
 | `vehicle`   | The rating vehicles: what is in the fleet and what each one looks like. |
 
 ## Commands
 
-| Command             | What it does                                                          |
-| ------------------- | --------------------------------------------------------------------- |
-| `book counts`       | How many rows are in each table.                                      |
-| `book orphans`      | Spectra whose gauge is no longer in the book.                         |
-| `book prune`        | Remove superseded conclusions older than a cutoff.                    |
-| `book vacuum`       | Rebuild the file, giving back the space a prune freed.                |
-| `campaign add`      | Record a measurement campaign.                                        |
-| `campaign list`     | Campaigns on one structure, oldest first.                             |
-| `check`             | Run the structural checks SQLite can do on the book itself.           |
-| `fatigue evaluate`  | Evaluate every detail on a structure against one campaign.            |
-| `gauge add`         | Record a gauge installation.                                          |
-| `gauge list`        | Every gauge in the book.                                              |
-| `init`              | Create the book of record, or bring an existing one up to date.       |
-| `permit`            | Rate a structure for one permit vehicle, at every level of control.   |
-| `posting`           | Work the posting decision from the legal load ratings.                |
-| `program due`       | Structures whose inspection date has gone past.                       |
-| `program record`    | Write down what an inspection found.                                  |
-| `program show`      | What the programme currently believes about one structure.            |
-| `program worklist`  | The office's list, gaps first.                                        |
-| `rate`              | Rate a structure against the legal fleet, or against the design load. |
-| `ratings`           | What the book already holds for a structure, newest first.            |
-| `record`            | Read a raw strain file, condition it, and count the cycles in it.     |
-| `report inventory`  | The district's picture: how much is known, and what is due.           |
-| `report overdue`    | Structures past their inspection date, soonest due first.             |
-| `report structure`  | Everything on record about one structure, absences included.          |
-| `shear`             | Rate a structure in shear, ends included.                             |
-| `spectrum`          | Read a two column range and count file into the book.                 |
-| `status`            | Report the schema version and what the book holds.                    |
-| `structure delete`  | Remove a structure and everything hanging off it.                     |
-| `structure details` | Every fatigue detail on a structure.                                  |
-| `structure export`  | Write a structure back out as a document.                             |
-| `structure import`  | Read a structure document into the book.                              |
-| `structure list`    | Every structure in the book, in file cabinet order.                   |
-| `structure section` | Section properties at one station.                                    |
-| `structure show`    | Everything the book holds about one structure.                        |
-| `studs`             | Stud spacing from fatigue, and stud count from strength.              |
-| `thickness add`     | Record one reading off a field sheet.                                 |
-| `thickness import`  | Read a whole field sheet: plate, station, remaining thickness, note.  |
-| `thickness list`    | Every reading on a structure, newest first.                           |
-| `thickness loss`    | What the readings leave of each plate, worst first.                   |
-| `thickness rate`    | Loss per year at each place that has been measured twice.             |
-| `vehicle envelope`  | The moment a vehicle puts at each tenth point of a simple span.       |
-| `vehicle list`      | Every vehicle this tool can rate against.                             |
-| `vehicle show`      | One vehicle's axles, spacings and running weight.                     |
+| Command             | What it does                                                             |
+| ------------------- | ------------------------------------------------------------------------ |
+| `book counts`       | How many rows are in each table.                                         |
+| `book orphans`      | Spectra whose gauge is no longer in the book.                            |
+| `book prune`        | Remove superseded conclusions older than a cutoff.                       |
+| `book vacuum`       | Rebuild the file, giving back the space a prune freed.                   |
+| `campaign add`      | Record a measurement campaign.                                           |
+| `campaign list`     | Campaigns on one structure, oldest first.                                |
+| `check`             | Run the structural checks SQLite can do on the book itself.              |
+| `fatigue evaluate`  | Evaluate every detail on a structure against one campaign.               |
+| `gauge add`         | Record a gauge installation.                                             |
+| `gauge list`        | Every gauge in the book.                                                 |
+| `init`              | Create the book of record, or bring an existing one up to date.          |
+| `permit`            | Rate a structure for one permit vehicle, at every level of control.      |
+| `posting`           | Work the posting decision from the legal load ratings.                   |
+| `program due`       | Structures whose inspection date has gone past.                          |
+| `program record`    | Write down what an inspection found.                                     |
+| `program show`      | What the programme currently believes about one structure.               |
+| `program worklist`  | The office's list, gaps first.                                           |
+| `rate`              | Rate a structure against the legal fleet, or against the design load.    |
+| `ratings`           | What the book already holds for a structure, newest first.               |
+| `record`            | Read a raw strain file, condition it, and count the cycles in it.        |
+| `report inventory`  | The district's picture: how much is known, and what is due.              |
+| `report overdue`    | Structures past their inspection date, soonest due first.                |
+| `report structure`  | Everything on record about one structure, absences included.             |
+| `shape compare`     | The shapes the three rectangle idealisation fits least well.             |
+| `shape list`        | Every shape in the catalogue.                                            |
+| `shape show`        | One shape's published dimensions, and what the idealisation makes of it. |
+| `shear`             | Rate a structure in shear, ends included.                                |
+| `spectrum`          | Read a two column range and count file into the book.                    |
+| `status`            | Report the schema version and what the book holds.                       |
+| `structure delete`  | Remove a structure and everything hanging off it.                        |
+| `structure details` | Every fatigue detail on a structure.                                     |
+| `structure export`  | Write a structure back out as a document.                                |
+| `structure import`  | Read a structure document into the book.                                 |
+| `structure list`    | Every structure in the book, in file cabinet order.                      |
+| `structure section` | Section properties at one station.                                       |
+| `structure show`    | Everything the book holds about one structure.                           |
+| `studs`             | Stud spacing from fatigue, and stud count from strength.                 |
+| `thickness add`     | Record one reading off a field sheet.                                    |
+| `thickness import`  | Read a whole field sheet: plate, station, remaining thickness, note.     |
+| `thickness list`    | Every reading on a structure, newest first.                              |
+| `thickness loss`    | What the readings leave of each plate, worst first.                      |
+| `thickness rate`    | Loss per year at each place that has been measured twice.                |
+| `vehicle envelope`  | The moment a vehicle puts at each tenth point of a simple span.          |
+| `vehicle list`      | Every vehicle this tool can rate against.                                |
+| `vehicle show`      | One vehicle's axles, spacings and running weight.                        |
 
 ## Detail
 
@@ -312,6 +316,32 @@ Structures past their inspection date, soonest due first.
 | Option | Default | What it does                                 |
 | ------ | ------- | -------------------------------------------- |
 | `--on` |         | Ask as at a date, YYYY-MM-DD. Default today. |
+
+### `shearstud shape list`
+
+Every shape in the catalogue.
+
+| Option          | Default | What it does                             |
+| --------------- | ------- | ---------------------------------------- |
+| `--starts-with` |         | Only designations beginning with this.   |
+| `--sort-depth`  |         | Deepest first instead of by designation. |
+
+### `shearstud shape show`
+
+One shape's published dimensions, and what the idealisation makes of it.
+
+Takes `designation`.
+
+### `shearstud shape compare`
+
+The shapes the three rectangle idealisation fits least well.
+
+    Deep shapes with narrow flanges are at the top of this list, because the
+    fillet is a larger share of a section that has less flange in it.
+
+| Option    | Default | What it does       |
+| --------- | ------- | ------------------ |
+| `--worst` | `5`     | How many to print. |
 
 ### `shearstud structure list`
 
