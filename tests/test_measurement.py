@@ -17,6 +17,10 @@ from shearstud.structure.gauge import ORIENTATION_LONGITUDINAL, ORIENTATION_TRAN
 
 pytestmark = pytest.mark.store
 
+NUMBER = "18-SH-0473"
+CAMPAIGN = "C-2025-04"
+DETAIL = "D07"
+
 
 def install(
     gauge_id: str = "G3-BF-01",
@@ -278,3 +282,73 @@ def test_recording_a_gauge_removal_keeps_its_spectra(seeded_book: Path) -> None:
     meas.save_gauge(seeded_book, install(removed=date(2026, 2, 1)))
     assert meas.load_gauges(seeded_book)[0].removed_on == date(2026, 2, 1)
     assert meas.load_spectrum(seeded_book, "C-2025-04", "G3-BF-01").total_count > 0.0
+
+
+def test_a_campaign_can_be_looked_up_by_its_id_alone(seeded_book: Path) -> None:
+    # The id is unique across the book, so a caller holding one does not have
+    # to find out which structure it belongs to in order to ask about it.
+    found = meas.load_campaign(seeded_book, CAMPAIGN)
+    assert found.campaign_id == CAMPAIGN
+    assert found.structure_number == NUMBER
+
+
+def test_a_campaign_that_is_not_there_is_refused(seeded_book: Path) -> None:
+    with pytest.raises(StorageError, match="no campaign"):
+        meas.load_campaign(seeded_book, "C-1999-01")
+
+
+def test_a_campaign_with_no_correction_is_typical(seeded_book: Path) -> None:
+    assert meas.load_campaign(seeded_book, CAMPAIGN).is_typical
+    assert CampaignRecord(
+        campaign_id=CAMPAIGN,
+        structure_number=NUMBER,
+        started_on=date(2025, 4, 1),
+        ended_on=date(2025, 4, 14),
+    ).is_typical
+
+
+def test_a_scaled_campaign_is_not_typical(seeded_book: Path) -> None:
+    record = meas.load_campaign(seeded_book, CAMPAIGN)
+    meas.save_campaign(
+        seeded_book,
+        CampaignRecord(
+            campaign_id=record.campaign_id,
+            structure_number=record.structure_number,
+            started_on=record.started_on,
+            ended_on=record.ended_on,
+            seasonal_factor=1.4,
+        ),
+    )
+    assert not meas.load_campaign(seeded_book, CAMPAIGN).is_typical
+
+
+def test_the_coverage_lists_every_gauge_on_the_structure(seeded_book: Path) -> None:
+    meas.save_gauge(seeded_book, install("g1"))
+    meas.save_gauge(seeded_book, install("g2"))
+    coverage = meas.campaign_coverage(seeded_book, CAMPAIGN)
+    assert [gauge_id for gauge_id, _, _ in coverage] == ["g1", "g2"]
+
+
+def test_a_gauge_that_did_not_report_is_on_the_coverage(seeded_book: Path) -> None:
+    # The silent channels are the point. A campaign that counted cycles on
+    # three of five gauges looks complete in a listing of what it has.
+    meas.save_gauge(seeded_book, install("g1"))
+    meas.save_gauge(seeded_book, install("g2"))
+    meas.save_spectrum(seeded_book, CAMPAIGN, spectrum("g1"))
+    reported = {gauge_id: did for gauge_id, _, did in meas.campaign_coverage(seeded_book, CAMPAIGN)}
+    assert reported == {"g1": True, "g2": False}
+
+
+def test_the_coverage_names_the_detail_each_gauge_is_on(seeded_book: Path) -> None:
+    meas.save_gauge(seeded_book, install("g1"))
+    coverage = meas.campaign_coverage(seeded_book, CAMPAIGN)
+    assert coverage[0][1] == DETAIL
+
+
+def test_a_structure_with_no_gauges_has_empty_coverage(seeded_book: Path) -> None:
+    assert meas.campaign_coverage(seeded_book, CAMPAIGN) == []
+
+
+def test_the_coverage_of_a_campaign_that_is_not_there_is_refused(seeded_book: Path) -> None:
+    with pytest.raises(StorageError, match="no campaign"):
+        meas.campaign_coverage(seeded_book, "C-1999-01")

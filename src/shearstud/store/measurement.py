@@ -48,6 +48,16 @@ class CampaignRecord:
         """How long the campaign ran, counting both end days."""
         return float((self.ended_on - self.started_on).days + 1)
 
+    @property
+    def is_typical(self) -> bool:
+        """True when no seasonal correction was applied to the counts.
+
+        The evaluation carries the same property on its own campaign record.
+        A report that says a spectrum was scaled and does not say by how much
+        is a report the next reader cannot reproduce.
+        """
+        return self.seasonal_factor == 1.0
+
 
 @dataclass(frozen=True, slots=True)
 class SpectrumQuality:
@@ -282,3 +292,52 @@ def gauges_in_campaign(path: Path | str, campaign_id: str) -> list[str]:
         (campaign_id,),
     )
     return [str(row["gauge_id"]) for row in rows]
+
+
+def load_campaign(path: Path | str, campaign_id: str) -> CampaignRecord:
+    """One campaign by its id, whichever structure it was run on.
+
+    A campaign id is unique across the book, so this does not take a structure
+    number. Requiring one would mean a caller holding a campaign id had to look
+    up which structure it belonged to in order to ask about it, which is the
+    lookup this is for.
+    """
+    row = db.fetch_one(
+        path,
+        "SELECT campaign_id, structure_number, started_on, ended_on, seasonal_factor, note "
+        "FROM campaigns WHERE campaign_id = ?",
+        (campaign_id,),
+    )
+    if row is None:
+        raise StorageError(f"no campaign {campaign_id!r} in the book of record")
+    return CampaignRecord(
+        campaign_id=str(row["campaign_id"]),
+        structure_number=str(row["structure_number"]),
+        started_on=date.fromisoformat(str(row["started_on"])),
+        ended_on=date.fromisoformat(str(row["ended_on"])),
+        seasonal_factor=float(row["seasonal_factor"]),
+        note=str(row["note"]),
+    )
+
+
+def campaign_coverage(path: Path | str, campaign_id: str) -> list[tuple[str, str, bool]]:
+    """Every gauge on the structure, and whether it reported in this campaign.
+
+    The gauges that did not report are the point. A campaign that counted
+    cycles on three of its five gauges looks complete in every listing that
+    only shows what it has, and the two silent channels are the ones somebody
+    has to go and look at.
+    """
+    campaign = load_campaign(path, campaign_id)
+    reporting = set(gauges_in_campaign(path, campaign_id))
+    rows = db.fetch_all(
+        path,
+        "SELECT g.gauge_id, g.detail_id FROM gauges AS g "
+        "JOIN details AS d ON d.detail_id = g.detail_id "
+        "WHERE d.structure_number = ? ORDER BY g.gauge_id",
+        (campaign.structure_number,),
+    )
+    return [
+        (str(row["gauge_id"]), str(row["detail_id"]), str(row["gauge_id"]) in reporting)
+        for row in rows
+    ]

@@ -9,7 +9,16 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
-## 0.16.0 - 2026-06-29
+## 0.17.0 - 2026-07-06
+
+### Added
+
+- `shearstud campaign show` reports a campaign and, for each gauge on the
+  structure, whether it reported and how much of its record was usable. The
+  gauges that did not report are the point: a campaign that counted cycles on
+  three of five channels looks complete in any listing of what it has.
+
+## 0.16.0 - 2026-06-26
 
 ### Added
 

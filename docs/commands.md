@@ -31,6 +31,7 @@ from the environment, because a rating office runs one book per district.
 | `book vacuum`       | Rebuild the file, giving back the space a prune freed.                   |
 | `campaign add`      | Record a measurement campaign.                                           |
 | `campaign list`     | Campaigns on one structure, oldest first.                                |
+| `campaign show`     | One campaign, and which of the structure's gauges reported in it.        |
 | `check`             | Run the structural checks SQLite can do on the book itself.              |
 | `fatigue evaluate`  | Evaluate every detail on a structure against one campaign.               |
 | `gauge add`         | Record a gauge installation.                                             |
@@ -155,6 +156,12 @@ Takes `campaign_id`, `number`.
 | `--to`       |         | Last day, YYYY-MM-DD.      |
 | `--seasonal` | `1.0`   | Seasonal factor.           |
 | `--note`     | ``      | What the campaign was for. |
+
+### `shearstud campaign show`
+
+One campaign, and which of the structure's gauges reported in it.
+
+Takes `campaign_id`.
 
 ### `shearstud spectrum`
 

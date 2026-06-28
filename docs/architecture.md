@@ -20,9 +20,9 @@ the same table, so the two cannot drift apart.
 | structure   | 7       | 844   | the inventory: identity, spans, girders, details and gauges       |
 | rating      | 7       | 1052  | capacity, load factors, the rating equation, posting and permits  |
 | program     | 3       | 380   | what the office does with the numbers: intervals and priority     |
-| store       | 16      | 2535  | the book of record, its migrations and its repositories           |
+| store       | 16      | 2594  | the book of record, its migrations and its repositories           |
 | analysis    | 8       | 1615  | dead load, and the runs that use everything below at once         |
-| cli         | 12      | 1906  | the command line, which is how anyone outside the package uses it |
+| cli         | 12      | 1937  | the command line, which is how anyone outside the package uses it |
 | tools       | 23      | 3049  | the repository's own checks and generated documents               |
 
 ## What each layer may import
@@ -42,7 +42,7 @@ the same table, so the two cannot drift apart.
 | cli         | analysis, fatigue, geometry, loads, program, rating, signals, store, structure      |
 | tools       | analysis, cli, fatigue, geometry, loads, program, rating, signals, store, structure |
 
-The package holds 87 SQL statements, all of them in the
+The package holds 89 SQL statements, all of them in the
 store layer. `check_sql` enforces that.
 
 ## Modules
@@ -136,7 +136,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.store.db`                          | 158   | The book of record: one SQLite file, opened and closed around each unit of  |
 | `shearstud.store.importer`                    | 243   | Reading a structure out of a JSON document, and writing one back.           |
 | `shearstud.store.inventory`                   | 435   | Reading and writing whole structures.                                       |
-| `shearstud.store.measurement`                 | 284   | Reading and writing what was measured: gauges, campaigns and spectra.       |
+| `shearstud.store.measurement`                 | 343   | Reading and writing what was measured: gauges, campaigns and spectra.       |
 | `shearstud.store.migrate`                     | 162   | Applying migrations, and refusing to run against a book that has diverged.  |
 | `shearstud.store.migrations.m001_structures`  | 87    | The inventory: structures, girders and the details welded to them.          |
 | `shearstud.store.migrations.m002_measurement` | 71    | What is measured: gauges, campaigns, cycle spectra and thickness readings.  |
@@ -165,7 +165,7 @@ store layer. `check_sql` enforces that.
 | --------------------------- | ----- | ----------------------------------------------------------------------------- |
 | `shearstud.cli.book`        | 100   | Commands that operate on the book itself rather than on what is in it.        |
 | `shearstud.cli.main`        | 149   | The command line, which is the only way anyone outside this package uses it.  |
-| `shearstud.cli.measurement` | 409   | Commands for what was measured, and the fatigue evaluation that reads it.     |
+| `shearstud.cli.measurement` | 440   | Commands for what was measured, and the fatigue evaluation that reads it.     |
 | `shearstud.cli.program`     | 150   | Commands for the inspection programme: what gets visited, and when.           |
 | `shearstud.cli.rating`      | 225   | Commands that rate a structure and decide whether to post it.                 |
 | `shearstud.cli.report`      | 65    | Commands that print the two reports the office sends out.                     |

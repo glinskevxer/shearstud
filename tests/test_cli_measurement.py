@@ -539,3 +539,53 @@ def test_a_temperature_file_that_is_not_there_is_refused(
 ) -> None:
     result = imported_record(runner, wired, tmp_path, "--temperature", str(tmp_path / "gone.csv"))
     assert result.exit_code != 0
+
+
+def test_a_campaign_shows_when_it_ran(runner: CliRunner, wired: Path) -> None:
+    result = runner.invoke(main, ["--book", str(wired), "campaign", "show", CAMPAIGN])
+    assert result.exit_code == 0, result.output
+    assert "2025-04-01 to 2025-04-14" in result.output
+    assert "14 days" in result.output
+
+
+def test_a_campaign_shows_which_structure_it_was_on(runner: CliRunner, wired: Path) -> None:
+    result = runner.invoke(main, ["--book", str(wired), "campaign", "show", CAMPAIGN])
+    assert NUMBER in result.output
+
+
+def test_a_campaign_with_no_correction_says_typical(runner: CliRunner, wired: Path) -> None:
+    result = runner.invoke(main, ["--book", str(wired), "campaign", "show", CAMPAIGN])
+    assert "season     typical" in result.output
+
+
+def test_a_silent_gauge_is_named(runner: CliRunner, wired: Path, tmp_path: Path) -> None:
+    # The gauge on this structure never reported. A listing that only showed
+    # what the campaign has would leave it out entirely.
+    result = runner.invoke(main, ["--book", str(wired), "campaign", "show", CAMPAIGN])
+    assert "did not report" in result.output
+    assert "0 of 1 gauges reported" in result.output
+    assert "silent     g1" in result.output
+
+
+def test_a_reporting_gauge_shows_its_quality(
+    runner: CliRunner, wired: Path, tmp_path: Path
+) -> None:
+    imported_record(runner, wired, tmp_path, "--save")
+    result = runner.invoke(main, ["--book", str(wired), "campaign", "show", CAMPAIGN])
+    assert "usable" in result.output
+    assert "1 of 1 gauges reported" in result.output
+    assert "silent" not in result.output
+
+
+def test_a_railed_gauge_is_called_out_in_the_campaign(
+    runner: CliRunner, wired: Path, tmp_path: Path
+) -> None:
+    imported_record(runner, wired, tmp_path, "--save", railed=True)
+    result = runner.invoke(main, ["--book", str(wired), "campaign", "show", CAMPAIGN])
+    assert "NOT TRUSTWORTHY" in result.output
+
+
+def test_a_campaign_that_is_not_there_is_refused(runner: CliRunner, wired: Path) -> None:
+    result = runner.invoke(main, ["--book", str(wired), "campaign", "show", "C-1999-01"])
+    assert result.exit_code != 0
+    assert "no campaign" in result.output

@@ -407,3 +407,34 @@ def import_record(
         return
     meas.save_spectrum(path, campaign_id, result.spectrum, result.quality)
     click.echo(f"saved {len(result.spectrum)} bins against {campaign_id}")
+
+
+@campaign.command("show")
+@click.argument("campaign_id")
+@pass_context
+def show_campaign(ctx: Context, campaign_id: str) -> None:
+    """One campaign, and which of the structure's gauges reported in it."""
+    path = ctx.require_book()
+    record = meas.load_campaign(path, campaign_id)
+    click.echo(f"campaign   {record.campaign_id} on {record.structure_number}")
+    click.echo(f"ran        {record.started_on} to {record.ended_on}, {record.days:g} days")
+    scale = "typical" if record.is_typical else f"scaled by {record.seasonal_factor:g}"
+    click.echo(f"season     {scale}")
+    if record.note:
+        click.echo(f"note       {record.note}")
+
+    coverage = meas.campaign_coverage(path, campaign_id)
+    if not coverage:
+        click.echo("gauges     none on this structure")
+        return
+    for gauge_id, detail_id, reported in coverage:
+        if not reported:
+            click.echo(f"  {gauge_id:<12}{detail_id:<16}did not report")
+            continue
+        quality = meas.load_quality(path, campaign_id, gauge_id)
+        verdict = "usable" if quality.is_trustworthy else "NOT TRUSTWORTHY"
+        click.echo(f"  {gauge_id:<12}{detail_id:<16}{quality.usable_frac:>6.1%} usable  {verdict}")
+    silent = [gauge_id for gauge_id, _, reported in coverage if not reported]
+    click.echo(f"{len(coverage) - len(silent)} of {len(coverage)} gauges reported")
+    if silent:
+        click.echo(f"silent     {', '.join(silent)}")
