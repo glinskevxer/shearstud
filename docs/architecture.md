@@ -14,16 +14,16 @@ the same table, so the two cannot drift apart.
 | ----------- | ------- | ----- | ----------------------------------------------------------------- |
 | (top level) | 3       | 194   | units, the error tree, and nothing that knows about a bridge      |
 | geometry    | 8       | 1046  | plates, sections, composite stages and section loss               |
-| loads       | 9       | 1352  | vehicles, influence lines, distribution and the dynamic allowance |
+| loads       | 9       | 1355  | vehicles, influence lines, distribution and the dynamic allowance |
 | signals     | 7       | 1107  | strain records, conditioning, defects, rainflow and spectra       |
 | fatigue     | 5       | 624   | detail categories, Miner damage, remaining life and evaluation    |
 | structure   | 7       | 844   | the inventory: identity, spans, girders, details and gauges       |
-| rating      | 7       | 1052  | capacity, load factors, the rating equation, posting and permits  |
-| program     | 3       | 380   | what the office does with the numbers: intervals and priority     |
+| rating      | 7       | 1056  | capacity, load factors, the rating equation, posting and permits  |
+| program     | 3       | 382   | what the office does with the numbers: intervals and priority     |
 | store       | 16      | 2594  | the book of record, its migrations and its repositories           |
 | analysis    | 8       | 1615  | dead load, and the runs that use everything below at once         |
 | cli         | 12      | 1937  | the command line, which is how anyone outside the package uses it |
-| tools       | 23      | 3049  | the repository's own checks and generated documents               |
+| tools       | 24      | 3202  | the repository's own checks and generated documents               |
 
 ## What each layer may import
 
@@ -72,7 +72,7 @@ store layer. `check_sql` enforces that.
 | ------------------------------ | ----- | --------------------------------------------------------------------------- |
 | `shearstud.loads.axles`        | 154   | Axle trains: the vehicles that get driven across an influence line.         |
 | `shearstud.loads.continuous`   | 256   | Influence lines for continuous units, from the three moment equation.       |
-| `shearstud.loads.distribution` | 237   | Live load distribution factors: how much of a lane one girder carries.      |
+| `shearstud.loads.distribution` | 240   | Live load distribution factors: how much of a lane one girder carries.      |
 | `shearstud.loads.impact`       | 100   | Dynamic load allowance, and the one load it is never applied to.            |
 | `shearstud.loads.influence`    | 219   | Influence lines as piecewise linear functions of load position.             |
 | `shearstud.loads.live`         | 116   | Assembling one live load effect out of the four things that make it.        |
@@ -119,13 +119,13 @@ store layer. `check_sql` enforces that.
 | `shearstud.rating.permit`   | 140   | Permit ratings: one heavy load, crossing once, under stated conditions.     |
 | `shearstud.rating.posting`  | 151   | Turning rating factors into a posting sign.                                 |
 | `shearstud.rating.rate`     | 155   | The rating factor: capacity left over, divided by what the truck asks for.  |
-| `shearstud.rating.studs`    | 194   | Shear connectors: what holds the deck to the girder, and how far apart.     |
+| `shearstud.rating.studs`    | 198   | Shear connectors: what holds the deck to the girder, and how far apart.     |
 
 ### program
 
 | Module                       | Lines | What it is                                                                 |
 | ---------------------------- | ----- | -------------------------------------------------------------------------- |
-| `shearstud.program.interval` | 198   | How long until this structure gets looked at again.                        |
+| `shearstud.program.interval` | 200   | How long until this structure gets looked at again.                        |
 | `shearstud.program.priority` | 167   | Which structures get looked at first, and why they cannot share one score. |
 
 ### store
@@ -183,6 +183,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.tools.build_commands`     | 112   | The command reference, built by walking the command tree that ships.            |
 | `shearstud.tools.build_glossary`     | 104   | The glossary, built from the constants the code actually uses.                  |
 | `shearstud.tools.build_lock`         | 53    | Write ``migrations.lock`` from the migrations in the code.                      |
+| `shearstud.tools.build_rules`        | 153   | The thresholds document: every number this package decides on, in one table.    |
 | `shearstud.tools.check_changelog`    | 141   | The changelog says what the version is, so the version has to agree.            |
 | `shearstud.tools.check_cli`          | 99    | The command line documents itself: every command and every option has help.     |
 | `shearstud.tools.check_constants`    | 137   | A coefficient buried in an expression is a coefficient nobody can check.        |

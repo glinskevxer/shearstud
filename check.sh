@@ -24,7 +24,7 @@ run "mypy"          "$PY" -m mypy
 for module in $(ls src/shearstud/tools/check_*.py | xargs -n1 basename | sed 's/\.py$//'); do
   run "$module" "$PY" -m "shearstud.tools.$module"
 done
-for module in build_architecture build_commands build_glossary build_lock schema_dump; do
+for module in build_architecture build_commands build_glossary build_lock build_rules schema_dump; do
   run "$module" "$PY" -m "shearstud.tools.$module" --check
 done
 run "pytest" "$PY" -m pytest -p no:cacheprovider -n auto "$@"

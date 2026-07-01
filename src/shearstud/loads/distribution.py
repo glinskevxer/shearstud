@@ -37,6 +37,9 @@ SPACING_RANGE_FT: Final[tuple[float, float]] = (3.5, 16.0)
 SLAB_RANGE_IN: Final[tuple[float, float]] = (4.5, 12.0)
 SPAN_RANGE_FT: Final[tuple[float, float]] = (20.0, 240.0)
 STIFFNESS_RANGE_IN4: Final[tuple[float, float]] = (10_000.0, 7_000_000.0)
+#: Fewest beams the distribution equations were fitted against. A three girder
+#: cross section is outside them and wants the lever rule instead, which is
+#: why this refuses rather than extrapolating.
 MIN_BEAMS: Final[int] = 4
 
 #: How far from the web to the curb the exterior correction was fitted over.

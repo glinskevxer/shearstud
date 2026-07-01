@@ -1,0 +1,142 @@
+"""The thresholds document, and the rule that every threshold is explained."""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+
+import pytest
+
+from shearstud.tools import build_rules as build
+from shearstud.tools.walk import SourceFile
+
+pytestmark = pytest.mark.tools
+
+Plant = Callable[..., None]
+Source = Callable[[str, str], SourceFile]
+
+HEAD = '"""A module that says something useful about itself."""'
+
+
+def test_the_shipped_document_is_current() -> None:
+    assert build.DOCUMENT.is_current(build.body())
+
+
+def test_the_check_exits_zero_when_the_document_is_current() -> None:
+    assert build.main(["--check"]) == 0
+
+
+def test_every_threshold_carries_an_explanation() -> None:
+    # The comment is the whole document. A threshold with only a number in it
+    # is a row somebody reads and then goes to the source anyway.
+    unexplained = [rule.name for rule in build.rules() if not rule.has_note]
+    assert unexplained == []
+
+
+def test_the_document_finds_thresholds_in_several_layers() -> None:
+    modules = {rule.module for rule in build.rules()}
+    assert len(modules) > 10
+    assert any(module.startswith("shearstud.program") for module in modules)
+    assert any(module.startswith("shearstud.rating") for module in modules)
+
+
+def test_the_inspection_interval_thresholds_are_in_it() -> None:
+    # These are the agency decisions the document exists for.
+    names = {rule.name for rule in build.rules()}
+    assert "POOR_CONDITION_RATING" in names
+    assert "EXTENSION_CONDITION_RATING" in names
+    assert "ROUTINE_MONTHS" in names
+
+
+def test_a_specification_coefficient_is_not_a_threshold() -> None:
+    # The distribution factor exponents are correct and nobody argues about
+    # them. Including them would bury the ones an agency changes.
+    names = {rule.name for rule in build.rules()}
+    assert "ONE_LANE_SPACING_EXPONENT" not in names
+    assert "SHEAR_YIELD_RATIO" not in names
+
+
+def test_the_rules_come_back_in_module_and_name_order() -> None:
+    found = [(rule.module, rule.name) for rule in build.rules()]
+    assert found == sorted(found)
+
+
+def test_a_name_that_ends_in_a_boundary_word_is_a_rule() -> None:
+    for name in ("CLOSURE_THRESHOLD", "BALANCE_LIMIT", "WATCH_YEARS", "ROUTINE_MONTHS"):
+        assert build.is_rule(name)
+
+
+def test_a_name_that_starts_with_a_boundary_word_is_a_rule() -> None:
+    assert build.is_rule("MIN_SPAN_FT")
+    assert build.is_rule("MAX_COUNTY_CODE")
+
+
+def test_a_lower_case_name_is_never_a_rule() -> None:
+    assert not build.is_rule("min_span_ft")
+
+
+def test_a_coefficient_is_not_a_rule() -> None:
+    assert not build.is_rule("STEEL_E_KSI")
+    assert not build.is_rule("ONE_LANE_INTERCEPT")
+
+
+def test_the_named_exceptions_are_not_rules() -> None:
+    # A tolerance on a floating point comparison is not an agency decision.
+    for name in build.NOT_A_RULE:
+        assert not build.is_rule(name)
+
+
+def test_a_threshold_is_read_out_of_a_planted_file(source: Source, planted: Plant) -> None:
+    body = f"{HEAD}\n\n#: Below this it is a slab.\nMIN_SPAN_FT = 6.0\n"
+    planted(build, [source("structure/x.py", body)])
+    found = build.rules()
+    assert len(found) == 1
+    assert found[0].name == "MIN_SPAN_FT"
+    assert found[0].value == "6.0"
+    assert found[0].note == "Below this it is a slab."
+
+
+def test_an_annotated_assignment_is_read(source: Source, planted: Plant) -> None:
+    body = f"{HEAD}\n\n#: Below this it is a slab.\nMIN_SPAN_FT: Final[float] = 6.0\n"
+    planted(build, [source("structure/x.py", body)])
+    assert build.rules()[0].value == "6.0"
+
+
+def test_an_annotation_with_no_value_is_skipped(source: Source, planted: Plant) -> None:
+    planted(build, [source("structure/x.py", f"{HEAD}\n\nMIN_SPAN_FT: float\n")])
+    assert build.rules() == []
+
+
+def test_a_multi_line_comment_becomes_one_sentence(source: Source, planted: Plant) -> None:
+    body = f"{HEAD}\n\n#: Below this it is\n#: a slab, not a girder.\nMIN_SPAN_FT = 6.0\n"
+    planted(build, [source("structure/x.py", body)])
+    assert build.rules()[0].note == "Below this it is a slab, not a girder."
+
+
+def test_a_plain_comment_is_not_read_as_an_explanation(source: Source, planted: Plant) -> None:
+    body = f"{HEAD}\n\n# Below this it is a slab.\nMIN_SPAN_FT = 6.0\n"
+    planted(build, [source("structure/x.py", body)])
+    assert build.rules()[0].note == ""
+
+
+def test_a_threshold_at_the_top_of_a_file_has_no_comment_above_it(
+    source: Source, planted: Plant
+) -> None:
+    planted(build, [source("structure/x.py", "MIN_SPAN_FT = 6.0\n")])
+    assert build.rules()[0].note == ""
+
+
+def test_the_document_counts_what_it_found() -> None:
+    found = build.rules()
+    assert f"{len(found)} thresholds across" in build.body()
+
+
+def test_the_document_carries_the_generated_banner() -> None:
+    assert build.DOCUMENT.wrap(build.body()).startswith("<!-- Generated by build_rules")
+
+
+def test_a_stale_document_is_reported(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(build, "body", lambda: "# Thresholds\n\nnothing at all\n")
+    assert build.main(["--check"]) == 1
+    assert "rules.md is out of date" in capsys.readouterr().out

@@ -41,6 +41,8 @@ ALLOWED_MONTHS: Final[tuple[int, ...]] = (SHORT_MONTHS, ROUTINE_MONTHS, EXTENDED
 
 #: The National Bridge Inventory condition scale, worst to best.
 MIN_CONDITION_RATING: Final[int] = 0
+#: The top of the scale, which is a component in new condition. Nine and not
+#: ten: the National Bridge Inventory scale runs zero to nine.
 MAX_CONDITION_RATING: Final[int] = 9
 
 #: At or below this rating a component is in poor condition.

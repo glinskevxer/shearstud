@@ -9,7 +9,17 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
-## 0.17.0 - 2026-07-06
+## 0.18.0 - 2026-07-13
+
+### Added
+
+- `docs/rules.md`, generated: every threshold this package decides on, with
+  the comment its author left on it. Coefficients out of a specification are
+  left out on purpose; these are the numbers an agency changes.
+- Three thresholds that had no explanation now carry one, which is what
+  writing the document found.
+
+## 0.17.0 - 2026-06-28
 
 ### Added
 

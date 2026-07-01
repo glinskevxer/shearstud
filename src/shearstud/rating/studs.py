@@ -36,6 +36,10 @@ MIN_HEIGHT_RATIO: Final[float] = 4.0
 
 #: Pitch limits, AASHTO LRFD 6.10.10.1.2, in stud diameters and in inches.
 MIN_PITCH_DIAMETERS: Final[float] = 6.0
+#: Furthest apart a row of studs may be, whatever the fatigue check allows.
+#: Beyond this the deck lifts off the flange between the rows and the section
+#: stops behaving as one, which is a failure the shear flow calculation has no
+#: way of seeing.
 MAX_PITCH_IN: Final[float] = 48.0
 
 #: Fatigue I resistance coefficient, applied to the diameter squared. This is

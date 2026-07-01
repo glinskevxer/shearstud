@@ -65,6 +65,7 @@ jobs:
       - run: python -m shearstud.tools.build_commands --check
       - run: python -m shearstud.tools.build_glossary --check
       - run: python -m shearstud.tools.build_lock --check
+      - run: python -m shearstud.tools.build_rules --check
       - run: python -m shearstud.tools.schema_dump --check
       - name: fail if regenerating changes anything
         run: |
@@ -72,6 +73,7 @@ jobs:
           python -m shearstud.tools.build_commands
           python -m shearstud.tools.build_glossary
           python -m shearstud.tools.build_lock
+          python -m shearstud.tools.build_rules
           python -m shearstud.tools.schema_dump
           git diff --exit-code
 

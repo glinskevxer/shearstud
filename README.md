@@ -202,6 +202,13 @@ newest one is the answer. That is not a preference. It is what the record has
 to look like when a structure posted in 2019 and unposted in 2026 comes up in a
 claim.
 
+Every threshold this tool decides on is in [docs/rules.md](docs/rules.md),
+collected out of the source with the comment its author left on it. That is the
+question a bridge engineer asks about a tool like this and cannot answer by
+reading the arithmetic: at what condition rating does the interval shorten, how
+much section loss is a finding, how far below one does a rating factor have to
+be before the structure is closed rather than posted.
+
 The schema is in [docs/schema.md](docs/schema.md), generated from the
 migrations. Migrations are numbered, applied in order, and frozen once applied:
 each one's digest is recorded in `migrations.lock` and the build fails if an
