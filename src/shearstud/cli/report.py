@@ -12,7 +12,7 @@ from datetime import date
 import click
 
 from shearstud.analysis import report as rep
-from shearstud.cli.main import Context, main, pass_context
+from shearstud.cli.main import Context, main, parse_optional_date, pass_context
 
 
 @main.group()
@@ -45,7 +45,7 @@ def structure_report(ctx: Context, number: str, silences: bool) -> None:
 def inventory_report(ctx: Context, when: str | None) -> None:
     """The district's picture: how much is known, and what is due."""
     path = ctx.require_book()
-    today = date.today() if when is None else date.fromisoformat(when)
+    today = parse_optional_date(when, "the date to ask as at") or date.today()
     click.echo(rep.as_text(rep.inventory_report(path, today)))
 
 
@@ -55,7 +55,7 @@ def inventory_report(ctx: Context, when: str | None) -> None:
 def overdue_report(ctx: Context, when: str | None) -> None:
     """Structures past their inspection date, soonest due first."""
     path = ctx.require_book()
-    today = date.today() if when is None else date.fromisoformat(when)
+    today = parse_optional_date(when, "the date to ask as at") or date.today()
     rows = rep.due_before(path, today)
     if not rows:
         click.echo("nothing overdue")

@@ -16,13 +16,14 @@ from __future__ import annotations
 
 import sys
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import Final
 
 import click
 
 from shearstud import __version__
-from shearstud.errors import ShearstudError
+from shearstud.errors import InputError, ShearstudError
 from shearstud.store import db, migrate
 
 #: Where the book lives when nobody says otherwise.
@@ -50,6 +51,30 @@ class Context:
 
 
 pass_context = click.make_pass_decorator(Context)
+
+#: What a date option looks like when it is right.
+DATE_FORMAT: Final[str] = "YYYY-MM-DD"
+
+
+def parse_date(text: str, what: str) -> date:
+    """A date off the command line, or a message a user can act on.
+
+    Eleven commands take a date and every one of them was calling
+    ``date.fromisoformat`` directly. That raises ``ValueError``, which is not a
+    package error, so it went straight past the error boundary and reached the
+    user as a traceback ending in ``Invalid isoformat string``. Naming the
+    option in the message is the other half: a command with three date options
+    that says one of them is wrong has not said much.
+    """
+    try:
+        return date.fromisoformat(text)
+    except ValueError:
+        raise InputError(f"{what} {text!r} is not a date, expected {DATE_FORMAT}") from None
+
+
+def parse_optional_date(text: str | None, what: str) -> date | None:
+    """The same, for an option that may be left out."""
+    return None if text is None else parse_date(text, what)
 
 
 class ShearstudGroup(click.Group):

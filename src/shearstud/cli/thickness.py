@@ -14,7 +14,7 @@ from pathlib import Path
 
 import click
 
-from shearstud.cli.main import Context, main, pass_context
+from shearstud.cli.main import Context, main, parse_date, pass_context
 from shearstud.errors import InputError
 from shearstud.geometry import loss
 from shearstud.store import inventory
@@ -56,7 +56,7 @@ def add_reading(
             plate_label=plate_label,
             station_ft=station_ft,
             remaining_in=remaining_in,
-            measured_on=date.fromisoformat(measured),
+            measured_on=parse_date(measured, "the reading date"),
             note=note,
         ),
     )
@@ -72,7 +72,7 @@ def add_reading(
 def import_sheet(ctx: Context, number: str, girder_id: str, sheet: Path, measured: str) -> None:
     """Read a whole field sheet: plate, station, remaining thickness, note."""
     path = ctx.require_book()
-    when = date.fromisoformat(measured)
+    when = parse_date(measured, "the reading date")
     written = 0
     for reading in _read_sheet(sheet, number, girder_id, when):
         th.save(path, reading)

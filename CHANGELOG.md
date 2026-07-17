@@ -9,7 +9,17 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
-## 0.18.0 - 2026-07-13
+## 0.18.1 - 2026-07-20
+
+### Fixed
+
+- **Changes results.** No number moved, but a date option that could not be
+  parsed reached the user as a traceback ending in `Invalid isoformat
+  string` rather than as an error. Eleven commands were each parsing dates
+  for themselves; they share one parser now, and it names which option was
+  wrong.
+
+## 0.18.0 - 2026-06-30
 
 ### Added
 

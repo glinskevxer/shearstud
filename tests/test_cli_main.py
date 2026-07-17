@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -9,6 +10,7 @@ from click.testing import CliRunner
 
 from shearstud import __version__
 from shearstud.cli.main import main
+from shearstud.errors import InputError
 from shearstud.store import db, migrate
 
 pytestmark = pytest.mark.cli
@@ -141,3 +143,61 @@ def test_the_boundary_lives_on_the_group_and_not_on_the_runner() -> None:
     from shearstud.cli.main import ShearstudGroup
 
     assert "invoke" in vars(ShearstudGroup)
+
+
+def test_a_date_reads() -> None:
+    from shearstud.cli.main import parse_date
+
+    assert parse_date("2026-04-02", "the reading date") == date(2026, 4, 2)
+
+
+def test_a_date_that_is_not_a_date_names_the_option() -> None:
+    # A command with three date options that says one of them is wrong has
+    # not said much.
+    from shearstud.cli.main import parse_date
+
+    with pytest.raises(InputError, match="the reading date 'last tuesday' is not a date"):
+        parse_date("last tuesday", "the reading date")
+
+
+def test_a_bad_date_says_what_a_good_one_looks_like() -> None:
+    from shearstud.cli.main import DATE_FORMAT, parse_date
+
+    with pytest.raises(InputError, match=DATE_FORMAT):
+        parse_date("02/04/2026", "the reading date")
+
+
+def test_an_optional_date_may_be_left_out() -> None:
+    from shearstud.cli.main import parse_optional_date
+
+    assert parse_optional_date(None, "the date") is None
+    assert parse_optional_date("2026-04-02", "the date") == date(2026, 4, 2)
+
+
+def test_a_bad_date_reaches_the_user_as_an_error_and_not_a_traceback(
+    runner: CliRunner, seeded_book: Path
+) -> None:
+    # date.fromisoformat raises ValueError, which is not a package error, so
+    # it went straight past the error boundary and out as a traceback.
+    result = runner.invoke(
+        main, ["--book", str(seeded_book), "report", "overdue", "--on", "last tuesday"]
+    )
+    assert result.exit_code != 0
+    assert "Error:" in result.output
+    assert "Traceback" not in result.output
+    assert "is not a date" in result.output
+
+
+def test_every_command_that_takes_a_date_reports_a_bad_one_the_same_way(
+    runner: CliRunner, seeded_book: Path
+) -> None:
+    calls = [
+        ["program", "due", "--on", "nope"],
+        ["report", "inventory", "--on", "nope"],
+        ["book", "prune", "--before", "nope"],
+    ]
+    for words in calls:
+        result = runner.invoke(main, ["--book", str(seeded_book), *words])
+        assert result.exit_code != 0, words
+        assert "is not a date" in result.output, words
+        assert "Traceback" not in result.output, words

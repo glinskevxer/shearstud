@@ -15,7 +15,7 @@ from datetime import date
 import click
 
 from shearstud.analysis import programrun as pr
-from shearstud.cli.main import Context, main, pass_context
+from shearstud.cli.main import Context, main, parse_date, parse_optional_date, pass_context
 from shearstud.program import interval, priority
 from shearstud.store import programme as prog
 from shearstud.store.programme import ProgrammeRow
@@ -64,7 +64,7 @@ def record_inspection(
             daily_traffic=traffic,
             detour_mi=detour_mi,
             is_posted=posted,
-            last_inspected=date.fromisoformat(inspected),
+            last_inspected=parse_date(inspected, "the inspection date"),
             updated_on=date.today(),
         ),
     )
@@ -133,7 +133,7 @@ def show_worklist(ctx: Context, limit: int, band: str | None) -> None:
 def show_due(ctx: Context, when: str | None) -> None:
     """Structures whose inspection date has gone past."""
     path = ctx.require_book()
-    today = date.today() if when is None else date.fromisoformat(when)
+    today = parse_optional_date(when, "the date to ask as at") or date.today()
     overdue: list[tuple[date, str, int]] = []
     for row in prog.load_all(path):
         life_years, _ = pr.credited_life_years(path, row.structure_number)

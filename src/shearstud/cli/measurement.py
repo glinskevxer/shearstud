@@ -21,7 +21,7 @@ import click
 
 from shearstud.analysis import fatiguerun as fr
 from shearstud.analysis import recordrun as rec
-from shearstud.cli.main import Context, main, pass_context
+from shearstud.cli.main import Context, main, parse_date, parse_optional_date, pass_context
 from shearstud.errors import InputError
 from shearstud.fatigue.life import TrafficModel, cycles_per_truck
 from shearstud.program import interval
@@ -93,9 +93,9 @@ def add_gauge(
             detail_id=detail_id,
             orientation=orientation,
             gauge_factor=factor,
-            installed_on=date.fromisoformat(installed),
+            installed_on=parse_date(installed, "the installation date"),
             channel_limit_ue=limit_ue,
-            removed_on=None if removed is None else date.fromisoformat(removed),
+            removed_on=parse_optional_date(removed, "the removal date"),
         ),
     )
     click.echo(f"recorded {gauge_id} on {detail_id}")
@@ -157,8 +157,8 @@ def add_campaign(
         CampaignRecord(
             campaign_id=campaign_id,
             structure_number=number,
-            started_on=date.fromisoformat(started),
-            ended_on=date.fromisoformat(ended),
+            started_on=parse_date(started, "the start date"),
+            ended_on=parse_date(ended, "the end date"),
             seasonal_factor=seasonal_factor,
             note=note,
         ),

@@ -16,7 +16,7 @@ from datetime import date
 
 import click
 
-from shearstud.cli.main import Context, main, pass_context
+from shearstud.cli.main import Context, main, parse_date, pass_context
 from shearstud.store import db, retention
 
 
@@ -38,7 +38,7 @@ def prune_book(ctx: Context, before: str, yes: bool, vacuum: bool) -> None:
     1998 loses nothing.
     """
     path = ctx.require_book()
-    cutoff = date.fromisoformat(before)
+    cutoff = parse_date(before, "the cutoff")
     today = date.today()
     retention.check_cutoff(cutoff, today)
 
