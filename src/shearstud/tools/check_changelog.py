@@ -10,11 +10,17 @@ changelog still tops out at the previous version produces a wheel nobody can
 match to a set of changes, and the mismatch is invisible until somebody in
 another office asks which version corrected the stud coefficient.
 
-The last rule is about the sections rather than the version. A release that
-changes an answer has to say so in the words the changelog reserves for it,
-because a rating engineer reads this file to find out whether last year's
-number would come out differently today, and a "Fixed" heading with no such
-mark says the answer is unchanged.
+The last rule is about where the results mark may appear. A rating engineer
+reads this file to find out whether last year's number would come out
+differently today, and the mark is how they find those entries, so it has to
+mean something everywhere it is written.
+
+It used to be the other way round: every ``Fixed`` section had to carry the
+mark, on the argument that a fix which changes no number is not a fix. That
+rule convicted a real entry the day a release fixed a flag that did nothing
+from a command line, which is a fix and moves no rating, and the entry was
+right. So the rule is now that the mark may only appear where a result could
+have moved, and nothing forces it to appear at all.
 """
 
 from __future__ import annotations
@@ -41,9 +47,10 @@ SECTIONS: Final[frozenset[str]] = frozenset({"Added", "Changed", "Fixed", "Remov
 #: What an entry that changes a number has to say about itself.
 RESULT_MARK: Final[str] = "**Changes results.**"
 
-#: Sections where an unmarked entry is worth nothing to a rating engineer, so
-#: at least one entry in them has to carry the mark.
-MARKED_SECTIONS: Final[frozenset[str]] = frozenset({"Fixed"})
+#: Sections where the results mark means something. ``Added`` cannot change a
+#: result, because there was nothing there to change, and ``Removed`` says so
+#: in its own heading.
+MARKED_SECTIONS: Final[frozenset[str]] = frozenset({"Fixed", "Changed"})
 
 
 def releases() -> list[tuple[str, date]]:
@@ -120,18 +127,33 @@ def problems() -> list[str]:
                 found.append(f"{version} has a {heading!r} section, expected one of {SECTIONS}")
 
     for version, _ in entries:
-        marked = set(sections_of(version)) & MARKED_SECTIONS
-        if marked and RESULT_MARK not in body_of(version):
-            found.append(
-                f"{version} fixes something and no entry says {RESULT_MARK}; "
-                f"a fix that changes no number does not belong under Fixed"
-            )
+        for heading in marked_sections(version):
+            if heading not in MARKED_SECTIONS:
+                found.append(
+                    f"{version} says {RESULT_MARK} under {heading!r}, where nothing "
+                    f"could have changed; the mark belongs in {sorted(MARKED_SECTIONS)}"
+                )
     return found
+
+
+def marked_sections(version: str) -> list[str]:
+    """Section headings under a release that carry the results mark."""
+    body = body_of(version)
+    out: list[str] = []
+    heading = ""
+    for line in body.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("### "):
+            heading = stripped[4:].strip()
+        elif RESULT_MARK in stripped and heading:
+            out.append(heading)
+    return sorted(set(out))
 
 
 def main(argv: list[str] | None = None) -> int:
     """Run the check and report."""
-    if argv is not None and "--list" in argv:
+    args = sys.argv[1:] if argv is None else argv
+    if "--list" in args:
         for version, when in releases():
             print(f"check_changelog: {version} on {when}")
     return report("check_changelog", problems())

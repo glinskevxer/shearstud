@@ -156,7 +156,8 @@ def problems() -> list[str]:
 
 def main(argv: list[str] | None = None) -> int:
     """Run the check and report."""
-    if argv is not None and "--list" in argv:
+    args = sys.argv[1:] if argv is None else argv
+    if "--list" in args:
         for invocation in invocations(README.read_text(encoding="utf-8")):
             print(f"check_readme: {' '.join(invocation)}")
     return report("check_readme", problems())

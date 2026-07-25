@@ -127,7 +127,8 @@ def counts() -> dict[str, int]:
 
 def main(argv: list[str] | None = None) -> int:
     """Run the check and report."""
-    if argv is not None and "--counts" in argv:
+    args = sys.argv[1:] if argv is None else argv
+    if "--counts" in args:
         for layer, count in sorted(counts().items()):
             print(f"check_constants: {layer} carries {count} float literal(s)")
     return report("check_constants", problems())

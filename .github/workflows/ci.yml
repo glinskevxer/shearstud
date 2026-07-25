@@ -39,6 +39,7 @@ jobs:
       - run: python -m shearstud.tools.check_changelog
       - run: python -m shearstud.tools.check_cli
       - run: python -m shearstud.tools.check_constants
+      - run: python -m shearstud.tools.check_dataclasses
       - run: python -m shearstud.tools.check_docstrings
       - run: python -m shearstud.tools.check_errors
       - run: python -m shearstud.tools.check_layers

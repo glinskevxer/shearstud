@@ -23,7 +23,7 @@ the same table, so the two cannot drift apart.
 | store       | 16      | 2594  | the book of record, its migrations and its repositories           |
 | analysis    | 8       | 1615  | dead load, and the runs that use everything below at once         |
 | cli         | 12      | 1962  | the command line, which is how anyone outside the package uses it |
-| tools       | 24      | 3202  | the repository's own checks and generated documents               |
+| tools       | 25      | 3346  | the repository's own checks and generated documents               |
 
 ## What each layer may import
 
@@ -184,15 +184,16 @@ store layer. `check_sql` enforces that.
 | `shearstud.tools.build_glossary`     | 104   | The glossary, built from the constants the code actually uses.                  |
 | `shearstud.tools.build_lock`         | 53    | Write ``migrations.lock`` from the migrations in the code.                      |
 | `shearstud.tools.build_rules`        | 153   | The thresholds document: every number this package decides on, in one table.    |
-| `shearstud.tools.check_changelog`    | 141   | The changelog says what the version is, so the version has to agree.            |
+| `shearstud.tools.check_changelog`    | 163   | The changelog says what the version is, so the version has to agree.            |
 | `shearstud.tools.check_cli`          | 99    | The command line documents itself: every command and every option has help.     |
-| `shearstud.tools.check_constants`    | 137   | A coefficient buried in an expression is a coefficient nobody can check.        |
+| `shearstud.tools.check_constants`    | 138   | A coefficient buried in an expression is a coefficient nobody can check.        |
+| `shearstud.tools.check_dataclasses`  | 120   | Every value in this package is frozen, and this is what says so.                |
 | `shearstud.tools.check_docstrings`   | 81    | Every module, public class, public function and public method says what it is.  |
 | `shearstud.tools.check_errors`       | 161   | Errors are the package's own, they carry a message, and nothing is swallowed.   |
 | `shearstud.tools.check_layers`       | 143   | Imports run one way through the package, and this is where that is written.     |
 | `shearstud.tools.check_migrations`   | 126   | Applied migrations are frozen, and the lock file is what says so.               |
 | `shearstud.tools.check_naming`       | 156   | Names say what the thing is, in the words this domain already uses.             |
-| `shearstud.tools.check_readme`       | 166   | The README makes checkable claims, so they get checked.                         |
+| `shearstud.tools.check_readme`       | 167   | The README makes checkable claims, so they get checked.                         |
 | `shearstud.tools.check_sql`          | 178   | SQL is parameterised, lives in the store layer, and names its columns.          |
 | `shearstud.tools.check_tests`        | 147   | Every module has a test file, every test file has a marker, every test asserts. |
 | `shearstud.tools.check_units`        | 172   | Every float that crosses a public boundary carries its unit in its name.        |

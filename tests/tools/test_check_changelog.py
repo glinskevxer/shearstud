@@ -106,15 +106,35 @@ def test_a_section_heading_nobody_uses_is_caught(planted) -> None:  # type: igno
     assert any("'Miscellaneous' section" in problem for problem in found)
 
 
-def test_a_fix_that_does_not_say_it_moved_a_number_is_caught(planted) -> None:  # type: ignore[no-untyped-def]
+def test_a_fix_that_moved_no_number_needs_no_mark(planted) -> None:  # type: ignore[no-untyped-def]
+    # The rule used to be the other way round, and it convicted a real entry
+    # the day a release fixed a flag that did nothing from a command line.
+    # That is a fix and it moves no rating.
     text = CLEAN.replace("**Changes results.** Something that moved a number.", "Something.")
-    found = planted(text)
-    assert any("and no entry says" in problem for problem in found)
-
-
-def test_a_release_with_no_fixes_needs_no_mark(planted) -> None:  # type: ignore[no-untyped-def]
-    text = "# Changelog\n\n## 9.9.9 - 2026-05-01\n\n### Added\n\n- Something.\n"
     assert planted(text) == []
+
+
+def test_the_mark_is_allowed_under_a_fix(planted) -> None:  # type: ignore[no-untyped-def]
+    assert planted(CLEAN) == []
+
+
+def test_the_mark_is_allowed_under_a_change(planted) -> None:  # type: ignore[no-untyped-def]
+    text = CLEAN.replace("### Fixed", "### Changed")
+    assert planted(text) == []
+
+
+def test_the_mark_under_an_addition_is_caught(planted) -> None:  # type: ignore[no-untyped-def]
+    # Nothing was there to change, so the mark says nothing and would only
+    # dilute the entries where it does.
+    text = CLEAN.replace("- Something.", "- **Changes results.** Something.")
+    found = planted(text)
+    assert any("where nothing" in problem for problem in found)
+
+
+def test_the_sections_carrying_the_mark_are_found(planted) -> None:  # type: ignore[no-untyped-def]
+    planted(CLEAN)
+    assert check.marked_sections("9.9.8") == ["Fixed"]
+    assert check.marked_sections("9.9.9") == []
 
 
 def test_a_document_with_no_releases_is_caught(planted) -> None:  # type: ignore[no-untyped-def]

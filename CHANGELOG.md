@@ -9,7 +9,22 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
-## 0.18.1 - 2026-07-20
+## 0.19.0 - 2026-07-20
+
+### Added
+
+- `check_dataclasses` fails the build on a value type that is not frozen or
+  has no slots. Everything in this package is a fact about a bridge at a
+  moment, and a fact that can be edited in place is one two callers can
+  disagree about.
+
+### Fixed
+
+- The `--list` and `--counts` flags on four of the self checks did nothing
+  from a command line. They read an argument list the entry point never
+  filled in, so they only worked when a test called them.
+
+## 0.18.1 - 2026-07-16
 
 ### Fixed
 
