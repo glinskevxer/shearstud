@@ -9,7 +9,17 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
-## 0.19.0 - 2026-07-20
+## 0.20.0 - 2026-08-03
+
+### Added
+
+- `shearstud book export` and `book import` move a whole book as JSON. The
+  file carries the schema version it was written at, and a load into a book
+  at a different version is refused. The target book has to be empty:
+  merging two books is a different job with its own questions about which
+  copy of a structure wins.
+
+## 0.19.0 - 2026-07-25
 
 ### Added
 

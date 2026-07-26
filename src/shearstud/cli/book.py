@@ -13,11 +13,12 @@ record somebody may have to produce in a claim.
 from __future__ import annotations
 
 from datetime import date
+from pathlib import Path
 
 import click
 
 from shearstud.cli.main import Context, main, parse_date, pass_context
-from shearstud.store import db, retention
+from shearstud.store import db, retention, transfer
 
 
 @main.group()
@@ -98,3 +99,32 @@ def counts(ctx: Context) -> None:
     path = ctx.require_book()
     for table in db.table_names(path):
         click.echo(f"{table:<20}{db.row_count(path, table):>8}")
+
+
+@book.command("export")
+@click.argument("target", type=click.Path(dir_okay=False, path_type=Path))
+@pass_context
+def export_book(ctx: Context, target: Path) -> None:
+    """Write the whole book to a transfer file."""
+    path = ctx.require_book()
+    rows = transfer.write(target, path)
+    click.echo(f"wrote {rows} row(s) to {target}")
+
+
+@book.command("import")
+@click.argument("source", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@pass_context
+def import_book(ctx: Context, source: Path) -> None:
+    """Read a transfer file into an empty book.
+
+    The book has to be empty. Merging two books is a different job with its own
+    questions about which copy of a structure wins, and answering those quietly
+    inside a load is how one of them disappears.
+    """
+    path = ctx.require_book()
+    document = transfer.read(source)
+    written = transfer.load(path, document)
+    for table, count in written.items():
+        if count:
+            click.echo(f"  {table:<20}{count}")
+    click.echo(f"read {sum(written.values())} row(s) from {source}")

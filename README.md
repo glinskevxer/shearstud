@@ -223,6 +223,19 @@ shearstud book prune --before 2014-01-01
 shearstud book prune --before 2014-01-01 --yes --vacuum
 ```
 
+```
+shearstud book export district7.json
+shearstud --book new.sqlite3 book import district7.json
+```
+
+A district hands its book to the central office once a year and gets one back
+after a review. The transfer file is JSON rather than a copy of the database,
+because the two ends run different versions of this package and a database
+written by a newer schema is one the older one refuses to open. The file says
+which schema it was written at, and a load into a book at a different one is
+refused rather than attempted: a partial load that silently drops a column
+nobody noticed is worse than a refusal somebody has to think about.
+
 Pruning is the only thing this tool deletes on purpose, and it takes two
 separate agreements. `--yes` is one. The other is the cutoff itself: the store
 refuses any cutoff inside the ten year retention policy, whatever the command

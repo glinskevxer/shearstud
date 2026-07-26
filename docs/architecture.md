@@ -20,9 +20,9 @@ the same table, so the two cannot drift apart.
 | structure   | 7       | 844   | the inventory: identity, spans, girders, details and gauges       |
 | rating      | 7       | 1056  | capacity, load factors, the rating equation, posting and permits  |
 | program     | 3       | 382   | what the office does with the numbers: intervals and priority     |
-| store       | 16      | 2594  | the book of record, its migrations and its repositories           |
+| store       | 17      | 2768  | the book of record, its migrations and its repositories           |
 | analysis    | 8       | 1615  | dead load, and the runs that use everything below at once         |
-| cli         | 12      | 1962  | the command line, which is how anyone outside the package uses it |
+| cli         | 12      | 1992  | the command line, which is how anyone outside the package uses it |
 | tools       | 25      | 3346  | the repository's own checks and generated documents               |
 
 ## What each layer may import
@@ -42,7 +42,7 @@ the same table, so the two cannot drift apart.
 | cli         | analysis, fatigue, geometry, loads, program, rating, signals, store, structure      |
 | tools       | analysis, cli, fatigue, geometry, loads, program, rating, signals, store, structure |
 
-The package holds 89 SQL statements, all of them in the
+The package holds 95 SQL statements, all of them in the
 store layer. `check_sql` enforces that.
 
 ## Modules
@@ -146,6 +146,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.store.programme`                   | 200   | The inspection programme's own row for each structure.                      |
 | `shearstud.store.retention`                   | 143   | Pruning the record, which is the only place anything is deleted on purpose. |
 | `shearstud.store.thickness`                   | 247   | Storing ultrasonic thickness readings, and reading them back as a section.  |
+| `shearstud.store.transfer`                    | 174   | Moving a whole book somewhere else, and reading one back.                   |
 
 ### analysis
 
@@ -163,7 +164,7 @@ store layer. `check_sql` enforces that.
 
 | Module                      | Lines | What it is                                                                    |
 | --------------------------- | ----- | ----------------------------------------------------------------------------- |
-| `shearstud.cli.book`        | 100   | Commands that operate on the book itself rather than on what is in it.        |
+| `shearstud.cli.book`        | 130   | Commands that operate on the book itself rather than on what is in it.        |
 | `shearstud.cli.main`        | 174   | The command line, which is the only way anyone outside this package uses it.  |
 | `shearstud.cli.measurement` | 440   | Commands for what was measured, and the fatigue evaluation that reads it.     |
 | `shearstud.cli.program`     | 150   | Commands for the inspection programme: what gets visited, and when.           |

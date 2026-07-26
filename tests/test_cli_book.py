@@ -156,3 +156,57 @@ def test_the_tables_the_prune_touches_are_the_ones_it_reports(
 
 def test_the_group_appears_in_the_help(runner: CliRunner) -> None:
     assert "book" in runner.invoke(main, ["--help"]).output
+
+
+def test_a_book_exports_and_imports(runner: CliRunner, seeded_book: Path, tmp_path: Path) -> None:
+    add_rating(seeded_book, OLD)
+    target = tmp_path / "district.json"
+    out = call(runner, seeded_book, "export", str(target))
+    assert out.exit_code == 0, out.output
+    assert "wrote" in out.output
+    assert target.exists()
+
+    fresh = tmp_path / "fresh.sqlite3"
+    runner.invoke(main, ["--book", str(fresh), "init"])
+    back = call(runner, fresh, "import", str(target))
+    assert back.exit_code == 0, back.output
+    assert "read" in back.output
+    assert db.row_count(fresh, "ratings") == db.row_count(seeded_book, "ratings")
+
+
+def test_the_import_names_the_tables_it_filled(
+    runner: CliRunner, seeded_book: Path, tmp_path: Path
+) -> None:
+    target = tmp_path / "district.json"
+    call(runner, seeded_book, "export", str(target))
+    fresh = tmp_path / "fresh.sqlite3"
+    runner.invoke(main, ["--book", str(fresh), "init"])
+    result = call(runner, fresh, "import", str(target))
+    assert "structures" in result.output
+    assert "spectra" not in result.output
+
+
+def test_an_import_into_a_book_that_is_not_empty_is_refused(
+    runner: CliRunner, seeded_book: Path, tmp_path: Path
+) -> None:
+    target = tmp_path / "district.json"
+    call(runner, seeded_book, "export", str(target))
+    result = call(runner, seeded_book, "import", str(target))
+    assert result.exit_code != 0
+    assert "already has rows" in result.output
+
+
+def test_an_import_of_a_file_that_is_not_one_is_refused(
+    runner: CliRunner, seeded_book: Path, tmp_path: Path
+) -> None:
+    other = tmp_path / "other.json"
+    other.write_text('{"format": "something-else"}', encoding="utf-8")
+    result = call(runner, seeded_book, "import", str(other))
+    assert result.exit_code != 0
+    assert "not a shearstud-book file" in result.output
+
+
+def test_an_import_of_a_file_that_is_not_there_is_refused(
+    runner: CliRunner, seeded_book: Path, tmp_path: Path
+) -> None:
+    assert call(runner, seeded_book, "import", str(tmp_path / "gone.json")).exit_code != 0

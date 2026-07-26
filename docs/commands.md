@@ -26,6 +26,8 @@ from the environment, because a rating office runs one book per district.
 | Command             | What it does                                                             |
 | ------------------- | ------------------------------------------------------------------------ |
 | `book counts`       | How many rows are in each table.                                         |
+| `book export`       | Write the whole book to a transfer file.                                 |
+| `book import`       | Read a transfer file into an empty book.                                 |
 | `book orphans`      | Spectra whose gauge is no longer in the book.                            |
 | `book prune`        | Remove superseded conclusions older than a cutoff.                       |
 | `book vacuum`       | Rebuild the file, giving back the space a prune freed.                   |
@@ -115,6 +117,22 @@ Rebuild the file, giving back the space a prune freed.
 ### `shearstud book counts`
 
 How many rows are in each table.
+
+### `shearstud book export`
+
+Write the whole book to a transfer file.
+
+Takes `target`.
+
+### `shearstud book import`
+
+Read a transfer file into an empty book.
+
+    The book has to be empty. Merging two books is a different job with its own
+    questions about which copy of a structure wins, and answering those quietly
+    inside a load is how one of them disappears.
+
+Takes `source`.
 
 ### `shearstud gauge list`
 
