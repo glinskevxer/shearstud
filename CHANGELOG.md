@@ -9,7 +9,20 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
-## 0.20.0 - 2026-08-03
+## 0.21.0 - 2026-08-03
+
+### Added
+
+- The computed stress range at a detail nobody has gauged, from the fatigue
+  truck. Every evaluation until now started from a measured spectrum, which
+  reaches the one detail in twelve that carries a gauge.
+- The fatigue load is one truck in one lane at the fixed rear axle spacing,
+  with the multiple presence factor taken back out, the fatigue dynamic
+  allowance, and the short term composite section at every station. All four
+  differ from the rating load and all four are easy to carry across by
+  accident.
+
+## 0.20.0 - 2026-07-26
 
 ### Added
 
