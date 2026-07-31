@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "shearstud"
-version = "0.21.0"
+version = "0.22.0"
 description = "Fatigue accounting and load rating for instrumented steel girder bridges"
 readme = "README.md"
 requires-python = ">=3.12"

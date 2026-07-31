@@ -222,6 +222,60 @@ def exterior_correction_shear(distance_to_curb_ft: float) -> float:
     return max(1.0, SHEAR_E_INTERCEPT + distance_to_curb_ft / SHEAR_E_DIVISOR_FT)
 
 
+#: Wheel positions across a lane, as distances from the exterior girder. The
+#: two wheels of a design lane are six feet apart, and the near one sits two
+#: feet from the curb, which puts it a curb distance plus two feet in from the
+#: exterior web on a deck with no overhang to speak of.
+LANE_WHEEL_GAP_FT: Final[float] = 6.0
+WHEEL_FROM_CURB_FT: Final[float] = 2.0
+
+#: Wheel lines in one lane. Halving the lever rule answer turns wheel lines
+#: into lanes, and forgetting to is a factor of two.
+WHEELS_PER_LANE: Final[float] = 2.0
+
+
+def lever_rule_factor(spacing_ft: float, overhang_ft: float, *, lanes_loaded: int) -> float:
+    """A distribution factor from statics, for a cross section the equations
+    do not cover.
+
+    AASHTO's equations were fitted against four beams and more, and this
+    inventory has eleven three girder stringer units the fit does not reach.
+    The answer there is not to extrapolate; it is to hinge the deck over the
+    first interior girder and take the reaction, which is what an engineer did
+    before the equations existed and what the specification still says to do.
+
+    The result is conservative and everybody knows it. That is the right trade
+    for eleven structures: an approximate factor that is on the safe side beats
+    a fitted factor outside the range it was fitted in.
+
+    ``lanes_loaded`` is a ceiling and not an instruction. The governing
+    arrangement is whichever number of lanes puts the most on this girder, and
+    on a narrow spacing that is one: a second lane's wheels land beyond the
+    hinge, where they unload the exterior girder rather than loading it, and
+    asking for two lanes on a seven and a half foot spacing comes back
+    negative. A negative distribution factor is not a conservative answer, it
+    is an arithmetic result nobody should be handed, so the arrangements are
+    compared and the worst real one wins.
+    """
+    if lanes_loaded < 1:
+        raise InputError(f"{lanes_loaded} lanes loaded is not a load case")
+    best = 0.0
+    for lanes in range(1, lanes_loaded + 1):
+        wheel_lines = lever_rule(spacing_ft, _wheel_offsets_ft(overhang_ft, lanes))
+        best = max(best, apply_presence(wheel_lines / WHEELS_PER_LANE, lanes))
+    return best
+
+
+def _wheel_offsets_ft(overhang_ft: float, lanes: int) -> list[float]:
+    """Wheel positions across the deck, from the exterior girder inwards."""
+    near_ft = max(0.0, overhang_ft - WHEEL_FROM_CURB_FT)
+    out: list[float] = []
+    for lane in range(lanes):
+        start_ft = near_ft + lane * (LANE_WHEEL_GAP_FT + WHEEL_FROM_CURB_FT * 2.0)
+        out.extend([start_ft, start_ft + LANE_WHEEL_GAP_FT])
+    return out
+
+
 def lever_rule(spacing_ft: float, wheel_offsets_ft: list[float]) -> float:
     """Reaction on the exterior girder with the deck hinged at the first
     interior one.

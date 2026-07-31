@@ -209,3 +209,51 @@ def test_a_lever_rule_with_no_wheels_is_refused() -> None:
 def test_a_lever_rule_with_no_spacing_is_refused() -> None:
     with pytest.raises(InputError, match="not a spacing"):
         dist.lever_rule(0.0, [1.0])
+
+
+def test_the_lever_rule_gives_a_factor_between_zero_and_one() -> None:
+    for spacing_ft in (6.0, 7.5, 10.0, 14.0):
+        factor = dist.lever_rule_factor(spacing_ft, 3.5, lanes_loaded=2)
+        assert 0.0 < factor < 1.0, spacing_ft
+
+
+def test_a_wider_spacing_puts_more_on_the_exterior_girder() -> None:
+    close = dist.lever_rule_factor(6.0, 3.5, lanes_loaded=2)
+    wide = dist.lever_rule_factor(12.0, 3.5, lanes_loaded=2)
+    assert wide > close
+
+
+def test_a_second_lane_never_lowers_the_factor() -> None:
+    # Its wheels land beyond the hinge on a narrow spacing, where they unload
+    # the exterior girder. A negative distribution factor is not a
+    # conservative answer, it is a number nobody should be handed.
+    for spacing_ft in (6.0, 7.5, 10.0):
+        one = dist.lever_rule_factor(spacing_ft, 3.5, lanes_loaded=1)
+        two = dist.lever_rule_factor(spacing_ft, 3.5, lanes_loaded=2)
+        assert two >= one, spacing_ft
+
+
+def test_a_narrow_spacing_is_governed_by_one_lane() -> None:
+    assert dist.lever_rule_factor(7.5, 3.5, lanes_loaded=2) == pytest.approx(
+        dist.lever_rule_factor(7.5, 3.5, lanes_loaded=1)
+    )
+
+
+def test_no_lanes_loaded_is_refused() -> None:
+    with pytest.raises(InputError, match="is not a load case"):
+        dist.lever_rule_factor(7.5, 3.5, lanes_loaded=0)
+
+
+def test_a_bigger_overhang_moves_the_wheels_inboard() -> None:
+    # A wider overhang puts the curb further from the exterior web, so the
+    # wheels sit further in and press on the girder less.
+    tight = dist.lever_rule_factor(10.0, 0.0, lanes_loaded=1)
+    wide = dist.lever_rule_factor(10.0, 6.0, lanes_loaded=1)
+    assert wide < tight
+
+
+def test_the_lever_rule_carries_the_presence_factor() -> None:
+    raw = dist.lever_rule(10.0, dist._wheel_offsets_ft(3.5, 1)) / dist.WHEELS_PER_LANE
+    assert dist.lever_rule_factor(10.0, 3.5, lanes_loaded=1) == pytest.approx(
+        raw * dist.presence_factor(1)
+    )

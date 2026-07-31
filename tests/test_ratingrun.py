@@ -15,6 +15,7 @@ from shearstud.geometry.effective import DeckLayout
 from shearstud.geometry.plate import flange, web
 from shearstud.geometry.schedule import from_breaks, uniform
 from shearstud.geometry.section import Section
+from shearstud.loads import distribution as dist
 from shearstud.loads import vehicles
 from shearstud.rating import factors as fac
 from shearstud.store import assessment as asm
@@ -494,3 +495,53 @@ def test_every_rating_on_a_continuous_unit_is_positive() -> None:
     for station in results:
         for factor in station.ratings:
             assert factor.factored_live >= 0.0
+
+
+def three_girder_structure() -> Structure:
+    """A three girder stringer unit, which the fitted equations do not cover."""
+    return Structure(
+        number=parse("07-CR-0112"),
+        name="Dry Creek",
+        spans=simple(SPAN_FT),
+        girders=(girder("G1", 0, True), girder("G2", 1, False), girder("G3", 2, True)),
+        year_built=1954,
+    )
+
+
+def test_a_cross_section_the_equations_do_not_cover_uses_the_lever_rule() -> None:
+    # Eleven three girder stringer units on this inventory sit outside the
+    # range the equations were fitted in. Extrapolating there is the wrong
+    # answer; statics is the right one.
+    unit = three_girder_structure()
+    factor = rr.distribution_for(unit, unit.girder("G2"), RatingSettings())
+    assert 0.0 < factor < 1.5
+
+
+def test_the_lever_rule_answer_is_the_one_statics_gives() -> None:
+    unit = three_girder_structure()
+    line = unit.girder("G2")
+    assert rr.distribution_for(unit, line, RatingSettings()) == pytest.approx(
+        dist.lever_rule_factor(
+            line.layout.average_spacing_ft, line.layout.overhang_ft, lanes_loaded=2
+        )
+    )
+
+
+def test_a_four_girder_unit_still_uses_the_equations() -> None:
+    unit = structure()
+    line = unit.girder("G2")
+    assert rr.distribution_for(unit, line, RatingSettings()) != pytest.approx(
+        dist.lever_rule_factor(
+            line.layout.average_spacing_ft, line.layout.overhang_ft, lanes_loaded=2
+        )
+    )
+
+
+def test_a_three_girder_unit_rates_end_to_end() -> None:
+    # It used to raise, because the applicability check refused before the
+    # lever rule was reachable.
+    results = rr.rate_structure(
+        three_girder_structure(), vehicles.legal_fleet(), RatingSettings(stations_per_span=4)
+    )
+    assert results
+    assert rr.governing(results).value > 0.0

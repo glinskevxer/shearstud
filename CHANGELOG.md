@@ -9,7 +9,21 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
-## 0.21.0 - 2026-08-03
+## 0.22.0 - 2026-08-10
+
+### Added
+
+- A three girder unit rates. The distribution equations were fitted against
+  four beams and more, and eleven stringer units on this inventory have
+  three, so a rating there used to refuse rather than answer. It falls back
+  to the lever rule, which is what the specification says to do and what an
+  engineer did before the equations existed.
+- The lever rule compares the lane arrangements and takes the worst real
+  one. A second lane's wheels land beyond the hinge on a narrow spacing,
+  where they unload the exterior girder; asking for two lanes on a seven and
+  a half foot spacing came back negative.
+
+## 0.21.0 - 2026-07-30
 
 ### Added
 

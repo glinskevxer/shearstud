@@ -14,14 +14,14 @@ the same table, so the two cannot drift apart.
 | ----------- | ------- | ----- | ----------------------------------------------------------------- |
 | (top level) | 3       | 194   | units, the error tree, and nothing that knows about a bridge      |
 | geometry    | 8       | 1046  | plates, sections, composite stages and section loss               |
-| loads       | 9       | 1355  | vehicles, influence lines, distribution and the dynamic allowance |
+| loads       | 9       | 1409  | vehicles, influence lines, distribution and the dynamic allowance |
 | signals     | 7       | 1107  | strain records, conditioning, defects, rainflow and spectra       |
 | fatigue     | 5       | 624   | detail categories, Miner damage, remaining life and evaluation    |
 | structure   | 7       | 844   | the inventory: identity, spans, girders, details and gauges       |
 | rating      | 7       | 1056  | capacity, load factors, the rating equation, posting and permits  |
 | program     | 3       | 382   | what the office does with the numbers: intervals and priority     |
 | store       | 17      | 2768  | the book of record, its migrations and its repositories           |
-| analysis    | 9       | 1856  | dead load, and the runs that use everything below at once         |
+| analysis    | 9       | 1864  | dead load, and the runs that use everything below at once         |
 | cli         | 12      | 2009  | the command line, which is how anyone outside the package uses it |
 | tools       | 25      | 3346  | the repository's own checks and generated documents               |
 
@@ -72,7 +72,7 @@ store layer. `check_sql` enforces that.
 | ------------------------------ | ----- | --------------------------------------------------------------------------- |
 | `shearstud.loads.axles`        | 154   | Axle trains: the vehicles that get driven across an influence line.         |
 | `shearstud.loads.continuous`   | 256   | Influence lines for continuous units, from the three moment equation.       |
-| `shearstud.loads.distribution` | 240   | Live load distribution factors: how much of a lane one girder carries.      |
+| `shearstud.loads.distribution` | 294   | Live load distribution factors: how much of a lane one girder carries.      |
 | `shearstud.loads.impact`       | 100   | Dynamic load allowance, and the one load it is never applied to.            |
 | `shearstud.loads.influence`    | 219   | Influence lines as piecewise linear functions of load position.             |
 | `shearstud.loads.live`         | 116   | Assembling one live load effect out of the four things that make it.        |
@@ -156,7 +156,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.analysis.fatigueload` | 168   | The computed stress range at a detail nobody has put a gauge on.            |
 | `shearstud.analysis.fatiguerun`  | 270   | Evaluating every instrumented detail on a structure from stored spectra.    |
 | `shearstud.analysis.programrun`  | 141   | Building the office's worklist out of the book, and saying what is missing. |
-| `shearstud.analysis.ratingrun`   | 409   | Rating a whole structure, which is where every other module gets used.      |
+| `shearstud.analysis.ratingrun`   | 417   | Rating a whole structure, which is where every other module gets used.      |
 | `shearstud.analysis.recordrun`   | 221   | A raw logger file, taken all the way through to a spectrum in the book.     |
 | `shearstud.analysis.report`      | 172   | The two reports the office actually sends out.                              |
 | `shearstud.analysis.shearrun`    | 297   | Rating a structure in shear, which is a different run and not a variation.  |

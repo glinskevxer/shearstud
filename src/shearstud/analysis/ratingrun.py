@@ -222,6 +222,14 @@ def distribution_for(structure: Structure, girder: GirderLine, settings: RatingS
     )
     span_ft = max(structure.spans.lengths_ft)
     spacing_ft = girder.layout.average_spacing_ft
+    if structure.girder_count < dist.MIN_BEAMS:
+        # Outside the range the equations were fitted in. Statics, not an
+        # extrapolation: hinge the deck over the first interior girder and
+        # take the reaction, which is what the specification says to do and
+        # what an engineer did before the equations existed.
+        return dist.lever_rule_factor(
+            spacing_ft, girder.layout.overhang_ft, lanes_loaded=settings.lanes_loaded
+        )
     interior = dist.interior_moment(
         spacing_ft,
         span_ft,
