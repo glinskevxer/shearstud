@@ -74,6 +74,7 @@ shearstud campaign add C-2026-04 18-SH-0473 --from 2026-04-01 --to 2026-04-14
 shearstud record C-2026-04 G2-BF-01 strain.csv --rate-hz 20 --save
 shearstud spectrum C-2026-04 G2-BF-01 counts.csv
 shearstud fatigue evaluate 18-SH-0473 C-2026-04 --save
+shearstud fatigue evaluate 18-SH-0473 C-2026-04 --computed
 ```
 
 ```
@@ -94,6 +95,12 @@ purpose. A dropout is a flat run at whatever the logger writes when the bridge
 is gone and a rail hit is a sample at the channel limit, and conditioning moves
 both of those somewhere else. `spectrum` is the shorter road in, for when
 something upstream has already done the counting.
+
+`--computed` works out a stress range for the details nobody has gauged, from
+the fatigue truck rather than from a measurement. Those lines are printed
+separately and labelled, because a computed range and a measured one are
+different evidence and a single column invites somebody to take whichever
+number they like.
 
 The evaluation reports what it skipped as well as what it evaluated. A detail
 with no gauge on it, a gauge that reads transverse strain, and a record too

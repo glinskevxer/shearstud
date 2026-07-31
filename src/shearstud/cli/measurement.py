@@ -243,6 +243,11 @@ def fatigue() -> None:
 @click.option("--allow-poor-records", is_flag=True, help="Evaluate untrustworthy records too.")
 @click.option("--save", is_flag=True, help="Write the evaluations into the book.")
 @click.option(
+    "--computed",
+    is_flag=True,
+    help="Evaluate the ungauged details from the fatigue truck as well.",
+)
+@click.option(
     "--condition",
     type=click.IntRange(interval.MIN_CONDITION_RATING, interval.MAX_CONDITION_RATING),
     default=interval.EXTENSION_CONDITION_RATING,
@@ -257,6 +262,7 @@ def evaluate_command(
     growth: float | None,
     allow_poor_records: bool,
     save: bool,
+    computed: bool,
     condition: int,
 ) -> None:
     """Evaluate every detail on a structure against one campaign."""
@@ -280,6 +286,17 @@ def evaluate_command(
         skipped = result.skipped_for(reason)
         if skipped:
             click.echo(f"skipped ({reason}): {', '.join(skipped)}")
+    if computed:
+        # Kept apart from the measured lines on purpose. A computed range and
+        # a measured one are different evidence and a single column invites
+        # somebody to take whichever number they like.
+        click.echo("computed from the fatigue truck, not measured:")
+        for evaluation in fr.unmeasured_evaluations(record, traffic, result):
+            life = "indefinite" if evaluation.infinite_life else f"{evaluation.years_remaining:.0f}"
+            click.echo(
+                f"  {evaluation.detail_id:<16}{evaluation.detail_category:<4}"
+                f"{evaluation.effective_range_ksi:>6.2f} ksi  {life:>12}  {evaluation.verdict}"
+            )
     state = fr.inspection_state(result, condition)
     decision = interval.decide(state)
     click.echo(

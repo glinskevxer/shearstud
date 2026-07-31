@@ -9,6 +9,7 @@ import pytest
 
 from shearstud.analysis import fatiguerun as fr
 from shearstud.errors import InputError
+from shearstud.fatigue import evaluation as ev
 from shearstud.fatigue.life import TrafficModel
 from shearstud.geometry.composite import DeckSlab
 from shearstud.geometry.effective import DeckLayout
@@ -19,7 +20,7 @@ from shearstud.program import interval
 from shearstud.signals import spectrum as spec
 from shearstud.signals.rainflow import Cycle
 from shearstud.signals.spectrum import Spectrum
-from shearstud.store import inventory
+from shearstud.store import importer, inventory
 from shearstud.store import measurement as meas
 from shearstud.store.measurement import CampaignRecord, SpectrumQuality
 from shearstud.structure.detail import FIBRE_BOTTOM, FatigueDetail
@@ -32,6 +33,7 @@ from shearstud.structure.girder import GirderLine
 from shearstud.structure.identity import parse
 from shearstud.structure.record import Structure
 from shearstud.structure.span import simple
+from shearstud.tools.walk import REPO_ROOT
 
 pytestmark = pytest.mark.fatigue
 
@@ -100,10 +102,8 @@ def spectrum(gauge_id: str, range_ksi: float = 6.0, count: float = 60000.0) -> S
     return spec.build(gauge_id, cycles, 5.0)
 
 
-def traffic() -> TrafficModel:
-    return TrafficModel(
-        adtt=1500.0, lanes_available=2, growth_pct_per_yr=2.0, cycles_per_passage=1.0
-    )
+def traffic(adtt: float = 1500.0) -> TrafficModel:
+    return TrafficModel(adtt=adtt, lanes_available=2, growth_pct_per_yr=2.0, cycles_per_passage=1.0)
 
 
 @pytest.fixture
@@ -304,3 +304,74 @@ def test_a_nonredundant_structure_is_due_sooner_than_a_redundant_one(wired: Path
     last, today = date(2023, 1, 1), date(2026, 6, 1)
     assert not fr.inspection_due(result, last, today, 8)
     assert fr.inspection_due(result, last, today, 8, has_nonredundant_members=True)
+
+
+def example() -> Structure:
+    """The four girder example structure.
+
+    The toy structure the rest of this file uses has one girder line, and the
+    distribution equations refuse fewer than four beams, correctly: a one
+    girder cross section is not a bridge. The computed range needs a real one.
+    """
+    return importer.read(REPO_ROOT / "examples" / "salt-fork-creek.json")
+
+
+def test_every_detail_gets_a_computed_evaluation() -> None:
+    record = example()
+    found = fr.computed_evaluations(record, traffic())
+    assert len(found) == len(record.details())
+
+
+def test_a_computed_evaluation_carries_a_stress_range() -> None:
+    found = fr.computed_evaluations(example(), traffic())
+    assert all(evaluation.effective_range_ksi > 0.0 for evaluation in found)
+
+
+def test_the_computed_evaluations_come_back_worst_first() -> None:
+    found = fr.computed_evaluations(example(), traffic())
+    lives = [evaluation.years_remaining for evaluation in found]
+    assert lives == sorted(lives)
+
+
+def test_a_computed_spectrum_is_one_range() -> None:
+    # Constant amplitude, because a computed range is one number rather than a
+    # distribution. A measurement carries what actually crossed.
+    for evaluation in fr.computed_evaluations(example(), traffic()):
+        assert evaluation.largest_range_ksi == pytest.approx(evaluation.effective_range_ksi)
+
+
+def test_the_computed_cycle_count_is_a_year_of_traffic() -> None:
+    model = traffic()
+    found = fr.computed_evaluations(example(), model)
+    assert found[0].annual_cycles == pytest.approx(model.cycles_in_first_year())
+
+
+def test_heavier_traffic_uses_up_a_computed_detail_faster() -> None:
+    record = example()
+    quiet = fr.computed_evaluations(record, traffic(adtt=100.0))[0]
+    busy = fr.computed_evaluations(record, traffic(adtt=8000.0))[0]
+    assert busy.years_remaining <= quiet.years_remaining
+
+
+def test_the_computed_categories_are_the_ones_on_the_details() -> None:
+    record = example()
+    found = fr.computed_evaluations(record, traffic())
+    assert {e.detail_category for e in found} == {d.category_name for d in record.details()}
+
+
+def test_a_computed_evaluation_uses_a_campaign_that_scales_by_one() -> None:
+    # The spectrum is already a year of traffic, so the extrapolation has to
+    # be a no operation or the count goes through twice.
+    campaign = ev.Campaign(days=fr.COMPUTED_CAMPAIGN_DAYS)
+    assert campaign.annual_scale == pytest.approx(1.0)
+
+
+def test_the_unmeasured_details_are_the_ones_left_over(wired: Path) -> None:
+    record = loaded(wired)
+    result = fr.run(wired, record, CAMPAIGN, traffic())
+    assert result.evaluated
+    # The one girder toy cannot carry a computed range, so the split is
+    # checked on the example structure instead.
+    full = example()
+    computed = fr.computed_evaluations(full, traffic())
+    assert len(computed) == len(full.details())

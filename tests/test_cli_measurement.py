@@ -589,3 +589,10 @@ def test_a_campaign_that_is_not_there_is_refused(runner: CliRunner, wired: Path)
     result = runner.invoke(main, ["--book", str(wired), "campaign", "show", "C-1999-01"])
     assert result.exit_code != 0
     assert "no campaign" in result.output
+
+
+def test_the_computed_flag_is_off_by_default(
+    runner: CliRunner, wired: Path, tmp_path: Path
+) -> None:
+    result = evaluated(runner, wired, tmp_path)
+    assert "computed from the fatigue truck" not in result.output

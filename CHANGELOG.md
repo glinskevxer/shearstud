@@ -13,6 +13,14 @@ ones a rating engineer has to read.
 
 ### Added
 
+- `shearstud fatigue evaluate --computed` evaluates the ungauged details
+  from the fatigue truck and prints them under their own heading. A detail
+  that carries a gauge keeps its measurement: reporting both would invite
+  somebody to take whichever number they liked.
+
+
+### Added
+
 - The computed stress range at a detail nobody has gauged, from the fatigue
   truck. Every evaluation until now started from a measured spectrum, which
   reaches the one detail in twelve that carries a gauge.

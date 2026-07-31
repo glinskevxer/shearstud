@@ -19,16 +19,21 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
+from typing import Final
 
+from shearstud.analysis import fatigueload
 from shearstud.errors import InputError
 from shearstud.fatigue import categories as cat
 from shearstud.fatigue import evaluation as ev
 from shearstud.fatigue import life as lf
 from shearstud.program import interval
+from shearstud.signals import rainflow
+from shearstud.signals import spectrum as spec
 from shearstud.store import measurement as meas
 from shearstud.structure.detail import FatigueDetail
 from shearstud.structure.gauge import GaugeInstall
 from shearstud.structure.record import Structure
+from shearstud.units import stress_to_strain_ue
 
 #: Why a detail was not evaluated.
 SKIP_NO_GAUGE = "no gauge on this detail"
@@ -195,3 +200,71 @@ def inspection_due(
         has_nonredundant_members=has_nonredundant_members,
     )
     return interval.decide(state).is_overdue(last_inspected, today)
+
+
+#: A campaign length that makes the extrapolation a no operation, for a
+#: spectrum that is already a year of traffic because it was computed rather
+#: than counted.
+COMPUTED_CAMPAIGN_DAYS: Final[float] = 365.0
+
+#: Bin width for a computed spectrum, in microstrain. One bin is all it needs,
+#: because a computed range is a single number rather than a distribution, and
+#: the width only has to be wide enough not to split it.
+COMPUTED_BIN_WIDTH_UE: Final[float] = 1000.0
+
+
+def computed_evaluations(structure: Structure, traffic: lf.TrafficModel) -> list[ev.Evaluation]:
+    """Evaluate every detail from the fatigue truck rather than from a gauge.
+
+    A constant amplitude spectrum of one range, repeated as many times a year
+    as the traffic model says. That is what the fatigue provisions do and it is
+    the whole difference from a measured evaluation: a measurement carries the
+    distribution of what actually crossed, and this carries one truck the
+    specification made up.
+
+    The result is worse evidence than a measurement and much better than the
+    silence that was there before, and it is kept apart from the measured
+    evaluations so that a report cannot mix them.
+    """
+    campaign = ev.Campaign(days=COMPUTED_CAMPAIGN_DAYS)
+    cycles_per_year = traffic.cycles_in_first_year()
+    out: list[ev.Evaluation] = []
+    for computed in fatigueload.ranges_for(structure):
+        detail = structure.detail_owner(computed.detail_id).detail(computed.detail_id)
+        counted = spec.build(
+            computed.detail_id,
+            [
+                rainflow.Cycle(
+                    range_ue=stress_to_strain_ue(computed.range_ksi),
+                    mean_ue=0.0,
+                    count=cycles_per_year,
+                )
+            ],
+            COMPUTED_BIN_WIDTH_UE,
+        )
+        out.append(
+            ev.evaluate(
+                detail_id=detail.detail_id,
+                measured=counted,
+                campaign=campaign,
+                detail=cat.category(detail.category_name),
+                traffic=traffic,
+            )
+        )
+    return sorted(out, key=lambda found: (found.years_remaining, found.detail_id))
+
+
+def unmeasured_evaluations(
+    structure: Structure, traffic: lf.TrafficModel, result: RunResult
+) -> list[ev.Evaluation]:
+    """Computed evaluations for the details a run could not measure.
+
+    The ones it could measure keep their measurement. Recomputing those and
+    reporting both would invite somebody to take whichever number they liked.
+    """
+    measured = {evaluation.detail_id for evaluation in result.evaluated}
+    return [
+        evaluation
+        for evaluation in computed_evaluations(structure, traffic)
+        if evaluation.detail_id not in measured
+    ]
