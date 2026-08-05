@@ -21,7 +21,7 @@ the same table, so the two cannot drift apart.
 | rating      | 7       | 1056  | capacity, load factors, the rating equation, posting and permits  |
 | program     | 3       | 382   | what the office does with the numbers: intervals and priority     |
 | store       | 17      | 2768  | the book of record, its migrations and its repositories           |
-| analysis    | 9       | 1864  | dead load, and the runs that use everything below at once         |
+| analysis    | 9       | 1889  | dead load, and the runs that use everything below at once         |
 | cli         | 12      | 2009  | the command line, which is how anyone outside the package uses it |
 | tools       | 25      | 3346  | the repository's own checks and generated documents               |
 
@@ -158,7 +158,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.analysis.programrun`  | 141   | Building the office's worklist out of the book, and saying what is missing. |
 | `shearstud.analysis.ratingrun`   | 417   | Rating a whole structure, which is where every other module gets used.      |
 | `shearstud.analysis.recordrun`   | 221   | A raw logger file, taken all the way through to a spectrum in the book.     |
-| `shearstud.analysis.report`      | 172   | The two reports the office actually sends out.                              |
+| `shearstud.analysis.report`      | 197   | The two reports the office actually sends out.                              |
 | `shearstud.analysis.shearrun`    | 297   | Rating a structure in shear, which is a different run and not a variation.  |
 
 ### cli

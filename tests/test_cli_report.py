@@ -73,13 +73,13 @@ def test_a_structure_report_prints_its_identity(runner: CliRunner, seeded_book: 
 
 def test_a_structure_report_counts_the_silences(runner: CliRunner, seeded_book: Path) -> None:
     result = report(runner, seeded_book, "structure", NUMBER)
-    assert "4 of 10 lines have nothing behind them" in result.output
+    assert "5 of 11 lines have nothing behind them" in result.output
 
 
 def test_the_silences_flag_prints_only_the_absences(runner: CliRunner, seeded_book: Path) -> None:
     result = report(runner, seeded_book, "structure", NUMBER, "--silences")
     assert result.exit_code == 0
-    assert len(result.output.strip().splitlines()) == 4
+    assert len(result.output.strip().splitlines()) == 5
     assert "nothing on record" in result.output
     assert "Salt Fork Creek" not in result.output
 

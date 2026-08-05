@@ -13,6 +13,13 @@ ones a rating engineer has to read.
 
 ### Added
 
+- The structure report carries a computed fatigue line beside the measured
+  one, always, even when they agree. They are different evidence and a
+  reader who cannot tell them apart will quote whichever suits.
+
+
+### Added
+
 - A three girder unit rates. The distribution equations were fitted against
   four beams and more, and eleven stringer units on this inventory have
   three, so a rating there used to refuse rather than answer. It falls back

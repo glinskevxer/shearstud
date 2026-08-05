@@ -23,6 +23,7 @@ from datetime import date
 from pathlib import Path
 from typing import Final
 
+from shearstud.analysis import fatigueload
 from shearstud.analysis import programrun as pr
 from shearstud.errors import StorageError
 from shearstud.program import interval, priority
@@ -84,6 +85,29 @@ def _fatigue_line(path: Path | str, number: str) -> Line:
     return Line("fatigue", f"{life_years:.1f} years left at the worst measured detail")
 
 
+def _computed_line(path: Path | str, number: str) -> Line:
+    """What the fatigue truck says about the details nobody has gauged.
+
+    A separate line from the measured one, always, even when they agree. They
+    are different evidence: one is what crossed the bridge and the other is a
+    truck the specification made up, and a reader who cannot tell them apart
+    will quote whichever suits.
+    """
+    try:
+        record = inventory.load(path, number)
+    except StorageError:
+        return Line("computed", f"{NOTHING_ON_RECORD}, the geometry is not in the book")
+    ranges = fatigueload.ranges_for(record)
+    if not ranges:
+        return Line("computed", f"{NOTHING_ON_RECORD}, this structure has no details on it")
+    worst = ranges[0]
+    return Line(
+        "computed",
+        f"{worst.range_ksi:.2f} ksi at {worst.detail_id} from the fatigue truck, "
+        f"across {len(ranges)} detail(s)",
+    )
+
+
 def _programme_lines(path: Path | str, number: str) -> list[Line]:
     row = prog.find(path, number)
     if row is None:
@@ -118,6 +142,7 @@ def structure_report(path: Path | str, number: str) -> list[Line]:
         _rating_line(path, number),
         _posting_line(path, number),
         _fatigue_line(path, number),
+        _computed_line(path, number),
     ]
     out.extend(_programme_lines(path, number))
     return out

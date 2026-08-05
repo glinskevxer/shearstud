@@ -128,9 +128,9 @@ def test_a_bare_structure_says_there_is_no_posting_decision(seeded_book: Path) -
 
 
 def test_every_absence_is_a_line_rather_than_a_missing_line(seeded_book: Path) -> None:
-    # This is the whole design. Four things are unknown and four lines say so.
+    # This is the whole design. Five things are unknown and five lines say so.
     lines = rep.structure_report(seeded_book, NUMBER)
-    assert len(rep.silences(lines)) == 4
+    assert len(rep.silences(lines)) == 5
 
 
 def test_a_rated_structure_reports_the_governing_factor(seeded_book: Path) -> None:
@@ -175,12 +175,71 @@ def test_a_poor_structure_reports_the_short_interval(seeded_book: Path) -> None:
     assert "12 months" in labelled(rep.structure_report(seeded_book, NUMBER), "interval")
 
 
-def test_a_fully_recorded_structure_has_no_silences(seeded_book: Path) -> None:
-    add_programme(seeded_book)
-    add_rating(seeded_book)
-    add_evaluation(seeded_book)
-    asm.save_posting(seeded_book, NUMBER, open_decision(), date(2025, 6, 1))
-    assert rep.silences(rep.structure_report(seeded_book, NUMBER)) == []
+def test_a_fully_recorded_structure_has_no_silences(book: Path) -> None:
+    # The seeded book carries a girder row with no section runs, so its
+    # geometry cannot be loaded and the computed line is a silence. A book
+    # with real geometry in it has nothing left to report as missing.
+    from shearstud.store import importer, inventory
+    from shearstud.tools.walk import REPO_ROOT
+
+    record = importer.read(REPO_ROOT / "examples" / "salt-fork-creek.json")
+    inventory.save(book, record)
+    detail_id = record.details()[0].detail_id
+    db.execute(
+        book,
+        "INSERT INTO campaigns (campaign_id, structure_number, started_on, ended_on) "
+        "VALUES (?, ?, ?, ?)",
+        (CAMPAIGN, NUMBER, "2025-04-01", "2025-04-14"),
+    )
+    add_programme(book)
+    add_rating(book)
+    asm.save_evaluation(
+        book,
+        Evaluation(
+            detail_id=detail_id,
+            detail_category="E",
+            campaign_days=30.0,
+            annual_cycles=400000.0,
+            effective_range_ksi=6.0,
+            largest_range_ksi=9.0,
+            infinite_life=False,
+            damage_per_first_year=1.0 / 12.0,
+            years_remaining=12.0,
+        ),
+        CAMPAIGN,
+        date(2025, 7, 1),
+    )
+    asm.save_posting(book, NUMBER, open_decision(), date(2025, 6, 1))
+    assert rep.silences(rep.structure_report(book, NUMBER)) == []
+
+
+def test_the_computed_line_reports_the_worst_detail(book: Path) -> None:
+    from shearstud.store import importer, inventory
+    from shearstud.tools.walk import REPO_ROOT
+
+    inventory.save(book, importer.read(REPO_ROOT / "examples" / "salt-fork-creek.json"))
+    text = labelled(rep.structure_report(book, NUMBER), "computed")
+    assert "ksi at" in text
+    assert "from the fatigue truck" in text
+
+
+def test_the_computed_line_is_separate_from_the_measured_one(book: Path) -> None:
+    # Different evidence: one is what crossed the bridge and the other is a
+    # truck the specification made up.
+    from shearstud.store import importer, inventory
+    from shearstud.tools.walk import REPO_ROOT
+
+    inventory.save(book, importer.read(REPO_ROOT / "examples" / "salt-fork-creek.json"))
+    lines = rep.structure_report(book, NUMBER)
+    labels = [line.label for line in lines]
+    assert "fatigue" in labels
+    assert "computed" in labels
+
+
+def test_a_structure_whose_geometry_will_not_load_says_so(seeded_book: Path) -> None:
+    assert "the geometry is not in the book" in labelled(
+        rep.structure_report(seeded_book, NUMBER), "computed"
+    )
 
 
 def test_a_structure_that_is_not_in_the_book_has_no_report(seeded_book: Path) -> None:
