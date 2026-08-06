@@ -432,3 +432,56 @@ def test_a_girder_that_is_not_there_is_refused(runner: CliRunner, imported_book:
 def _inertia(result: Any, stage: str) -> float:
     line = next(line for line in result.output.splitlines() if line.startswith(stage))
     return float(line.split("I")[1].split()[0])
+
+
+def computed_details(runner: CliRunner, book: Path) -> Any:
+    return runner.invoke(main, ["--book", str(book), "structure", "details", NUMBER, "--computed"])
+
+
+def test_the_computed_flag_adds_a_stress_range(runner: CliRunner, imported_book: Path) -> None:
+    result = computed_details(runner, imported_book)
+    assert result.exit_code == 0, result.output
+    assert "ksi" in result.output
+    assert "threshold" in result.output
+
+
+def test_the_computed_listing_says_it_is_not_measured(
+    runner: CliRunner, imported_book: Path
+) -> None:
+    assert "not measured" in computed_details(runner, imported_book).output
+
+
+def test_the_computed_listing_is_ordered_worst_first(
+    runner: CliRunner, imported_book: Path
+) -> None:
+    # A category on its own does not say which detail is in trouble. A
+    # category E detail carrying two ksi outlives a category B one carrying
+    # twelve, and ordering by category puts them the wrong way round.
+    result = computed_details(runner, imported_book)
+    ranges = [
+        float(line.split("ksi")[0].split()[-1])
+        for line in result.output.splitlines()
+        if "ksi" in line
+    ]
+    assert ranges == sorted(ranges, reverse=True)
+
+
+def test_the_computed_listing_says_whether_a_detail_accumulates(
+    runner: CliRunner, imported_book: Path
+) -> None:
+    result = computed_details(runner, imported_book)
+    assert "infinite life" in result.output or "ACCUMULATING" in result.output
+
+
+def test_the_plain_listing_carries_no_stress_range(runner: CliRunner, imported_book: Path) -> None:
+    result = runner.invoke(main, ["--book", str(imported_book), "structure", "details", NUMBER])
+    assert "ksi" not in result.output
+
+
+def test_a_structure_with_no_details_has_no_computed_ranges(
+    runner: CliRunner, imported_book: Path
+) -> None:
+    from shearstud.store import db
+
+    db.execute(imported_book, "DELETE FROM details")
+    assert "no details" in computed_details(runner, imported_book).output

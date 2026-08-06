@@ -22,7 +22,7 @@ the same table, so the two cannot drift apart.
 | program     | 3       | 382   | what the office does with the numbers: intervals and priority     |
 | store       | 17      | 2768  | the book of record, its migrations and its repositories           |
 | analysis    | 9       | 1889  | dead load, and the runs that use everything below at once         |
-| cli         | 12      | 2009  | the command line, which is how anyone outside the package uses it |
+| cli         | 12      | 2042  | the command line, which is how anyone outside the package uses it |
 | tools       | 25      | 3346  | the repository's own checks and generated documents               |
 
 ## What each layer may import
@@ -172,7 +172,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.cli.rating`      | 225   | Commands that rate a structure and decide whether to post it.                 |
 | `shearstud.cli.report`      | 65    | Commands that print the two reports the office sends out.                     |
 | `shearstud.cli.shapes`      | 89    | Commands for the rolled shape catalogue.                                      |
-| `shearstud.cli.structures`  | 223   | Commands for the inventory: what is on the books and what it looks like.      |
+| `shearstud.cli.structures`  | 256   | Commands for the inventory: what is on the books and what it looks like.      |
 | `shearstud.cli.studs`       | 118   | Commands for the shear connectors, which are what make composite action true. |
 | `shearstud.cli.thickness`   | 191   | Commands for ultrasonic thickness readings and the loss they represent.       |
 | `shearstud.cli.vehicles`    | 162   | Commands for the vehicles themselves, and for permitting one across.          |

@@ -9,7 +9,16 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
-## 0.22.0 - 2026-08-10
+## 0.23.0 - 2026-08-13
+
+### Added
+
+- `shearstud structure details --computed` adds the stress range the fatigue
+  truck puts at each detail and orders by it. A category on its own does not
+  say which detail is in trouble: a category E detail carrying two ksi
+  outlives a category B one carrying twelve.
+
+## 0.22.0 - 2026-07-30
 
 ### Added
 

@@ -419,11 +419,17 @@ Takes `number`.
 
 Every fatigue detail on a structure.
 
+    ``--computed`` adds the stress range from the fatigue truck and orders by
+    it, because a category on its own does not say which detail is in trouble.
+    A category E detail carrying two ksi outlives a category B one carrying
+    twelve, and the ordering by category alone puts them the wrong way round.
+
 Takes `number`.
 
-| Option          | Default | What it does                           |
-| --------------- | ------- | -------------------------------------- |
-| `--worst-first` |         | Order by category rather than station. |
+| Option          | Default | What it does                                                |
+| --------------- | ------- | ----------------------------------------------------------- |
+| `--worst-first` |         | Order by category rather than station.                      |
+| `--computed`    |         | Add the stress range the fatigue truck puts at each detail. |
 
 ### `shearstud structure section`
 

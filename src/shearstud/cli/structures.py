@@ -12,11 +12,14 @@ from pathlib import Path
 
 import click
 
+from shearstud.analysis import fatigueload
 from shearstud.cli.main import Context, main, pass_context
 from shearstud.geometry.section import Section
 from shearstud.store import importer, inventory
 from shearstud.store import thickness as th
 from shearstud.store.inventory import StructurePolicy
+from shearstud.structure.detail import FatigueDetail
+from shearstud.structure.record import Structure
 
 
 @main.group()
@@ -144,9 +147,20 @@ def delete_structure(ctx: Context, number: str, yes: bool) -> None:
 @structure.command("details")
 @click.argument("number")
 @click.option("--worst-first", is_flag=True, help="Order by category rather than station.")
+@click.option(
+    "--computed",
+    is_flag=True,
+    help="Add the stress range the fatigue truck puts at each detail.",
+)
 @pass_context
-def list_details(ctx: Context, number: str, worst_first: bool) -> None:
-    """Every fatigue detail on a structure."""
+def list_details(ctx: Context, number: str, worst_first: bool, computed: bool) -> None:
+    """Every fatigue detail on a structure.
+
+    ``--computed`` adds the stress range from the fatigue truck and orders by
+    it, because a category on its own does not say which detail is in trouble.
+    A category E detail carrying two ksi outlives a category B one carrying
+    twelve, and the ordering by category alone puts them the wrong way round.
+    """
     path = ctx.require_book()
     record = inventory.load(path, number)
     rows = []
@@ -156,6 +170,9 @@ def list_details(ctx: Context, number: str, worst_first: bool) -> None:
     if not rows:
         click.echo("no details")
         return
+    if computed:
+        _echo_computed(record, rows)
+        return
     if worst_first:
         rows.sort(key=lambda r: (r[1].detail_category.constant_a, r[1].station_ft))
     for girder_id, detail in rows:
@@ -164,6 +181,22 @@ def list_details(ctx: Context, number: str, worst_first: bool) -> None:
             f"{detail.detail_id:<12}{girder_id:<6}{detail.station_ft:>7.1f} ft  "
             f"{detail.category_name:<3}{detail.fibre:<8}{detail.kind}{flag}"
         )
+
+
+def _echo_computed(record: Structure, rows: list[tuple[str, FatigueDetail]]) -> None:
+    """Each detail with its computed range, worst first."""
+    by_id = {detail.detail_id: girder_id for girder_id, detail in rows}
+    categories = {detail.detail_id: detail for _, detail in rows}
+    for found in fatigueload.ranges_for(record):
+        detail = categories[found.detail_id]
+        threshold_ksi = detail.detail_category.threshold_ksi
+        verdict = "infinite life" if found.range_ksi < threshold_ksi else "ACCUMULATING"
+        click.echo(
+            f"{found.detail_id:<16}{by_id[found.detail_id]:<6}{found.station_ft:>7.1f} ft  "
+            f"{detail.category_name:<3}{found.range_ksi:>6.2f} ksi  "
+            f"threshold {threshold_ksi:>5.2f}  {verdict}"
+        )
+    click.echo(f"{len(rows)} detail(s) from the fatigue truck, not measured")
 
 
 @structure.command("section")
