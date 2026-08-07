@@ -15,6 +15,7 @@ import click
 from shearstud.analysis import fatigueload
 from shearstud.cli.main import Context, main, pass_context
 from shearstud.geometry.section import Section
+from shearstud.loads import impact
 from shearstud.store import importer, inventory
 from shearstud.store import thickness as th
 from shearstud.store.inventory import StructurePolicy
@@ -86,6 +87,13 @@ def show_structure(ctx: Context, number: str, girders: bool) -> None:
     show_default=True,
     help="Traffic growth, %/yr.",
 )
+@click.option(
+    "--surface",
+    type=click.Choice(list(impact.SURFACES)),
+    default=impact.SURFACE_MINOR,
+    show_default=True,
+    help="Riding surface, for the dynamic allowance.",
+)
 @click.option("--force", is_flag=True, help="Replace a structure that is already there.")
 @pass_context
 def import_structure(
@@ -97,6 +105,7 @@ def import_structure(
     adtt: float,
     lanes: int,
     growth_pct: float,
+    surface: str,
     force: bool,
 ) -> None:
     """Read a structure document into the book."""
@@ -106,6 +115,7 @@ def import_structure(
     if inventory.exists(path, number) and not force:
         raise click.ClickException(f"{number} is already in the book. Use --force to replace it.")
     policy = StructurePolicy(
+        riding_surface=surface,
         steel_grade=grade,
         member_condition=condition,
         redundancy=redundancy,

@@ -9,7 +9,20 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
-## 0.23.0 - 2026-08-13
+## 0.24.0 - 2026-08-17
+
+### Added
+
+- The riding surface is recorded against the structure. It decides the
+  dynamic allowance a legal rating uses and had nowhere to be written down,
+  so every rating started from the default and an engineer who knew the deck
+  was rough had to say so every time or come out eleven per cent high on the
+  live load. `--surface` on `structure import` sets it; `--surface` on
+  `rate` and `shear` overrides it for one run.
+- Existing structures get `minor`, which is what the option defaulted to, so
+  no rating already worked changes because of this.
+
+## 0.23.0 - 2026-08-05
 
 ### Added
 

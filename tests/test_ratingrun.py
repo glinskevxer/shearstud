@@ -545,3 +545,27 @@ def test_a_three_girder_unit_rates_end_to_end() -> None:
     )
     assert results
     assert rr.governing(results).value > 0.0
+
+
+def test_the_riding_surface_is_read_off_the_structure(book: Path) -> None:
+    # It used to be a command line option with no home, so every rating
+    # started from the default and an engineer who knew the deck was rough
+    # had to remember to say so, every time.
+    inventory.save(book, structure(), StructurePolicy(riding_surface="rough"))
+    assert rr.settings_for(book, "18-SH-0473").riding_surface == "rough"
+
+
+def test_a_rougher_deck_lowers_the_rating(book: Path) -> None:
+    inventory.save(book, structure(), StructurePolicy(riding_surface="smooth"))
+    smooth = rr.rate_structure(
+        structure(),
+        vehicles.legal_fleet(),
+        rr.settings_for(book, "18-SH-0473", stations_per_span=4),
+    )
+    inventory.save(book, structure(), StructurePolicy(riding_surface="rough"))
+    rough = rr.rate_structure(
+        structure(),
+        vehicles.legal_fleet(),
+        rr.settings_for(book, "18-SH-0473", stations_per_span=4),
+    )
+    assert rr.governing(rough).value < rr.governing(smooth).value

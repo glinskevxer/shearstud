@@ -26,6 +26,7 @@ from shearstud.geometry.effective import DeckLayout
 from shearstud.geometry.plate import Plate
 from shearstud.geometry.schedule import GirderSchedule, SectionRun
 from shearstud.geometry.section import Section
+from shearstud.loads import impact
 from shearstud.store import db
 from shearstud.structure.detail import FatigueDetail
 from shearstud.structure.girder import GirderLine
@@ -54,7 +55,8 @@ NOT_RELIED_ON = (LIMITED, NONREDUNDANT)
 _STRUCTURE_COLUMNS = (
     "number, name, county_code, route_class, sequence, parallel, year_built, "
     "span_lengths_ft, continuous, effective_width_rule, steel_grade, "
-    "member_condition, redundancy, adtt, lanes_available, growth_pct_per_yr"
+    "member_condition, redundancy, adtt, lanes_available, growth_pct_per_yr, "
+    "riding_surface"
 )
 
 
@@ -73,8 +75,13 @@ class StructurePolicy:
     adtt: float = 0.0
     lanes_available: int = 2
     growth_pct_per_yr: float = 0.0
+    riding_surface: str = impact.SURFACE_MINOR
 
     def __post_init__(self) -> None:
+        if self.riding_surface not in impact.SURFACES:
+            raise StorageError(
+                f"unknown riding surface {self.riding_surface!r}, expected one of {impact.SURFACES}"
+            )
         if self.redundancy not in REDUNDANCIES:
             raise StorageError(
                 f"unknown redundancy {self.redundancy!r}, expected one of {REDUNDANCIES}"
@@ -104,7 +111,7 @@ def save(path: Path | str, structure: Structure, policy: StructurePolicy | None 
         connection.execute("DELETE FROM structures WHERE number = ?", (number,))
         connection.execute(
             f"INSERT INTO structures ({_STRUCTURE_COLUMNS}) "
-            f"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            f"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 number,
                 structure.name,
@@ -122,6 +129,7 @@ def save(path: Path | str, structure: Structure, policy: StructurePolicy | None 
                 settings.adtt,
                 settings.lanes_available,
                 settings.growth_pct_per_yr,
+                settings.riding_surface,
             ),
         )
         for girder in structure.girders:
@@ -392,7 +400,7 @@ def load_policy(path: Path | str, number: str) -> StructurePolicy:
     row = db.fetch_one(
         path,
         "SELECT steel_grade, member_condition, redundancy, adtt, lanes_available, "
-        "growth_pct_per_yr, continuous FROM structures WHERE number = ?",
+        "growth_pct_per_yr, riding_surface, continuous FROM structures WHERE number = ?",
         (number,),
     )
     if row is None:
@@ -404,6 +412,7 @@ def load_policy(path: Path | str, number: str) -> StructurePolicy:
         adtt=float(row["adtt"]),
         lanes_available=int(row["lanes_available"]),
         growth_pct_per_yr=float(row["growth_pct_per_yr"]),
+        riding_surface=str(row["riding_surface"]),
     )
 
 

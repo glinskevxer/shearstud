@@ -372,3 +372,24 @@ def test_every_structure_comes_back_in_file_cabinet_order(book: Path) -> None:
 
 def test_an_empty_book_has_no_summaries(book: Path) -> None:
     assert inventory.summaries(book) == []
+
+
+def test_the_riding_surface_survives_the_round_trip(book: Path) -> None:
+    inventory.save(book, structure(), StructurePolicy(riding_surface="rough"))
+    assert inventory.load_policy(book, "18-SH-0473").riding_surface == "rough"
+
+
+def test_the_riding_surface_defaults_to_the_middle_one() -> None:
+    assert StructurePolicy().riding_surface == "minor"
+
+
+def test_a_riding_surface_nobody_uses_is_refused() -> None:
+    with pytest.raises(StorageError, match="unknown riding surface"):
+        StructurePolicy(riding_surface="gravel")
+
+
+def test_every_surface_the_allowance_table_knows_is_accepted() -> None:
+    from shearstud.loads import impact
+
+    for surface in impact.SURFACES:
+        assert StructurePolicy(riding_surface=surface).riding_surface == surface

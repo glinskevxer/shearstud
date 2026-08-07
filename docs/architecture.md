@@ -20,10 +20,10 @@ the same table, so the two cannot drift apart.
 | structure   | 7       | 844   | the inventory: identity, spans, girders, details and gauges       |
 | rating      | 7       | 1056  | capacity, load factors, the rating equation, posting and permits  |
 | program     | 3       | 382   | what the office does with the numbers: intervals and priority     |
-| store       | 17      | 2768  | the book of record, its migrations and its repositories           |
-| analysis    | 9       | 1889  | dead load, and the runs that use everything below at once         |
-| cli         | 12      | 2042  | the command line, which is how anyone outside the package uses it |
-| tools       | 25      | 3346  | the repository's own checks and generated documents               |
+| store       | 18      | 2810  | the book of record, its migrations and its repositories           |
+| analysis    | 9       | 1890  | dead load, and the runs that use everything below at once         |
+| cli         | 12      | 2050  | the command line, which is how anyone outside the package uses it |
+| tools       | 25      | 3347  | the repository's own checks and generated documents               |
 
 ## What each layer may import
 
@@ -42,7 +42,7 @@ the same table, so the two cannot drift apart.
 | cli         | analysis, fatigue, geometry, loads, program, rating, signals, store, structure      |
 | tools       | analysis, cli, fatigue, geometry, loads, program, rating, signals, store, structure |
 
-The package holds 95 SQL statements, all of them in the
+The package holds 96 SQL statements, all of them in the
 store layer. `check_sql` enforces that.
 
 ## Modules
@@ -130,23 +130,24 @@ store layer. `check_sql` enforces that.
 
 ### store
 
-| Module                                        | Lines | What it is                                                                  |
-| --------------------------------------------- | ----- | --------------------------------------------------------------------------- |
-| `shearstud.store.assessment`                  | 313   | Storing what was concluded: ratings, fatigue evaluations and postings.      |
-| `shearstud.store.db`                          | 158   | The book of record: one SQLite file, opened and closed around each unit of  |
-| `shearstud.store.importer`                    | 243   | Reading a structure out of a JSON document, and writing one back.           |
-| `shearstud.store.inventory`                   | 435   | Reading and writing whole structures.                                       |
-| `shearstud.store.measurement`                 | 343   | Reading and writing what was measured: gauges, campaigns and spectra.       |
-| `shearstud.store.migrate`                     | 162   | Applying migrations, and refusing to run against a book that has diverged.  |
-| `shearstud.store.migrations.m001_structures`  | 87    | The inventory: structures, girders and the details welded to them.          |
-| `shearstud.store.migrations.m002_measurement` | 71    | What is measured: gauges, campaigns, cycle spectra and thickness readings.  |
-| `shearstud.store.migrations.m003_assessment`  | 72    | What is concluded: ratings, fatigue evaluations and posting decisions.      |
-| `shearstud.store.migrations.m004_programme`   | 39    | The facts the inspection programme runs on, none of which are engineering.  |
-| `shearstud.store.migrations.m005_thickness`   | 38    | Finishing the thickness table, which has been in the schema and unused.     |
-| `shearstud.store.programme`                   | 200   | The inspection programme's own row for each structure.                      |
-| `shearstud.store.retention`                   | 143   | Pruning the record, which is the only place anything is deleted on purpose. |
-| `shearstud.store.thickness`                   | 247   | Storing ultrasonic thickness readings, and reading them back as a section.  |
-| `shearstud.store.transfer`                    | 174   | Moving a whole book somewhere else, and reading one back.                   |
+| Module                                        | Lines | What it is                                                                   |
+| --------------------------------------------- | ----- | ---------------------------------------------------------------------------- |
+| `shearstud.store.assessment`                  | 313   | Storing what was concluded: ratings, fatigue evaluations and postings.       |
+| `shearstud.store.db`                          | 158   | The book of record: one SQLite file, opened and closed around each unit of   |
+| `shearstud.store.importer`                    | 243   | Reading a structure out of a JSON document, and writing one back.            |
+| `shearstud.store.inventory`                   | 444   | Reading and writing whole structures.                                        |
+| `shearstud.store.measurement`                 | 343   | Reading and writing what was measured: gauges, campaigns and spectra.        |
+| `shearstud.store.migrate`                     | 162   | Applying migrations, and refusing to run against a book that has diverged.   |
+| `shearstud.store.migrations.m001_structures`  | 87    | The inventory: structures, girders and the details welded to them.           |
+| `shearstud.store.migrations.m002_measurement` | 71    | What is measured: gauges, campaigns, cycle spectra and thickness readings.   |
+| `shearstud.store.migrations.m003_assessment`  | 72    | What is concluded: ratings, fatigue evaluations and posting decisions.       |
+| `shearstud.store.migrations.m004_programme`   | 39    | The facts the inspection programme runs on, none of which are engineering.   |
+| `shearstud.store.migrations.m005_thickness`   | 38    | Finishing the thickness table, which has been in the schema and unused.      |
+| `shearstud.store.migrations.m006_surface`     | 31    | The riding surface, which was a command line option and belongs on the deck. |
+| `shearstud.store.programme`                   | 200   | The inspection programme's own row for each structure.                       |
+| `shearstud.store.retention`                   | 143   | Pruning the record, which is the only place anything is deleted on purpose.  |
+| `shearstud.store.thickness`                   | 247   | Storing ultrasonic thickness readings, and reading them back as a section.   |
+| `shearstud.store.transfer`                    | 174   | Moving a whole book somewhere else, and reading one back.                    |
 
 ### analysis
 
@@ -156,7 +157,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.analysis.fatigueload` | 168   | The computed stress range at a detail nobody has put a gauge on.            |
 | `shearstud.analysis.fatiguerun`  | 270   | Evaluating every instrumented detail on a structure from stored spectra.    |
 | `shearstud.analysis.programrun`  | 141   | Building the office's worklist out of the book, and saying what is missing. |
-| `shearstud.analysis.ratingrun`   | 417   | Rating a whole structure, which is where every other module gets used.      |
+| `shearstud.analysis.ratingrun`   | 418   | Rating a whole structure, which is where every other module gets used.      |
 | `shearstud.analysis.recordrun`   | 221   | A raw logger file, taken all the way through to a spectrum in the book.     |
 | `shearstud.analysis.report`      | 197   | The two reports the office actually sends out.                              |
 | `shearstud.analysis.shearrun`    | 297   | Rating a structure in shear, which is a different run and not a variation.  |
@@ -169,10 +170,10 @@ store layer. `check_sql` enforces that.
 | `shearstud.cli.main`        | 174   | The command line, which is the only way anyone outside this package uses it.  |
 | `shearstud.cli.measurement` | 457   | Commands for what was measured, and the fatigue evaluation that reads it.     |
 | `shearstud.cli.program`     | 150   | Commands for the inspection programme: what gets visited, and when.           |
-| `shearstud.cli.rating`      | 225   | Commands that rate a structure and decide whether to post it.                 |
+| `shearstud.cli.rating`      | 223   | Commands that rate a structure and decide whether to post it.                 |
 | `shearstud.cli.report`      | 65    | Commands that print the two reports the office sends out.                     |
 | `shearstud.cli.shapes`      | 89    | Commands for the rolled shape catalogue.                                      |
-| `shearstud.cli.structures`  | 256   | Commands for the inventory: what is on the books and what it looks like.      |
+| `shearstud.cli.structures`  | 266   | Commands for the inventory: what is on the books and what it looks like.      |
 | `shearstud.cli.studs`       | 118   | Commands for the shear connectors, which are what make composite action true. |
 | `shearstud.cli.thickness`   | 191   | Commands for ultrasonic thickness readings and the loss they represent.       |
 | `shearstud.cli.vehicles`    | 162   | Commands for the vehicles themselves, and for permitting one across.          |
@@ -197,7 +198,7 @@ store layer. `check_sql` enforces that.
 | `shearstud.tools.check_naming`       | 156   | Names say what the thing is, in the words this domain already uses.             |
 | `shearstud.tools.check_readme`       | 167   | The README makes checkable claims, so they get checked.                         |
 | `shearstud.tools.check_sql`          | 178   | SQL is parameterised, lives in the store layer, and names its columns.          |
-| `shearstud.tools.check_tests`        | 147   | Every module has a test file, every test file has a marker, every test asserts. |
+| `shearstud.tools.check_tests`        | 148   | Every module has a test file, every test file has a marker, every test asserts. |
 | `shearstud.tools.check_units`        | 172   | Every float that crosses a public boundary carries its unit in its name.        |
 | `shearstud.tools.check_wiring`       | 153   | Nothing public is written and then left with no caller.                         |
 | `shearstud.tools.generated`          | 96    | The write-or-check contract every generated document follows.                   |

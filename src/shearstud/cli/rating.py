@@ -21,7 +21,7 @@ import click
 from shearstud.analysis import ratingrun as rr
 from shearstud.analysis import shearrun as sr
 from shearstud.cli.main import Context, main, pass_context
-from shearstud.loads import vehicles
+from shearstud.loads import impact, vehicles
 from shearstud.rating import factors as fac
 from shearstud.rating import posting as post
 from shearstud.store import assessment as asm
@@ -56,10 +56,9 @@ def _record_for(path: Path, number: str, measured: bool) -> Structure:
 )
 @click.option(
     "--surface",
-    type=click.Choice(["smooth", "minor", "rough"]),
-    default="minor",
-    show_default=True,
-    help="Riding surface, for the dynamic allowance.",
+    type=click.Choice(list(impact.SURFACES)),
+    default=None,
+    help="Override the riding surface recorded against the structure.",
 )
 @click.option("--condition", default=None, help="Override the recorded member condition.")
 @click.option("--design", is_flag=True, help="Rate the design load instead of the legal fleet.")
@@ -171,10 +170,9 @@ def ratings_command(ctx: Context, number: str, limit: int) -> None:
 )
 @click.option(
     "--surface",
-    type=click.Choice(["smooth", "minor", "rough"]),
-    default="minor",
-    show_default=True,
-    help="Riding surface, for the dynamic allowance.",
+    type=click.Choice(list(impact.SURFACES)),
+    default=None,
+    help="Override the riding surface recorded against the structure.",
 )
 @click.option("--condition", default=None, help="Override the recorded member condition.")
 @click.option("--measured", is_flag=True, help="Rate the measured sections, not the drawing ones.")

@@ -137,6 +137,7 @@ def settings_for(path: Path | str, number: str, **overrides: object) -> RatingSe
         "member_condition": policy.member_condition,
         "redundancy": policy.redundancy,
         "adtt": policy.adtt,
+        "riding_surface": policy.riding_surface,
     }
     fields.update({name: value for name, value in overrides.items() if value is not None})
     return RatingSettings(**fields)  # type: ignore[arg-type]

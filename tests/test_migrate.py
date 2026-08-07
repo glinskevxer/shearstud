@@ -8,7 +8,7 @@ import pytest
 
 from shearstud.errors import MigrationError
 from shearstud.store import db, migrate
-from shearstud.store.migrations import m001_structures, m005_thickness
+from shearstud.store.migrations import m001_structures, m006_surface
 from tests import support
 
 pytestmark = pytest.mark.store
@@ -62,13 +62,14 @@ def test_upgrading_twice_does_nothing_the_second_time(book: Path) -> None:
 
 def test_the_version_table_records_what_it_ran(book: Path) -> None:
     rows = migrate.applied(book)
-    assert [row.version for row in rows] == [1, 2, 3, 4, 5]
+    assert [row.version for row in rows] == [1, 2, 3, 4, 5, 6]
     assert [row.name for row in rows] == [
         "structures",
         "measurement",
         "assessment",
         "programme",
         "thickness",
+        "surface",
     ]
     assert all(len(row.digest) == 64 for row in rows)
     assert all(row.applied_at for row in rows)
@@ -174,14 +175,14 @@ def test_a_book_from_the_future_is_refused(book: Path) -> None:
 
 
 def test_the_newest_version_is_the_last_migration() -> None:
-    assert migrate.newest_version() == int(m005_thickness.VERSION)
+    assert migrate.newest_version() == int(m006_surface.VERSION)
 
 
 def test_a_partially_upgraded_book_finishes_the_job(tmp_path: Path) -> None:
     path = tmp_path / "partial.sqlite3"
     migrate.upgrade(path)
     db.execute(path, f"DELETE FROM {migrate.VERSION_TABLE} WHERE version > 1")
-    assert [int(m.VERSION) for m in migrate.pending(path)] == [2, 3, 4, 5]
+    assert [int(m.VERSION) for m in migrate.pending(path)] == [2, 3, 4, 5, 6]
 
 
 def test_an_upgraded_book_has_no_foreign_key_violations(book: Path) -> None:
@@ -221,19 +222,19 @@ def test_an_upgrade_can_be_stopped_partway(tmp_path: Path) -> None:
     path = tmp_path / "window.sqlite3"
     assert migrate.upgrade(path, through=2) == [1, 2]
     assert migrate.current_version(path) == 2
-    assert [int(m.VERSION) for m in migrate.pending(path)] == [3, 4, 5]
+    assert [int(m.VERSION) for m in migrate.pending(path)] == [3, 4, 5, 6]
 
 
 def test_a_stopped_upgrade_finishes_when_it_is_run_again(tmp_path: Path) -> None:
     path = tmp_path / "window.sqlite3"
     migrate.upgrade(path, through=2)
-    assert migrate.upgrade(path) == [3, 4, 5]
+    assert migrate.upgrade(path) == [3, 4, 5, 6]
     assert migrate.pending(path) == []
 
 
 def test_stopping_past_the_end_applies_everything(tmp_path: Path) -> None:
     path = tmp_path / "window.sqlite3"
-    assert migrate.upgrade(path, through=99) == [1, 2, 3, 4, 5]
+    assert migrate.upgrade(path, through=99) == [1, 2, 3, 4, 5, 6]
 
 
 def test_stopping_before_the_first_migration_is_refused(tmp_path: Path) -> None:
@@ -274,3 +275,33 @@ def test_the_thickness_table_refuses_two_readings_of_one_place_on_one_day(book: 
 def _columns(path: Path, table: str) -> set[str]:
     rows = db.fetch_all(path, f"PRAGMA table_info({table})")
     return {str(row["name"]) for row in rows}
+
+
+def test_the_riding_surface_arrives_with_its_migration(tmp_path: Path) -> None:
+    path = tmp_path / "staged.sqlite3"
+    migrate.upgrade(path, through=5)
+    assert "riding_surface" not in _columns(path, "structures")
+    migrate.upgrade(path)
+    assert "riding_surface" in _columns(path, "structures")
+
+
+def test_an_existing_structure_keeps_the_surface_the_option_defaulted_to(
+    tmp_path: Path,
+) -> None:
+    # No rating that has already been worked changes because of the migration.
+    path = tmp_path / "staged.sqlite3"
+    migrate.upgrade(path, through=5)
+    db.execute(
+        path,
+        "INSERT INTO structures (number, name, county_code, route_class, sequence, "
+        "parallel, year_built, span_lengths_ft, continuous, effective_width_rule, "
+        "steel_grade, member_condition, redundancy, adtt, lanes_available, "
+        "growth_pct_per_yr) VALUES ('18-SH-0473', 'Salt Fork Creek', 18, 'SH', 473, "
+        "'', 1962, '[84.0]', 0, 'tributary', 'A36', 'good', 'redundant', 500, 2, 1.0)",
+    )
+    migrate.upgrade(path)
+    row = db.fetch_one(
+        path, "SELECT riding_surface FROM structures WHERE number = ?", ("18-SH-0473",)
+    )
+    assert row is not None
+    assert row["riding_surface"] == "minor"

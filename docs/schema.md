@@ -2,7 +2,7 @@
 
 # Schema
 
-What migration 5 leaves behind, read back out
+What migration 6 leaves behind, read back out
 of SQLite rather than transcribed from the migration text.
 
 16 tables: `campaigns`, `details`, `evaluations`, `gauges`, `girders`, `posting_lines`, `postings`, `programme`, `ratings`, `schema_version`, `section_plates`, `section_runs`, `spectra`, `spectrum_bins`, `structures`, `thickness_readings`.
@@ -288,6 +288,11 @@ of SQLite rather than transcribed from the migration text.
 | adtt                 | REAL         | no   |         |
 | lanes_available      | INTEGER      | no   |         |
 | growth_pct_per_yr    | REAL         | no   |         |
+| riding_surface       | TEXT         | no   | 'minor' |
+
+| Index                 | Unique | Columns        |
+| --------------------- | ------ | -------------- |
+| structures_by_surface | no     | riding_surface |
 
 ### `thickness_readings`
 

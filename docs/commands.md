@@ -267,16 +267,16 @@ Rate a structure against the legal fleet, or against the design load.
 
 Takes `number`.
 
-| Option        | Default | What it does                                      |
-| ------------- | ------- | ------------------------------------------------- |
-| `--stations`  | `10`    | Stations per span.                                |
-| `--overlay`   |         | Overlay, inches.                                  |
-| `--surface`   | `minor` | Riding surface, for the dynamic allowance.        |
-| `--condition` |         | Override the recorded member condition.           |
-| `--design`    |         | Rate the design load instead of the legal fleet.  |
-| `--measured`  |         | Rate the measured sections, not the drawing ones. |
-| `--verbose`   |         | Print a line for every station.                   |
-| `--save`      |         | Write the results into the book.                  |
+| Option        | Default | What it does                                                |
+| ------------- | ------- | ----------------------------------------------------------- |
+| `--stations`  | `10`    | Stations per span.                                          |
+| `--overlay`   |         | Overlay, inches.                                            |
+| `--surface`   |         | Override the riding surface recorded against the structure. |
+| `--condition` |         | Override the recorded member condition.                     |
+| `--design`    |         | Rate the design load instead of the legal fleet.            |
+| `--measured`  |         | Rate the measured sections, not the drawing ones.           |
+| `--verbose`   |         | Print a line for every station.                             |
+| `--save`      |         | Write the results into the book.                            |
 
 ### `shearstud posting`
 
@@ -306,16 +306,16 @@ Rate a structure in shear, ends included.
 
 Takes `number`.
 
-| Option        | Default | What it does                                      |
-| ------------- | ------- | ------------------------------------------------- |
-| `--stations`  | `10`    | Stations per span.                                |
-| `--overlay`   |         | Overlay, inches.                                  |
-| `--surface`   | `minor` | Riding surface, for the dynamic allowance.        |
-| `--condition` |         | Override the recorded member condition.           |
-| `--measured`  |         | Rate the measured sections, not the drawing ones. |
-| `--ends-only` |         | Print only the end stations, where shear governs. |
-| `--verbose`   |         | Print a line for every station.                   |
-| `--save`      |         | Write the results into the book.                  |
+| Option        | Default | What it does                                                |
+| ------------- | ------- | ----------------------------------------------------------- |
+| `--stations`  | `10`    | Stations per span.                                          |
+| `--overlay`   |         | Overlay, inches.                                            |
+| `--surface`   |         | Override the riding surface recorded against the structure. |
+| `--condition` |         | Override the recorded member condition.                     |
+| `--measured`  |         | Rate the measured sections, not the drawing ones.           |
+| `--ends-only` |         | Print only the end stations, where shear governs.           |
+| `--verbose`   |         | Print a line for every station.                             |
+| `--save`      |         | Write the results into the book.                            |
 
 ### `shearstud report structure`
 
@@ -397,6 +397,7 @@ Takes `document`.
 | `--adtt`       |             | Truck traffic a day.                       |
 | `--lanes`      | `2`         | Lanes open to trucks.                      |
 | `--growth`     |             | Traffic growth, %/yr.                      |
+| `--surface`    | `minor`     | Riding surface, for the dynamic allowance. |
 | `--force`      |             | Replace a structure that is already there. |
 
 ### `shearstud structure export`
