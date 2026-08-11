@@ -9,7 +9,17 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
-## 0.24.0 - 2026-08-17
+## 0.25.0 - 2026-08-19
+
+### Added
+
+- `check_examples` holds the shipped example to what depends on it. It is
+  the structure the README tells a reader to import, the one the smoke run
+  takes end to end, and the one four test files read when they need a real
+  four girder unit. If it stops importing, three things break and none of
+  them says why.
+
+## 0.24.0 - 2026-08-06
 
 ### Added
 
