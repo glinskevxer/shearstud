@@ -9,7 +9,19 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
-## 0.25.0 - 2026-08-19
+## 0.25.1 - 2026-08-19
+
+### Changed
+
+- The suite runs in about half the time. The release gate tests each ran
+  every self check and the smoke run for themselves, which was two minutes
+  of a two and a half minute suite; they share one run now. `--dist
+  loadfile` keeps a test file on one worker, so a module scoped fixture is
+  paid for once rather than once per worker. Three continuous unit tests
+  drive one truck instead of the fleet, because they count stations and
+  check signs rather than compare ratings.
+
+## 0.25.0 - 2026-08-10
 
 ### Added
 

@@ -289,8 +289,11 @@ def test_the_governing_station_is_near_midspan() -> None:
 
 
 def test_a_continuous_unit_runs_through_without_error() -> None:
+    # Three vehicles rather than the fleet: enough that the governing choice
+    # is a choice, and not nine three moment solves per load position.
     s = structure(continuous=True)
-    results = rr.rate_structure(s, vehicles.legal_fleet(), RatingSettings(stations_per_span=4))
+    fleet = [vehicles.vehicle(name) for name in ("TYPE3", "TYPE3S2", "SU7")]
+    results = rr.rate_structure(s, fleet, RatingSettings(stations_per_span=4))
     assert results
     assert rr.governing(results).value > 0.0
 
@@ -490,8 +493,13 @@ def test_a_pier_station_rates_against_the_hogging_placement() -> None:
 def test_every_rating_on_a_continuous_unit_is_positive() -> None:
     # The live effect goes into the equation as a magnitude. A negative one
     # would come back as a rating factor above one on a section that is failing.
+    # One vehicle. The claim is about the sign of every live effect, which
+    # one truck settles, and a continuous unit costs a three moment solve per
+    # load position per vehicle.
     unit = structure(continuous=True)
-    results = rr.rate_structure(unit, vehicles.legal_fleet(), RatingSettings(stations_per_span=4))
+    results = rr.rate_structure(
+        unit, [vehicles.vehicle("TYPE3")], RatingSettings(stations_per_span=4)
+    )
     for station in results:
         for factor in station.ratings:
             assert factor.factored_live >= 0.0

@@ -173,8 +173,13 @@ def test_both_ends_of_the_structure_count_as_ends() -> None:
 def test_a_continuous_unit_has_two_ends_and_not_four() -> None:
     # The pier is not an end. Shear is large there too and it is not the case
     # this flag is about.
+    #
+    # One vehicle, not the fleet. Every station on a continuous unit rebuilds
+    # a three moment solve per load position, and this counts stations rather
+    # than comparing ratings, so nine vehicles is nine times the work for the
+    # same answer.
     unit = structure(continuous=True)
-    results = sr.rate_structure(unit, vehicles.legal_fleet(), settings())
+    results = sr.rate_structure(unit, [vehicles.vehicle("TYPE3")], settings())
     ends = [r for r in results if r.is_at_an_end]
     assert len(ends) == 2 * len(unit.girders)
 

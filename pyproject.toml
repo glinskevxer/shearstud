@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "shearstud"
-version = "0.25.0"
+version = "0.25.1"
 description = "Fatigue accounting and load rating for instrumented steel girder bridges"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -65,7 +65,11 @@ show_error_codes = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q --strict-markers -W error::ResourceWarning"
+# --dist loadfile keeps a whole test file on one worker. Several files here
+# build something expensive once in a module scoped fixture, and the default
+# distribution scatters their tests, which pays for the fixture on every
+# worker that gets one.
+addopts = "-q --strict-markers --dist loadfile -W error::ResourceWarning"
 markers = [
   "geometry: section property arithmetic",
   "loads: live load placement and distribution",

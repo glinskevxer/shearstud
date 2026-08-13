@@ -1,4 +1,10 @@
-"""The release gate, and the discovery that stops a check going unrun."""
+"""The release gate, and the discovery that stops a check going unrun.
+
+Every gate is run once for the whole module and every question is asked of that
+one result. Running them takes about twenty seconds, because it is every self
+check in the package plus the end to end smoke run, and five tests each doing
+it for themselves was two minutes of a two and a half minute suite.
+"""
 
 from __future__ import annotations
 
@@ -7,6 +13,12 @@ import pytest
 from shearstud.tools import release_check as release
 
 pytestmark = pytest.mark.tools
+
+
+@pytest.fixture(scope="module")
+def gate_results() -> list[release.GateResult]:
+    """Every gate, run once."""
+    return release.gates()
 
 
 def test_every_check_module_is_discovered() -> None:
@@ -49,18 +61,25 @@ def test_every_discovered_module_has_a_main() -> None:
         assert callable(module.main), name
 
 
-def test_every_gate_comes_back_clean() -> None:
-    failed = [result.name for result in release.gates() if not result.passed]
+def test_every_gate_comes_back_clean(gate_results: list[release.GateResult]) -> None:
+    failed = [result.name for result in gate_results if not result.passed]
     assert failed == []
 
 
-def test_the_gate_count_matches_what_ran() -> None:
-    results = release.gates()
-    assert len(results) == release.counts()["gates"]
+def test_the_gate_count_matches_what_ran(gate_results: list[release.GateResult]) -> None:
+    assert len(gate_results) == release.counts()["gates"]
 
 
-def test_the_smoke_run_is_one_of_the_gates() -> None:
-    assert "smoke" in {result.name for result in release.gates()}
+def test_the_smoke_run_is_one_of_the_gates(gate_results: list[release.GateResult]) -> None:
+    assert "smoke" in {result.name for result in gate_results}
+
+
+def test_every_check_module_is_one_of_the_gates(
+    gate_results: list[release.GateResult],
+) -> None:
+    ran = {result.name for result in gate_results}
+    assert set(release.check_modules()) <= ran
+    assert set(release.builder_modules()) <= ran
 
 
 def test_a_passing_gate_says_so() -> None:
@@ -76,12 +95,24 @@ def test_the_counts_are_plausible() -> None:
     assert numbers["test_lines"] > 5000
 
 
-def test_the_command_exits_zero(capsys: pytest.CaptureFixture[str]) -> None:
+def test_the_command_exits_zero(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    gate_results: list[release.GateResult],
+) -> None:
+    # Against the gates the module already ran. Running them again here says
+    # nothing the clean gate test has not, and costs twenty seconds to say it.
+    monkeypatch.setattr(release, "gates", lambda: gate_results)
     assert release.main(["--quiet"]) == 0
     assert "gates clean" in capsys.readouterr().out
 
 
-def test_the_command_prints_the_counts(capsys: pytest.CaptureFixture[str]) -> None:
+def test_the_command_prints_the_counts(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    gate_results: list[release.GateResult],
+) -> None:
+    monkeypatch.setattr(release, "gates", lambda: gate_results)
     release.main([])
     out = capsys.readouterr().out
     assert "modules" in out
