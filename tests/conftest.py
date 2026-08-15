@@ -8,11 +8,14 @@ bottom flange, and a rolled stringer each fail differently.
 
 from __future__ import annotations
 
+import json
 import shutil
 from pathlib import Path
 
 import pytest
+from click.testing import CliRunner
 
+from shearstud.cli import main
 from shearstud.geometry import rolled
 from shearstud.geometry.composite import CompositeGirder, DeckSlab
 from shearstud.geometry.plate import flange, web
@@ -124,4 +127,29 @@ def seeded_book(book: Path) -> Path:
             "VALUES (?, ?, ?, ?)",
             (SEED_CAMPAIGN, SEED_NUMBER, "2025-04-01", "2025-04-14"),
         )
+    return book
+
+
+@pytest.fixture
+def runner() -> CliRunner:
+    """A click runner, which every command line test needs one of."""
+    return CliRunner()
+
+
+@pytest.fixture
+def imported_book(runner: CliRunner, book: Path, tmp_path: Path) -> Path:
+    """A book holding the four girder structure the command line tests rate.
+
+    Four test files grew a byte identical copy of this under three different
+    names. They all wanted the same thing: a real structure in a real book,
+    put there the way a user puts one there, so that a command test exercises
+    the import as well as the command under test.
+    """
+    document = tmp_path / "structure.json"
+    document.write_text(json.dumps(support.document()), encoding="utf-8")
+    result = runner.invoke(
+        main,
+        ["--book", str(book), "structure", "import", str(document), "--adtt", "1200"],
+    )
+    assert result.exit_code == 0, result.output
     return book

@@ -23,11 +23,6 @@ OLDER = OLD - timedelta(days=365)
 CUTOFF = (date.today() - timedelta(days=365 * 12)).isoformat()
 
 
-@pytest.fixture
-def runner() -> CliRunner:
-    return CliRunner()
-
-
 def add_rating(book: Path, when: date, vehicle: str = "TYPE3") -> None:
     asm.save_rating(
         book,

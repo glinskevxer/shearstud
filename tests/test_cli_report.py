@@ -19,11 +19,6 @@ pytestmark = pytest.mark.cli
 NUMBER = "18-SH-0473"
 
 
-@pytest.fixture
-def runner() -> CliRunner:
-    return CliRunner()
-
-
 def add_programme(book: Path, rating: int = 8, inspected: date = date(2025, 4, 2)) -> None:
     prog.save(
         book,

@@ -17,11 +17,6 @@ from tests.support import NUMBER
 pytestmark = pytest.mark.cli
 
 
-@pytest.fixture
-def runner() -> CliRunner:
-    return CliRunner()
-
-
 def plate(label: str, width: float, height: float, y: float) -> dict[str, Any]:
     return {"label": label, "width_in": width, "height_in": height, "y_center_in": y}
 

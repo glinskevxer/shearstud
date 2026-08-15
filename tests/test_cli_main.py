@@ -16,11 +16,6 @@ from shearstud.store import db, migrate
 pytestmark = pytest.mark.cli
 
 
-@pytest.fixture
-def runner() -> CliRunner:
-    return CliRunner()
-
-
 def test_the_group_reports_its_version(runner: CliRunner) -> None:
     result = runner.invoke(main, ["--version"])
     assert result.exit_code == 0

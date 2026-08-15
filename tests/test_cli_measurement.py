@@ -22,11 +22,6 @@ CAMPAIGN = "C-2025-04"
 UE_PER_KSI = 1.0e6 / 29000.0
 
 
-@pytest.fixture
-def runner() -> CliRunner:
-    return CliRunner()
-
-
 def instrumented() -> dict[str, Any]:
     """One girder carrying the two details the measurement tests use."""
     return document(

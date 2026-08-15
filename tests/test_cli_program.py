@@ -20,11 +20,6 @@ NUMBER = "18-SH-0473"
 OTHER = "07-CR-0112"
 
 
-@pytest.fixture
-def runner() -> CliRunner:
-    return CliRunner()
-
-
 def add_structure(book: Path, number: str, redundancy: str = "redundant") -> None:
     db.execute(
         book,

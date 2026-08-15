@@ -9,7 +9,15 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
-## 0.25.1 - 2026-08-19
+## 0.25.2 - 2026-08-19
+
+### Changed
+
+- Four command line test files carried a byte identical copy of the same
+  fixture under three different names, and eight carried their own copy of
+  the click runner. Both now live in the shared conftest.
+
+## 0.25.1 - 2026-08-12
 
 ### Changed
 

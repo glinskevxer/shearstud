@@ -7,7 +7,6 @@ escort a load needs to see that escorting would have made it issuable.
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import pytest
@@ -15,26 +14,9 @@ from click.testing import CliRunner, Result
 
 from shearstud.cli import main
 from shearstud.loads import vehicles
-from tests.support import NUMBER, document
+from tests.support import NUMBER
 
 pytestmark = pytest.mark.cli
-
-
-@pytest.fixture
-def runner() -> CliRunner:
-    return CliRunner()
-
-
-@pytest.fixture
-def loaded(runner: CliRunner, book: Path, tmp_path: Path) -> Path:
-    doc = tmp_path / "structure.json"
-    doc.write_text(json.dumps(document()), encoding="utf-8")
-    result = runner.invoke(
-        main,
-        ["--book", str(book), "structure", "import", str(doc), "--adtt", "1200", "--grade", "A36"],
-    )
-    assert result.exit_code == 0, result.output
-    return book
 
 
 def call(runner: CliRunner, *words: str) -> Result:
@@ -129,78 +111,100 @@ def test_an_envelope_of_one_point_is_refused(runner: CliRunner) -> None:
     assert call(runner, "envelope", "TYPE3", "--span-ft", "90", "--points", "1").exit_code != 0
 
 
-def test_a_permit_prints_a_line_per_control(runner: CliRunner, loaded: Path) -> None:
+def test_a_permit_prints_a_line_per_control(runner: CliRunner, imported_book: Path) -> None:
     result = runner.invoke(
-        main, ["--book", str(loaded), "permit", NUMBER, "TYPE3", "--stations", "4"]
+        main, ["--book", str(imported_book), "permit", NUMBER, "TYPE3", "--stations", "4"]
     )
     assert result.exit_code == 0, result.output
     assert "mixed" in result.output
     assert "escorted" in result.output
 
 
-def test_escorting_gives_a_better_rating_than_mixing(runner: CliRunner, loaded: Path) -> None:
+def test_escorting_gives_a_better_rating_than_mixing(
+    runner: CliRunner, imported_book: Path
+) -> None:
     # The whole reason both are printed. An agency that always answers
     # "escorted" is charging for margin it does not need, and one that never
     # offers it refuses loads that could cross.
     result = runner.invoke(
-        main, ["--book", str(loaded), "permit", NUMBER, "TYPE3", "--stations", "4"]
+        main, ["--book", str(imported_book), "permit", NUMBER, "TYPE3", "--stations", "4"]
     )
     assert _rating(result, "mixed") < _rating(result, "escorted")
 
 
-def test_a_routine_permit_has_no_escorted_line(runner: CliRunner, loaded: Path) -> None:
+def test_a_routine_permit_has_no_escorted_line(runner: CliRunner, imported_book: Path) -> None:
     # Nobody escorts a vehicle that crosses unannounced.
     result = runner.invoke(
         main,
-        ["--book", str(loaded), "permit", NUMBER, "TYPE3", "--stations", "4", "--kind", "routine"],
+        [
+            "--book",
+            str(imported_book),
+            "permit",
+            NUMBER,
+            "TYPE3",
+            "--stations",
+            "4",
+            "--kind",
+            "routine",
+        ],
     )
     assert result.exit_code == 0, result.output
     assert "escorted" not in result.output
 
 
-def test_a_permit_that_clears_says_how_to_issue_it(runner: CliRunner, loaded: Path) -> None:
+def test_a_permit_that_clears_says_how_to_issue_it(runner: CliRunner, imported_book: Path) -> None:
     result = runner.invoke(
-        main, ["--book", str(loaded), "permit", NUMBER, "TYPE3", "--stations", "4"]
+        main, ["--book", str(imported_book), "permit", NUMBER, "TYPE3", "--stations", "4"]
     )
     assert "issue as single_trip" in result.output
     assert "margin over the load" in result.output
 
 
 def test_the_loosest_control_that_clears_is_the_one_offered(
-    runner: CliRunner, loaded: Path
+    runner: CliRunner, imported_book: Path
 ) -> None:
     result = runner.invoke(
-        main, ["--book", str(loaded), "permit", NUMBER, "TYPE3", "--stations", "4"]
+        main, ["--book", str(imported_book), "permit", NUMBER, "TYPE3", "--stations", "4"]
     )
     if _rating(result, "mixed") >= 1.0:
         assert "single_trip mixed" in result.output
 
 
 def test_a_permit_nothing_clears_says_so_rather_than_failing(
-    runner: CliRunner, loaded: Path
+    runner: CliRunner, imported_book: Path
 ) -> None:
     # A permit that cannot be issued is an answer, and it is the one the
     # haulier is waiting for.
     result = runner.invoke(
         main,
-        ["--book", str(loaded), "permit", NUMBER, "TYPE3", "--stations", "4", "--overlay", "60"],
+        [
+            "--book",
+            str(imported_book),
+            "permit",
+            NUMBER,
+            "TYPE3",
+            "--stations",
+            "4",
+            "--overlay",
+            "60",
+        ],
     )
     assert result.exit_code == 0, result.output
     assert "cannot cross" in result.output
 
 
-def test_a_permit_kind_nobody_issues_is_refused(runner: CliRunner, loaded: Path) -> None:
+def test_a_permit_kind_nobody_issues_is_refused(runner: CliRunner, imported_book: Path) -> None:
     result = runner.invoke(
         main,
-        ["--book", str(loaded), "permit", NUMBER, "TYPE3", "--kind", "provisional"],
+        ["--book", str(imported_book), "permit", NUMBER, "TYPE3", "--kind", "provisional"],
     )
     assert result.exit_code != 0
 
 
 def test_a_permit_on_a_structure_that_is_not_there_is_refused(
-    runner: CliRunner, loaded: Path
+    runner: CliRunner, imported_book: Path
 ) -> None:
-    result = runner.invoke(main, ["--book", str(loaded), "permit", "99-XX-9999", "TYPE3"])
+    result = runner.invoke(main, ["--book", str(imported_book), "permit", "99-XX-9999", "TYPE3"])
     assert result.exit_code != 0
 
 

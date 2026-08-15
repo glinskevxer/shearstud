@@ -11,11 +11,6 @@ from shearstud.geometry import rolled
 pytestmark = pytest.mark.cli
 
 
-@pytest.fixture
-def runner() -> CliRunner:
-    return CliRunner()
-
-
 def call(runner: CliRunner, *words: str) -> Result:
     return runner.invoke(main, ["shape", *words])
 
