@@ -9,7 +9,21 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
-## 0.25.2 - 2026-08-19
+## 0.26.0 - 2026-08-20
+
+### Added
+
+- The release gate refuses a repository that has shrunk. A checkout that
+  landed without its tests, or a merge that dropped a package, passes every
+  gate it still has, so the module, source, test and gate counts are checked
+  against floors of their own.
+
+### Changed
+
+- The coverage floor in CI is 97 per cent, measured at 98 across 7,307
+  statements.
+
+## 0.25.2 - 2026-08-15
 
 ### Changed
 

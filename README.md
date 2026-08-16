@@ -257,7 +257,10 @@ keeps its newest evaluation, so a structure last rated in 1998 loses nothing.
 
 That runs everything CI runs: the linter, the type checker, every `check_*`
 self check, every generated document in `--check` form, the whole suite, and
-the end to end smoke run.
+the end to end smoke run. `python -m shearstud.tools.release_check` runs the
+same gates in one command and adds the floors: a repository that has lost half
+its tests passes every gate it still has, so the counts are checked apart from
+them.
 
 The self checks are the unusual part and they are worth explaining. They walk
 this repository's own source and fail the build on things a linter has no

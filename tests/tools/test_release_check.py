@@ -131,3 +131,59 @@ def test_a_failing_gate_is_named(
     out = capsys.readouterr().out
     assert "FAILED check_x" in out
     assert "1 of 2 gates failed" in out
+
+
+def test_nothing_has_fallen_below_its_floor() -> None:
+    assert release.shortfalls() == []
+
+
+def test_every_floor_is_a_count_the_command_reports() -> None:
+    numbers = release.counts()
+    assert set(release.FLOORS) <= set(numbers)
+
+
+def test_every_floor_is_comfortably_below_where_the_repository_stands() -> None:
+    # A floor set just under today's number is a floor somebody raises every
+    # week until they stop reading it.
+    numbers = release.counts()
+    for name, floor in release.FLOORS.items():
+        assert numbers[name] > floor, name
+
+
+def test_a_count_below_its_floor_is_reported(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(release, "counts", lambda: dict.fromkeys(release.FLOORS, 0))
+    found = release.shortfalls()
+    assert len(found) == len(release.FLOORS)
+    assert all("below the floor of" in line for line in found)
+
+
+def test_a_count_that_is_missing_altogether_is_reported(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(release, "counts", lambda: {})
+    assert len(release.shortfalls()) == len(release.FLOORS)
+
+
+def test_a_shrunken_repository_fails_even_with_every_gate_clean(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    gate_results: list[release.GateResult],
+) -> None:
+    # A repository that has lost half its tests passes every gate it still
+    # has, which is why this is checked apart from them.
+    monkeypatch.setattr(release, "gates", lambda: gate_results)
+    monkeypatch.setattr(release, "counts", lambda: dict.fromkeys(release.FLOORS, 0))
+    assert release.main(["--quiet"]) == 1
+    out = capsys.readouterr().out
+    assert "SHRANK" in out
+    assert "below the floor" in out
+
+
+def test_a_failing_gate_is_reported_before_a_shortfall(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(release, "gates", lambda: [release.GateResult("check_x", 1)])
+    monkeypatch.setattr(release, "counts", lambda: dict.fromkeys(release.FLOORS, 0))
+    assert release.main(["--quiet"]) == 1
+    out = capsys.readouterr().out
+    assert out.index("FAILED") < out.index("SHRANK")

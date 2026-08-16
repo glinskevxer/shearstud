@@ -30,6 +30,25 @@ CHECK_PREFIX: Final[str] = "check_"
 BUILD_PREFIX: Final[str] = "build_"
 EXTRA_BUILDERS: Final[tuple[str, ...]] = ("schema_dump",)
 
+#: Floors the repository has to clear before a release is cut.
+#:
+#: Not targets. Every one of these is comfortably below where the repository
+#: actually stands, and they are here to catch a collapse rather than to
+#: measure progress: a merge that drops a package, a test run that collected
+#: half the suite, a checkout that landed without its tests. Those all leave a
+#: green build, because everything that ran passed.
+#:
+#: They are deliberately round and deliberately loose. A floor set just under
+#: today's number is a floor somebody raises every week until they stop
+#: reading it.
+FLOORS: Final[dict[str, int]] = {
+    "modules": 60,
+    "source_lines": 9_000,
+    "test_files": 50,
+    "test_lines": 12_000,
+    "gates": 15,
+}
+
 
 @dataclass(frozen=True, slots=True)
 class GateResult:
@@ -82,6 +101,16 @@ def gates() -> list[GateResult]:
     return out
 
 
+def shortfalls() -> list[str]:
+    """Every count that has fallen below its floor."""
+    numbers = counts()
+    return [
+        f"{name} is {numbers.get(name, 0)}, below the floor of {floor}"
+        for name, floor in FLOORS.items()
+        if numbers.get(name, 0) < floor
+    ]
+
+
 def counts() -> dict[str, int]:
     """The numbers a release note quotes."""
     sources = source_files(include_tools=True)
@@ -100,6 +129,7 @@ def main(argv: list[str] | None = None) -> int:
     args = sys.argv[1:] if argv is None else argv
     results = gates()
     failed = [result for result in results if not result.passed]
+    short = shortfalls()
     if "--quiet" not in args:
         numbers = counts()
         print(
@@ -109,8 +139,15 @@ def main(argv: list[str] | None = None) -> int:
         )
     for result in failed:
         print(f"release_check: FAILED {result.name}")
+    for line in short:
+        print(f"release_check: SHRANK {line}")
     if failed:
         print(f"release_check: {len(failed)} of {len(results)} gates failed")
+        return 1
+    if short:
+        # A repository that has lost half its tests passes every gate it still
+        # has, which is exactly why this is checked separately from them.
+        print(f"release_check: {len(short)} count(s) below the floor")
         return 1
     print(f"release_check: {len(results)} gates clean")
     return 0
