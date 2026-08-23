@@ -23,7 +23,7 @@ the same table, so the two cannot drift apart.
 | store       | 18      | 2810  | the book of record, its migrations and its repositories           |
 | analysis    | 9       | 1890  | dead load, and the runs that use everything below at once         |
 | cli         | 12      | 2050  | the command line, which is how anyone outside the package uses it |
-| tools       | 26      | 3511  | the repository's own checks and generated documents               |
+| tools       | 26      | 3542  | the repository's own checks and generated documents               |
 
 ## What each layer may import
 
@@ -191,13 +191,13 @@ store layer. `check_sql` enforces that.
 | `shearstud.tools.check_cli`          | 99    | The command line documents itself: every command and every option has help.     |
 | `shearstud.tools.check_constants`    | 138   | A coefficient buried in an expression is a coefficient nobody can check.        |
 | `shearstud.tools.check_dataclasses`  | 120   | Every value in this package is frozen, and this is what says so.                |
+| `shearstud.tools.check_docs`         | 198   | The hand written documents make checkable claims, so they get checked.          |
 | `shearstud.tools.check_docstrings`   | 81    | Every module, public class, public function and public method says what it is.  |
 | `shearstud.tools.check_errors`       | 161   | Errors are the package's own, they carry a message, and nothing is swallowed.   |
 | `shearstud.tools.check_examples`     | 127   | The shipped example is load bearing, so it is held to what it is used for.      |
 | `shearstud.tools.check_layers`       | 143   | Imports run one way through the package, and this is where that is written.     |
 | `shearstud.tools.check_migrations`   | 126   | Applied migrations are frozen, and the lock file is what says so.               |
 | `shearstud.tools.check_naming`       | 156   | Names say what the thing is, in the words this domain already uses.             |
-| `shearstud.tools.check_readme`       | 167   | The README makes checkable claims, so they get checked.                         |
 | `shearstud.tools.check_sql`          | 178   | SQL is parameterised, lives in the store layer, and names its columns.          |
 | `shearstud.tools.check_tests`        | 148   | Every module has a test file, every test file has a marker, every test asserts. |
 | `shearstud.tools.check_units`        | 172   | Every float that crosses a public boundary carries its unit in its name.        |

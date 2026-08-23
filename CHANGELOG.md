@@ -9,7 +9,20 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
-## 0.26.0 - 2026-08-20
+## 0.27.0 - 2026-08-22
+
+### Added
+
+- `docs/workflow.md`, a walkthrough of one structure from the drawings to
+  the district worklist in the order an office does it.
+
+### Changed
+
+- `check_readme` is `check_docs` and reads every hand written document
+  rather than only the README. A walkthrough somebody follows in order is
+  exactly the document a renamed command wastes an afternoon on.
+
+## 0.26.0 - 2026-08-16
 
 ### Added
 

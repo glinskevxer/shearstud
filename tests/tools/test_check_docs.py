@@ -1,10 +1,10 @@
-"""The README check, and the two ways it could quietly stop checking."""
+"""The document check, and the two ways it could quietly stop checking."""
 
 from __future__ import annotations
 
 import pytest
 
-from shearstud.tools import check_readme as check
+from shearstud.tools import check_docs as check
 
 pytestmark = pytest.mark.tools
 
@@ -117,7 +117,7 @@ def test_a_missing_readme_is_one_problem_and_not_twenty(
 def test_the_listing_prints_what_it_found(capsys: pytest.CaptureFixture[str]) -> None:
     assert check.main(["--list"]) == 0
     out = capsys.readouterr().out
-    assert "check_readme: init" in out
+    assert "README.md: init" in out
 
 
 def test_a_problem_is_reported_and_exits_one(
@@ -126,7 +126,7 @@ def test_a_problem_is_reported_and_exits_one(
     monkeypatch.setattr(check, "problems", lambda: ["says something untrue"])
     assert check.main([]) == 1
     out = capsys.readouterr().out
-    assert "check_readme: says something untrue" in out
+    assert "check_docs: says something untrue" in out
     assert "1 problem(s)" in out
 
 
@@ -140,3 +140,44 @@ def test_an_argument_to_a_leaf_command_is_not_reported() -> None:
 
 def test_a_fully_resolved_group_and_command_reports_nothing_missing() -> None:
     assert check.resolve(["program", "worklist"]) == (["program", "worklist"], None)
+
+
+def test_the_workflow_document_is_one_of_them() -> None:
+    assert any(path.name == "workflow.md" for path in check.documents())
+
+
+def test_the_readme_comes_first() -> None:
+    assert check.documents()[0].name == "README.md"
+
+
+def test_every_command_the_workflow_names_is_a_command() -> None:
+    # The document is a walkthrough somebody follows in order, so a renamed
+    # command wastes an afternoon rather than raising.
+    workflow = next(path for path in check.documents() if path.name == "workflow.md")
+    assert check.unknown_commands(workflow.read_text(encoding="utf-8")) == []
+
+
+def test_the_workflow_covers_the_whole_of_it() -> None:
+    workflow = next(path for path in check.documents() if path.name == "workflow.md")
+    text = workflow.read_text(encoding="utf-8")
+    for word in ("rate", "shear", "thickness", "record", "fatigue", "program", "report", "book"):
+        assert f"shearstud {word}" in text, word
+
+
+def test_a_problem_names_the_document_it_is_in(monkeypatch: pytest.MonkeyPatch) -> None:
+    from pathlib import Path
+
+    monkeypatch.setattr(check, "linked_paths", lambda _text: ["docs/nowhere.md"])
+    found = check.problems()
+    assert any(problem.startswith("README.md") for problem in found)
+    assert any(problem.startswith("workflow.md") for problem in found)
+    assert isinstance(check.README, Path)
+
+
+def test_the_generated_documents_are_not_checked_here() -> None:
+    # They are rebuilt from the code and compared in CI, which is stronger
+    # than anything this could offer.
+    names = {path.name for path in check.documents()}
+    assert "architecture.md" not in names
+    assert "schema.md" not in names
+    assert "rules.md" not in names

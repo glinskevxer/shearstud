@@ -53,6 +53,9 @@ Moment and shear are separate commands because they are separate runs. The
 shear run rates the abutments, which the moment run skips because moment there
 is zero, and shear at an abutment is the largest it gets anywhere.
 
+[docs/workflow.md](docs/workflow.md) walks one structure from the drawings to
+the district worklist, in the order an office actually does it.
+
 `shearstud --help` lists everything. The full command reference, generated from
 the command tree itself, is in [docs/commands.md](docs/commands.md).
 
