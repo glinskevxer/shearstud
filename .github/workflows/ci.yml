@@ -46,6 +46,7 @@ jobs:
       - run: python -m shearstud.tools.check_layers
       - run: python -m shearstud.tools.check_migrations
       - run: python -m shearstud.tools.check_naming
+      - run: python -m shearstud.tools.check_package
       - run: python -m shearstud.tools.check_docs
       - run: python -m shearstud.tools.check_sql
       - run: python -m shearstud.tools.check_tests

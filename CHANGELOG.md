@@ -9,7 +9,19 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
-## 0.27.0 - 2026-08-22
+## 0.28.0 - 2026-08-24
+
+### Added
+
+- A `py.typed` marker, which the package never had. Without it a downstream
+  project running a type checker saw this package as untyped and silently
+  lost every annotation in it.
+- `check_package` holds the wheel to what it has to carry: the typing
+  marker, the rolled shape catalogue and the console script. None of the
+  three is exercised by running from a checkout, so all three break in the
+  wheel and nowhere else.
+
+## 0.27.0 - 2026-08-23
 
 ### Added
 
