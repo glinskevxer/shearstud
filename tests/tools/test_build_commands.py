@@ -70,9 +70,14 @@ def test_the_detail_sections_name_the_arguments() -> None:
 
 
 def test_the_help_and_version_options_are_left_out() -> None:
-    text = build.body()
-    assert "`--help`" not in text
-    assert "`--version`" not in text
+    # The option rows and not the whole document. This used to search the
+    # text, which convicted a command whose docstring mentioned --version in
+    # a sentence, and the docstring was right.
+    for line in build.body().splitlines():
+        if not line.startswith("| `--"):
+            continue
+        option = line.split("`")[1]
+        assert option not in ("--help", "--version"), line
 
 
 def test_the_book_option_is_explained_once_at_the_top() -> None:

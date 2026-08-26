@@ -9,6 +9,28 @@ somebody will have to explain why.
 Entries that change an answer are marked **changes results**. Those are the
 ones a rating engineer has to read.
 
+## 1.0.0 - 2026-08-25
+
+The first release the office runs on. What is in it, in the order a structure
+goes through it: section properties and the composite stack, influence lines and
+the moving load traversal, AASHTO distribution and the dynamic allowance, LRFR
+moment and shear ratings with posting and permits, rainflow counting off a raw
+logger file, Miner damage and remaining life, section loss from ultrasonic
+readings, and the inspection interval and worklist the office is judged on.
+
+One SQLite book of record behind all of it, six numbered migrations, and
+fifteen self checks that walk this repository's own source. Every one of those
+checks was written after it found a real defect in this code, and most of them
+found more than one.
+
+### Added
+
+- `shearstud about` reports what an installation is: version, Python, the
+  schema this build expects, the specification edition the coefficients came
+  from, and where it is installed. It needs no book, which is the point: it
+  answers on an installation nobody has set up yet, and that is when somebody
+  is asking.
+
 ## 0.28.0 - 2026-08-24
 
 ### Added

@@ -196,3 +196,52 @@ def test_every_command_that_takes_a_date_reports_a_bad_one_the_same_way(
         assert result.exit_code != 0, words
         assert "is not a date" in result.output, words
         assert "Traceback" not in result.output, words
+
+
+def test_about_reports_the_version(runner: CliRunner) -> None:
+    result = runner.invoke(main, ["about"])
+    assert result.exit_code == 0, result.output
+    assert __version__ in result.output
+
+
+def test_about_reports_the_python_it_is_running_on(runner: CliRunner) -> None:
+    import sys
+
+    assert sys.version.split()[0] in runner.invoke(main, ["about"]).output
+
+
+def test_about_reports_the_schema_this_build_expects(runner: CliRunner) -> None:
+    result = runner.invoke(main, ["about"])
+    assert f"schema     {migrate.newest_version()} migrations" in result.output
+
+
+def test_about_names_the_specification_edition(runner: CliRunner) -> None:
+    # The second question on any support call about a number, and the answer
+    # changes on a different clock from the version.
+    from shearstud.cli.main import PROVISIONS
+
+    assert PROVISIONS in runner.invoke(main, ["about"]).output
+
+
+def test_about_counts_the_catalogue_and_the_fleet(runner: CliRunner) -> None:
+    from shearstud.geometry import rolled
+    from shearstud.loads import vehicles
+
+    result = runner.invoke(main, ["about"])
+    assert f"{len(rolled.designations())} rolled shapes" in result.output
+    assert f"{len(vehicles.names())} rating vehicles" in result.output
+
+
+def test_about_says_where_it_is_installed(runner: CliRunner) -> None:
+    assert "shearstud" in runner.invoke(main, ["about"]).output.split("installed")[1]
+
+
+def test_about_needs_no_book(runner: CliRunner, tmp_path: Path) -> None:
+    # It works on an installation nobody has set up yet, which is exactly when
+    # somebody is asking what they are running.
+    result = runner.invoke(main, ["--book", str(tmp_path / "gone.sqlite3"), "about"])
+    assert result.exit_code == 0, result.output
+
+
+def test_about_appears_in_the_help(runner: CliRunner) -> None:
+    assert "about" in runner.invoke(main, ["--help"]).output

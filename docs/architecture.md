@@ -22,7 +22,7 @@ the same table, so the two cannot drift apart.
 | program     | 3       | 382   | what the office does with the numbers: intervals and priority     |
 | store       | 18      | 2810  | the book of record, its migrations and its repositories           |
 | analysis    | 9       | 1890  | dead load, and the runs that use everything below at once         |
-| cli         | 12      | 2050  | the command line, which is how anyone outside the package uses it |
+| cli         | 12      | 2080  | the command line, which is how anyone outside the package uses it |
 | tools       | 27      | 3673  | the repository's own checks and generated documents               |
 
 ## What each layer may import
@@ -167,7 +167,7 @@ store layer. `check_sql` enforces that.
 | Module                      | Lines | What it is                                                                    |
 | --------------------------- | ----- | ----------------------------------------------------------------------------- |
 | `shearstud.cli.book`        | 130   | Commands that operate on the book itself rather than on what is in it.        |
-| `shearstud.cli.main`        | 174   | The command line, which is the only way anyone outside this package uses it.  |
+| `shearstud.cli.main`        | 204   | The command line, which is the only way anyone outside this package uses it.  |
 | `shearstud.cli.measurement` | 457   | Commands for what was measured, and the fatigue evaluation that reads it.     |
 | `shearstud.cli.program`     | 150   | Commands for the inspection programme: what gets visited, and when.           |
 | `shearstud.cli.rating`      | 223   | Commands that rate a structure and decide whether to post it.                 |

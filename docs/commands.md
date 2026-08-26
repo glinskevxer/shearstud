@@ -25,6 +25,7 @@ from the environment, because a rating office runs one book per district.
 
 | Command             | What it does                                                             |
 | ------------------- | ------------------------------------------------------------------------ |
+| `about`             | What this installation is, for a support call.                           |
 | `book counts`       | How many rows are in each table.                                         |
 | `book export`       | Write the whole book to a transfer file.                                 |
 | `book import`       | Read a transfer file into an empty book.                                 |
@@ -79,6 +80,19 @@ from the environment, because a rating office runs one book per district.
 ### `shearstud init`
 
 Create the book of record, or bring an existing one up to date.
+
+### `shearstud about`
+
+What this installation is, for a support call.
+
+    ``--version`` answers the first question and stops. This answers the four
+    that follow it, which are the ones that separate "the number is wrong" from
+    "you are running something else": which Python, which schema this build
+    expects, which specification edition the coefficients came from, and where
+    the catalogue and the documents are.
+
+    None of it needs a book, so it works on an installation that has not been
+    set up yet, which is exactly when somebody is asking.
 
 ### `shearstud status`
 

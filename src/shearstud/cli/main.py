@@ -24,6 +24,8 @@ import click
 
 from shearstud import __version__
 from shearstud.errors import InputError, ShearstudError
+from shearstud.geometry import rolled
+from shearstud.loads import vehicles
 from shearstud.store import db, migrate
 
 #: Where the book lives when nobody says otherwise.
@@ -54,6 +56,12 @@ pass_context = click.make_pass_decorator(Context)
 
 #: What a date option looks like when it is right.
 DATE_FORMAT: Final[str] = "YYYY-MM-DD"
+
+#: Which edition of the specifications the coefficients in this package came
+#: from. It is on the version report because "which edition" is the second
+#: question on any support call about a number, and because the answer changes
+#: on a different clock from the version.
+PROVISIONS: Final[str] = "AASHTO LRFD 9th edition, MBE 3rd edition"
 
 
 def parse_date(text: str, what: str) -> date:
@@ -121,6 +129,28 @@ def init(ctx: Context) -> None:
         click.echo(f"applied migrations {', '.join(str(v) for v in applied)}")
     else:
         click.echo("already up to date")
+
+
+@main.command()
+def about() -> None:
+    """What this installation is, for a support call.
+
+    ``--version`` answers the first question and stops. This answers the four
+    that follow it, which are the ones that separate "the number is wrong" from
+    "you are running something else": which Python, which schema this build
+    expects, which specification edition the coefficients came from, and where
+    the catalogue and the documents are.
+
+    None of it needs a book, so it works on an installation that has not been
+    set up yet, which is exactly when somebody is asking.
+    """
+    click.echo(f"shearstud  {__version__}")
+    click.echo(f"python     {sys.version.split()[0]} on {sys.platform}")
+    click.echo(f"schema     {migrate.newest_version()} migrations in this build")
+    click.echo(f"provisions {PROVISIONS}")
+    click.echo(f"shapes     {len(rolled.designations())} rolled shapes in the catalogue")
+    click.echo(f"vehicles   {len(vehicles.names())} rating vehicles")
+    click.echo(f"installed  {Path(__file__).resolve().parent.parent}")
 
 
 @main.command()
